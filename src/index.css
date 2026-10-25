@@ -1,0 +1,3399 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: var(--primary-color);
+  --color-primary-800: var(--primary-800, #166534);
+  --color-primary-900: var(--primary-900, #14532d);
+  --color-primary-200: var(--primary-200, #bbf7d0);
+  --color-primary-300: var(--primary-300, #86efac);
+}
+
+/* ==========================================================================
+   SISTEMA DE TEMAS VISUAIS (SKINS) - GABARITA CONCURSOS
+   Paletas: Verde (Original), Azul (Foco), Rosa (Suave)
+   ========================================================================== */
+
+:root,
+[data-skin="verde"],
+.skin-verde,
+.theme-green {
+  --primary-color: #059669;
+  --primary-hover: #10b981;
+  --primary-active: #047857;
+  --primary-text: #059669;
+  --primary-text-dark: #34d399;
+  --primary-800: #166534;
+  --primary-900: #14532d;
+  --primary-200: #bbf7d0;
+  --primary-300: #86efac;
+  --primary-light: rgba(16, 185, 129, 0.12);
+  --primary-light-border: rgba(16, 185, 129, 0.3);
+  --secondary-color: #0d9488;
+  --accent-color: #06b6d4;
+  --chart-glow: rgba(16, 185, 129, 0.25);
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --banner-bg: radial-gradient(ellipse at 85% 25%, rgba(16, 185, 129, 0.25) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #064e3b 50%, #022c22 100%);
+  --banner-border: rgba(16, 185, 129, 0.35);
+  --banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.18);
+  --banner-badge-bg: rgba(16, 185, 129, 0.2);
+  --banner-badge-text: #6ee7b7;
+  --banner-badge-border: rgba(16, 185, 129, 0.35);
+  --banner-highlight-text: #6ee7b7;
+  --banner-progress-from: #10b981;
+  --banner-progress-to: #2dd4bf;
+  --banner-progress-border: rgba(16, 185, 129, 0.25);
+  --revisoes-banner-bg: radial-gradient(ellipse at 15% 25%, rgba(16, 185, 129, 0.32) 0%, transparent 60%), linear-gradient(135deg, #064e3b 0%, #0f172a 50%, #022c22 100%);
+  --revisoes-banner-border: rgba(16, 185, 129, 0.35);
+  --revisoes-banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.18);
+  --revisoes-pill-bg: rgba(16, 185, 129, 0.2);
+  --revisoes-pill-border: rgba(16, 185, 129, 0.35);
+  --revisoes-pill-text: #6ee7b7;
+  --revisoes-pill-icon: #34d399;
+  --badge-pill-bg: rgba(16, 185, 129, 0.15);
+  --badge-pill-text: #34d399;
+  --badge-pill-border: rgba(16, 185, 129, 0.3);
+}
+
+[data-skin="azul"],
+.skin-azul,
+.theme-blue {
+  --primary-color: #2563eb;
+  --primary-hover: #3b82f6;
+  --primary-active: #1d4ed8;
+  --primary-text: #2563eb;
+  --primary-text-dark: #60a5fa;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-light: rgba(37, 99, 235, 0.12);
+  --primary-light-border: rgba(37, 99, 235, 0.3);
+  --secondary-color: #0284c7;
+  --accent-color: #06b6d4;
+  --chart-glow: rgba(37, 99, 235, 0.25);
+  --card-shadow: 0 4px 16px -2px rgba(37, 99, 235, 0.08), 0 2px 5px -1px rgba(6, 182, 212, 0.05);
+  --banner-bg: radial-gradient(ellipse at 85% 25%, rgba(37, 99, 235, 0.45) 0%, transparent 65%), linear-gradient(135deg, #0b1329 0%, #172554 50%, #0f172a 100%);
+  --banner-border: rgba(59, 130, 246, 0.45);
+  --banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3);
+  --banner-badge-bg: rgba(37, 99, 235, 0.25);
+  --banner-badge-text: #93c5fd;
+  --banner-badge-border: rgba(59, 130, 246, 0.45);
+  --banner-highlight-text: #60a5fa;
+  --banner-progress-from: #2563eb;
+  --banner-progress-to: #38bdf8;
+  --banner-progress-border: rgba(59, 130, 246, 0.3);
+  --revisoes-banner-bg: radial-gradient(ellipse at 15% 25%, rgba(37, 99, 235, 0.42) 0%, transparent 60%), linear-gradient(135deg, #172554 0%, #0f172a 50%, #0b1329 100%);
+  --revisoes-banner-border: rgba(59, 130, 246, 0.45);
+  --revisoes-banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3);
+  --revisoes-pill-bg: rgba(37, 99, 235, 0.25);
+  --revisoes-pill-border: rgba(59, 130, 246, 0.45);
+  --revisoes-pill-text: #93c5fd;
+  --revisoes-pill-icon: #60a5fa;
+  --badge-pill-bg: rgba(37, 99, 235, 0.15);
+  --badge-pill-text: #60a5fa;
+  --badge-pill-border: rgba(59, 130, 246, 0.3);
+}
+
+[data-skin="rosa"],
+.skin-rosa,
+.theme-pink {
+  --primary-color: #db2777;
+  --primary-hover: #ec4899;
+  --primary-active: #be185d;
+  --primary-text: #db2777;
+  --primary-text-dark: #f472b6;
+  --primary-800: #9d174d;
+  --primary-900: #831843;
+  --primary-200: #fbcfe8;
+  --primary-300: #f472b6;
+  --primary-light: rgba(219, 39, 119, 0.12);
+  --primary-light-border: rgba(219, 39, 119, 0.3);
+  --secondary-color: #a855f7;
+  --accent-color: #d946ef;
+  --chart-glow: rgba(219, 39, 119, 0.25);
+  --card-shadow: 0 6px 22px -2px rgba(219, 39, 119, 0.08), 0 2px 8px -1px rgba(168, 85, 247, 0.05);
+  --banner-bg: radial-gradient(ellipse at 85% 25%, rgba(219, 39, 119, 0.4) 0%, transparent 65%), linear-gradient(135deg, #180914 0%, #831843 50%, #0f172a 100%);
+  --banner-border: rgba(244, 114, 182, 0.4);
+  --banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(219, 39, 119, 0.25);
+  --banner-badge-bg: rgba(219, 39, 119, 0.25);
+  --banner-badge-text: #fbcfe8;
+  --banner-badge-border: rgba(244, 114, 182, 0.45);
+  --banner-highlight-text: #f472b6;
+  --banner-progress-from: #db2777;
+  --banner-progress-to: #f472b6;
+  --banner-progress-border: rgba(244, 114, 182, 0.3);
+  --revisoes-banner-bg: radial-gradient(ellipse at 15% 25%, rgba(219, 39, 119, 0.38) 0%, transparent 60%), linear-gradient(135deg, #831843 0%, #0f172a 50%, #180914 100%);
+  --revisoes-banner-border: rgba(244, 114, 182, 0.4);
+  --revisoes-banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(219, 39, 119, 0.25);
+  --revisoes-pill-bg: rgba(219, 39, 119, 0.25);
+  --revisoes-pill-border: rgba(244, 114, 182, 0.45);
+  --revisoes-pill-text: #fbcfe8;
+  --revisoes-pill-icon: #f472b6;
+  --badge-pill-bg: rgba(219, 39, 119, 0.15);
+  --badge-pill-text: #f472b6;
+  --badge-pill-border: rgba(244, 114, 182, 0.3);
+}
+
+[data-skin="roxo"],
+[data-skin="purple"],
+.skin-roxo,
+.skin-purple,
+body.theme-purple,
+.theme-purple {
+  --primary-color: #7C3AED;
+  --primary-hover: #8B5CF6;
+  --primary-active: #6D28D9;
+  --primary-text: #7C3AED;
+  --primary-text-dark: #A78BFA;
+  --primary-800: #5b21b6;
+  --primary-900: #4c1d95;
+  --primary-200: #ddd6fe;
+  --primary-300: #c4b5fd;
+  --primary-light: rgba(124, 58, 237, 0.12);
+  --primary-light-border: rgba(124, 58, 237, 0.3);
+  --secondary-color: #6D28D9;
+  --accent-color: #A78BFA;
+  --chart-glow: rgba(124, 58, 237, 0.35);
+  --card-shadow: 0 8px 24px rgba(124, 58, 237, 0.08);
+  --banner-bg: radial-gradient(ellipse at 85% 25%, rgba(167, 139, 250, 0.3) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #2e1065 50%, #581c87 100%);
+  --banner-border: rgba(167, 139, 250, 0.4);
+  --banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(124, 58, 237, 0.25);
+  --banner-badge-bg: rgba(124, 58, 237, 0.25);
+  --banner-badge-text: #C4B5FD;
+  --banner-badge-border: rgba(167, 139, 250, 0.45);
+  --banner-highlight-text: #A78BFA;
+  --banner-progress-from: #7C3AED;
+  --banner-progress-to: #A78BFA;
+  --banner-progress-border: rgba(167, 139, 250, 0.3);
+  --revisoes-banner-bg: radial-gradient(ellipse at 15% 25%, rgba(167, 139, 250, 0.32) 0%, transparent 60%), linear-gradient(135deg, #2e1065 0%, #0f172a 50%, #1e1138 100%);
+  --revisoes-banner-border: rgba(167, 139, 250, 0.35);
+  --revisoes-banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(124, 58, 237, 0.18);
+  --revisoes-pill-bg: rgba(124, 58, 237, 0.2);
+  --revisoes-pill-border: rgba(167, 139, 250, 0.35);
+  --revisoes-pill-text: #E9D5FF;
+  --revisoes-pill-icon: #C4B5FD;
+  --badge-pill-bg: rgba(124, 58, 237, 0.18);
+  --badge-pill-text: #C4B5FD;
+  --badge-pill-border: rgba(167, 139, 250, 0.35);
+}
+
+[data-skin="laranja"],
+[data-skin="orange"],
+[data-skin="dbz"],
+.skin-laranja,
+.skin-orange,
+.skin-dbz,
+body.theme-orange,
+body.theme-laranja,
+body.theme-dbz,
+.theme-orange,
+.theme-laranja,
+.theme-dbz {
+  --primary-color: #FF6B00;
+  --primary-hover: #FF8533;
+  --primary-active: #D83100;
+  --primary-text: #FF6B00;
+  --primary-text-dark: #FFCC00;
+  --primary-800: #9a3412;
+  --primary-900: #7c2d12;
+  --primary-200: #fed7aa;
+  --primary-300: #fdba74;
+  --primary-light: rgba(255, 107, 0, 0.15);
+  --primary-light-border: rgba(255, 107, 0, 0.35);
+  --secondary-color: #D83100;
+  --accent-color: #FFCC00;
+  --chart-glow: rgba(255, 107, 0, 0.35);
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --banner-bg: radial-gradient(ellipse at 85% 25%, rgba(255, 153, 0, 0.32) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #431407 45%, #7c2d12 75%, #c2410c 100%);
+  --banner-border: rgba(255, 107, 0, 0.45);
+  --banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(255, 107, 0, 0.25);
+  --banner-badge-bg: rgba(255, 107, 0, 0.25);
+  --banner-badge-text: #FFCC00;
+  --banner-badge-border: rgba(255, 204, 0, 0.55);
+  --banner-highlight-text: #FF8533;
+  --banner-progress-from: #FF6B00;
+  --banner-progress-to: #FFCC00;
+  --banner-progress-border: rgba(255, 204, 0, 0.3);
+  --revisoes-banner-bg: radial-gradient(ellipse at 15% 25%, rgba(255, 153, 0, 0.3) 0%, transparent 60%), linear-gradient(135deg, #431407 0%, #0f172a 50%, #1a0803 100%);
+  --revisoes-banner-border: rgba(255, 107, 0, 0.35);
+  --revisoes-banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 107, 0, 0.18);
+  --revisoes-pill-bg: rgba(255, 107, 0, 0.2);
+  --revisoes-pill-border: rgba(255, 204, 0, 0.35);
+  --revisoes-pill-text: #FFCC00;
+  --revisoes-pill-icon: #FFCC00;
+  --badge-pill-bg: rgba(255, 107, 0, 0.18);
+  --badge-pill-text: #FFCC00;
+  --badge-pill-border: rgba(255, 204, 0, 0.4);
+}
+
+/* ==========================================================================
+   CLASSES UTILITÁRIAS DINÂMICAS DO TEMA
+   ========================================================================== */
+
+.theme-btn-primary {
+  background-color: var(--primary-color) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease-in-out;
+}
+.theme-btn-primary:hover {
+  background-color: var(--primary-hover) !important;
+}
+.theme-btn-primary:active {
+  background-color: var(--primary-active) !important;
+}
+
+.bg-brand {
+  background-color: var(--primary-color) !important;
+}
+
+.text-brand {
+  color: var(--primary-color) !important;
+}
+.dark .text-brand {
+  color: var(--primary-text-dark) !important;
+}
+
+.border-brand {
+  border-color: var(--primary-color) !important;
+}
+
+.ring-brand {
+  --tw-ring-color: var(--primary-color) !important;
+}
+
+.theme-primary-bg {
+  background-color: var(--primary-color) !important;
+}
+
+.theme-primary-text {
+  color: var(--primary-text) !important;
+}
+.dark .theme-primary-text {
+  color: var(--primary-text-dark) !important;
+}
+
+.theme-primary-border {
+  border-color: var(--primary-hover) !important;
+}
+
+.theme-primary-badge {
+  background-color: var(--primary-light, rgba(16, 185, 129, 0.15)) !important;
+  color: var(--primary-text, #059669) !important;
+  border-color: var(--primary-light-border, rgba(16, 185, 129, 0.3)) !important;
+}
+.dark .theme-primary-badge,
+.dark-mode .theme-primary-badge {
+  color: var(--primary-text-dark, #34d399) !important;
+}
+
+.theme-primary-badge-darker {
+  background-color: var(--primary-light, rgba(16, 185, 129, 0.15)) !important;
+  color: var(--primary-900, #14532d) !important;
+  border-color: var(--primary-light-border, rgba(16, 185, 129, 0.3)) !important;
+  font-weight: 700 !important;
+}
+.dark .theme-primary-badge-darker,
+.dark-mode .theme-primary-badge-darker {
+  color: var(--primary-200, #bbf7d0) !important;
+  background-color: var(--primary-light, rgba(16, 185, 129, 0.15)) !important;
+  border-color: var(--primary-light-border, rgba(16, 185, 129, 0.3)) !important;
+}
+
+/* Badges e Pílulas na Sidebar */
+.sidebar-badge {
+  background-color: var(--badge-pill-bg, rgba(16, 185, 129, 0.15)) !important;
+  color: var(--badge-pill-text, #34d399) !important;
+  border: 1px solid var(--badge-pill-border, rgba(16, 185, 129, 0.3)) !important;
+}
+
+.sidebar-foco-box {
+  background-color: var(--primary-light, rgba(16, 185, 129, 0.12)) !important;
+  border-color: var(--primary-light-border, rgba(16, 185, 129, 0.3)) !important;
+}
+
+.sidebar-foco-title {
+  color: var(--primary-text-dark, #34d399) !important;
+}
+
+.sidebar-foco-icon {
+  color: var(--primary-hover, #10b981) !important;
+}
+
+.sidebar-nivel-badge {
+  background-color: var(--badge-pill-bg, rgba(16, 185, 129, 0.2)) !important;
+  color: var(--badge-pill-text, #34d399) !important;
+  border: 1px solid var(--badge-pill-border, rgba(16, 185, 129, 0.3)) !important;
+}
+
+html:not(.dark) .sidebar-nivel-badge,
+body:not(.dark) .sidebar-nivel-badge {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: var(--primary-color, #334155) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Tag Concurso Ativo no Banner */
+.badge-ativo {
+  background-color: var(--banner-badge-bg, rgba(16, 185, 129, 0.2)) !important;
+  color: var(--banner-badge-text, #6ee7b7) !important;
+  border: 1px solid var(--banner-badge-border, rgba(16, 185, 129, 0.35)) !important;
+}
+
+/* Botão Secundário de Alto Contraste no Banner Principal ("Mudar Concurso") */
+.btn-banner-secundario,
+.banner-principal .btn-banner-secundario,
+.card-banner .btn-banner-secundario {
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background-color: #000000 !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-banner-secundario:hover,
+.banner-principal .btn-banner-secundario:hover,
+.card-banner .btn-banner-secundario:hover {
+  background-color: #171717 !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+}
+
+.btn-banner-secundario *,
+.banner-principal .btn-banner-secundario *,
+.card-banner .btn-banner-secundario * {
+  color: #ffffff !important;
+}
+
+/* Tag Próximo Estudo Recomendado */
+.proximo-estudo-card {
+  border-color: var(--primary-light-border, rgba(16, 185, 129, 0.35)) !important;
+  background: linear-gradient(to right, var(--primary-light, rgba(16, 185, 129, 0.12)), transparent) !important;
+}
+
+/* Card Horas Estudadas */
+.card-metric-hours {
+  border-left-color: var(--primary-hover, #10b981) !important;
+}
+.card-metric-hours-icon-bg {
+  background-color: var(--primary-light, rgba(16, 185, 129, 0.12)) !important;
+  color: var(--primary-hover, #10b981) !important;
+}
+
+/* Botão Alternar Tema Sol/Lua no Cabeçalho */
+.theme-mode-active {
+  box-shadow: 0 0 0 1.5px var(--primary-hover, #10b981) !important;
+  border-color: var(--primary-hover, #10b981) !important;
+}
+.theme-moon-icon {
+  color: var(--primary-text-dark, #34d399) !important;
+}
+
+/* ==========================================================================
+   OVERLAYS E REGRAS GLOBAIS DE COR PARA TEMAS AZUL E ROSA
+   Mantém compatibilidade imediata com toda a hierarquia de componentes
+   ========================================================================== */
+
+/* --- TEMA AZUL (FOCO & ALTA CONCENTRAÇÃO) --- */
+[data-skin="azul"] .bg-emerald-600,
+[data-skin="azul"] .bg-emerald-500,
+[data-skin="azul"] .dark\:bg-emerald-600,
+[data-skin="azul"] .dark\:bg-emerald-500,
+[data-skin="azul"] button.bg-emerald-600,
+[data-skin="azul"] button.bg-emerald-500,
+[data-skin="azul"] a.bg-emerald-600,
+[data-skin="azul"] a.bg-emerald-500 {
+  background-color: #2563eb !important;
+}
+
+[data-skin="azul"] .accent-emerald-500,
+[data-skin="azul"] .accent-emerald-600 {
+  accent-color: #2563eb !important;
+}
+
+[data-skin="azul"] .hover\:bg-emerald-500:hover,
+[data-skin="azul"] .hover\:bg-emerald-700:hover,
+[data-skin="azul"] .dark\:hover\:bg-emerald-500:hover {
+  background-color: #3b82f6 !important;
+}
+
+[data-skin="azul"] .text-emerald-600,
+[data-skin="azul"] .text-emerald-500,
+[data-skin="azul"] .text-emerald-700 {
+  color: #2563eb !important;
+}
+
+[data-skin="azul"] .dark .dark\:text-emerald-400,
+[data-skin="azul"] .dark .dark\:text-emerald-300,
+[data-skin="azul"] .dark\:text-emerald-400,
+[data-skin="azul"] .dark\:text-emerald-300,
+[data-skin="azul"] .text-emerald-400 {
+  color: #60a5fa !important;
+}
+
+[data-skin="azul"] .border-emerald-500,
+[data-skin="azul"] .border-emerald-400 {
+  border-color: #3b82f6 !important;
+}
+
+[data-skin="azul"] .border-emerald-200,
+[data-skin="azul"] .border-emerald-300,
+[data-skin="azul"] .dark\:border-emerald-800\/50,
+[data-skin="azul"] .dark\:border-emerald-800\/60,
+[data-skin="azul"] .border-emerald-500\/20,
+[data-skin="azul"] .border-emerald-500\/30 {
+  border-color: rgba(37, 99, 235, 0.3) !important;
+}
+
+[data-skin="azul"] .bg-emerald-50,
+[data-skin="azul"] .bg-emerald-100,
+[data-skin="azul"] .bg-emerald-500\/10,
+[data-skin="azul"] .bg-emerald-500\/15 {
+  background-color: rgba(37, 99, 235, 0.12) !important;
+}
+
+[data-skin="azul"] .dark\:bg-emerald-950\/30,
+[data-skin="azul"] .dark\:bg-emerald-950\/40,
+[data-skin="azul"] .dark\:bg-emerald-900\/60 {
+  background-color: rgba(37, 99, 235, 0.22) !important;
+}
+
+[data-skin="azul"] .focus\:ring-emerald-500:focus {
+  --tw-ring-color: #3b82f6 !important;
+}
+
+[data-skin="azul"] .from-emerald-600 {
+  --tw-gradient-from: #2563eb var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(37, 99, 235, 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-skin="azul"] .to-teal-500,
+[data-skin="azul"] .to-teal-400 {
+  --tw-gradient-to: #06b6d4 var(--tw-gradient-to-position) !important;
+}
+
+[data-skin="azul"] .rounded-xl.border,
+[data-skin="azul"] .rounded-2xl.border {
+  box-shadow: 0 4px 16px -2px rgba(37, 99, 235, 0.07), 0 2px 5px -1px rgba(6, 182, 212, 0.04);
+}
+
+/* --- TEMA ROSA (SUAVE, LILÁS & MAGENTA CLARO) --- */
+[data-skin="rosa"] .bg-emerald-600,
+[data-skin="rosa"] .bg-emerald-500,
+[data-skin="rosa"] .dark\:bg-emerald-600,
+[data-skin="rosa"] .dark\:bg-emerald-500,
+[data-skin="rosa"] button.bg-emerald-600,
+[data-skin="rosa"] button.bg-emerald-500,
+[data-skin="rosa"] a.bg-emerald-600,
+[data-skin="rosa"] a.bg-emerald-500 {
+  background-color: #db2777 !important;
+}
+
+[data-skin="rosa"] .accent-emerald-500,
+[data-skin="rosa"] .accent-emerald-600 {
+  accent-color: #db2777 !important;
+}
+
+[data-skin="rosa"] .hover\:bg-emerald-500:hover,
+[data-skin="rosa"] .hover\:bg-emerald-700:hover,
+[data-skin="rosa"] .dark\:hover\:bg-emerald-500:hover {
+  background-color: #ec4899 !important;
+}
+
+[data-skin="rosa"] .text-emerald-600,
+[data-skin="rosa"] .text-emerald-500,
+[data-skin="rosa"] .text-emerald-700 {
+  color: #db2777 !important;
+}
+
+[data-skin="rosa"] .dark .dark\:text-emerald-400,
+[data-skin="rosa"] .dark .dark\:text-emerald-300,
+[data-skin="rosa"] .dark\:text-emerald-400,
+[data-skin="rosa"] .dark\:text-emerald-300,
+[data-skin="rosa"] .text-emerald-400 {
+  color: #f472b6 !important;
+}
+
+[data-skin="rosa"] .border-emerald-500,
+[data-skin="rosa"] .border-emerald-400 {
+  border-color: #ec4899 !important;
+}
+
+[data-skin="rosa"] .border-emerald-200,
+[data-skin="rosa"] .border-emerald-300,
+[data-skin="rosa"] .dark\:border-emerald-800\/50,
+[data-skin="rosa"] .dark\:border-emerald-800\/60,
+[data-skin="rosa"] .border-emerald-500\/20,
+[data-skin="rosa"] .border-emerald-500\/30 {
+  border-color: rgba(219, 39, 119, 0.3) !important;
+}
+
+[data-skin="rosa"] .bg-emerald-50,
+[data-skin="rosa"] .bg-emerald-100,
+[data-skin="rosa"] .bg-emerald-500\/10,
+[data-skin="rosa"] .bg-emerald-500\/15 {
+  background-color: rgba(219, 39, 119, 0.12) !important;
+}
+
+[data-skin="rosa"] .dark\:bg-emerald-950\/30,
+[data-skin="rosa"] .dark\:bg-emerald-950\/40,
+[data-skin="rosa"] .dark\:bg-emerald-900\/60 {
+  background-color: rgba(219, 39, 119, 0.22) !important;
+}
+
+[data-skin="rosa"] .focus\:ring-emerald-500:focus {
+  --tw-ring-color: #ec4899 !important;
+}
+
+[data-skin="rosa"] .from-emerald-600 {
+  --tw-gradient-from: #db2777 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(219, 39, 119, 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-skin="rosa"] .to-teal-500,
+[data-skin="rosa"] .to-teal-400 {
+  --tw-gradient-to: #a855f7 var(--tw-gradient-to-position) !important;
+}
+
+[data-skin="rosa"] .rounded-xl.border,
+[data-skin="rosa"] .rounded-2xl.border {
+  box-shadow: 0 6px 24px -2px rgba(219, 39, 119, 0.09), 0 2px 8px -1px rgba(168, 85, 247, 0.05);
+}
+
+/* --- TEMA ROXO (VIOLETA & PÚRPURA ELEGANTE) --- */
+[data-skin="roxo"] .bg-emerald-600,
+[data-skin="roxo"] .bg-emerald-500,
+[data-skin="roxo"] .dark\:bg-emerald-600,
+[data-skin="roxo"] .dark\:bg-emerald-500,
+[data-skin="roxo"] button.bg-emerald-600,
+[data-skin="roxo"] a.bg-emerald-600,
+[data-skin="purple"] .bg-emerald-600,
+[data-skin="purple"] .bg-emerald-500,
+.skin-roxo .bg-emerald-600,
+.skin-roxo .bg-emerald-500,
+body.theme-purple .bg-emerald-600,
+body.theme-purple .bg-emerald-500,
+.theme-purple .bg-emerald-600,
+.theme-purple .bg-emerald-500 {
+  background-color: #7C3AED !important;
+}
+
+[data-skin="roxo"] .hover\:bg-emerald-500:hover,
+[data-skin="roxo"] .hover\:bg-emerald-600:hover,
+[data-skin="roxo"] .hover\:bg-emerald-700:hover,
+[data-skin="roxo"] .dark\:hover\:bg-emerald-500:hover,
+[data-skin="purple"] .hover\:bg-emerald-500:hover,
+.skin-roxo .hover\:bg-emerald-500:hover,
+body.theme-purple .hover\:bg-emerald-500:hover,
+.theme-purple .hover\:bg-emerald-500:hover {
+  background-color: #8B5CF6 !important;
+}
+
+[data-skin="roxo"] .text-emerald-600,
+[data-skin="roxo"] .text-emerald-500,
+[data-skin="roxo"] .text-emerald-700,
+[data-skin="purple"] .text-emerald-600,
+[data-skin="purple"] .text-emerald-500,
+.skin-roxo .text-emerald-600,
+.skin-roxo .text-emerald-500,
+body.theme-purple .text-emerald-600,
+body.theme-purple .text-emerald-500,
+.theme-purple .text-emerald-600,
+.theme-purple .text-emerald-500 {
+  color: #7C3AED !important;
+}
+
+[data-skin="roxo"] .dark .dark\:text-emerald-400,
+[data-skin="roxo"] .dark .dark\:text-emerald-300,
+[data-skin="roxo"] .dark\:text-emerald-400,
+[data-skin="roxo"] .dark\:text-emerald-300,
+[data-skin="roxo"] .text-emerald-400,
+[data-skin="purple"] .dark\:text-emerald-400,
+[data-skin="purple"] .text-emerald-400,
+.skin-roxo .dark\:text-emerald-400,
+.skin-roxo .text-emerald-400,
+body.theme-purple .dark\:text-emerald-400,
+body.theme-purple .text-emerald-400,
+.theme-purple .dark\:text-emerald-400,
+.theme-purple .text-emerald-400 {
+  color: #A78BFA !important;
+}
+
+[data-skin="roxo"] .border-emerald-500,
+[data-skin="roxo"] .border-emerald-400,
+[data-skin="purple"] .border-emerald-500,
+.skin-roxo .border-emerald-500,
+body.theme-purple .border-emerald-500,
+.theme-purple .border-emerald-500 {
+  border-color: #8B5CF6 !important;
+}
+
+[data-skin="roxo"] .border-emerald-200,
+[data-skin="roxo"] .border-emerald-300,
+[data-skin="roxo"] .dark\:border-emerald-800\/50,
+[data-skin="roxo"] .dark\:border-emerald-800\/60,
+[data-skin="roxo"] .border-emerald-500\/20,
+[data-skin="roxo"] .border-emerald-500\/25,
+[data-skin="roxo"] .border-emerald-500\/30,
+[data-skin="roxo"] .border-emerald-500\/40,
+[data-skin="purple"] .border-emerald-500\/30,
+.skin-roxo .border-emerald-500\/30,
+body.theme-purple .border-emerald-500\/30,
+.theme-purple .border-emerald-500\/30 {
+  border-color: rgba(124, 58, 237, 0.3) !important;
+}
+
+[data-skin="roxo"] .bg-emerald-50,
+[data-skin="roxo"] .bg-emerald-100,
+[data-skin="roxo"] .bg-emerald-500\/10,
+[data-skin="roxo"] .bg-emerald-500\/15,
+[data-skin="roxo"] .bg-emerald-500\/20,
+[data-skin="purple"] .bg-emerald-500\/15,
+.skin-roxo .bg-emerald-500\/15,
+body.theme-purple .bg-emerald-500\/15,
+.theme-purple .bg-emerald-500\/15 {
+  background-color: rgba(124, 58, 237, 0.12) !important;
+}
+
+[data-skin="roxo"] .dark\:bg-emerald-950\/20,
+[data-skin="roxo"] .dark\:bg-emerald-950\/30,
+[data-skin="roxo"] .dark\:bg-emerald-950\/40,
+[data-skin="roxo"] .dark\:bg-emerald-900\/60,
+[data-skin="roxo"] .bg-emerald-950\/60,
+[data-skin="purple"] .dark\:bg-emerald-950\/30,
+.skin-roxo .dark\:bg-emerald-950\/30,
+body.theme-purple .dark\:bg-emerald-950\/30,
+.theme-purple .dark\:bg-emerald-950\/30 {
+  background-color: rgba(124, 58, 237, 0.22) !important;
+}
+
+[data-skin="roxo"] .focus\:ring-emerald-500:focus,
+[data-skin="roxo"] .ring-emerald-500,
+[data-skin="roxo"] .ring-emerald-500\/20,
+[data-skin="roxo"] .ring-emerald-500\/30,
+[data-skin="roxo"] .ring-emerald-500\/40 {
+  --tw-ring-color: #8B5CF6 !important;
+}
+
+[data-skin="roxo"] .from-emerald-600,
+[data-skin="roxo"] .from-emerald-500 {
+  --tw-gradient-from: #7C3AED var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(124, 58, 237, 0) var(--tw-gradient-from-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-skin="roxo"] .to-teal-500,
+[data-skin="roxo"] .to-teal-400,
+[data-skin="roxo"] .to-emerald-400 {
+  --tw-gradient-to: #A78BFA var(--tw-gradient-to-position) !important;
+}
+
+[data-skin="roxo"] .rounded-xl.border,
+[data-skin="roxo"] .rounded-2xl.border {
+  box-shadow: 0 4px 16px -2px rgba(124, 58, 237, 0.07), 0 2px 5px -1px rgba(167, 139, 250, 0.04);
+}
+
+/* --- TEMA LARANJA (VIBRANTE & ENERGÉTICO) --- */
+[data-skin="laranja"] .bg-emerald-600,
+[data-skin="laranja"] .bg-emerald-500,
+[data-skin="laranja"] .dark\:bg-emerald-600,
+[data-skin="laranja"] .dark\:bg-emerald-500,
+[data-skin="laranja"] button.bg-emerald-600,
+[data-skin="laranja"] a.bg-emerald-600,
+[data-skin="orange"] .bg-emerald-600,
+[data-skin="orange"] .bg-emerald-500,
+[data-skin="dbz"] .bg-emerald-600,
+.skin-laranja .bg-emerald-600,
+.skin-laranja .bg-emerald-500,
+body.theme-orange .bg-emerald-600,
+body.theme-orange .bg-emerald-500,
+body.theme-laranja .bg-emerald-600,
+body.theme-laranja .bg-emerald-500,
+.theme-orange .bg-emerald-600,
+.theme-laranja .bg-emerald-600 {
+  background-color: #FF6B00 !important;
+}
+
+[data-skin="laranja"] .hover\:bg-emerald-500:hover,
+[data-skin="laranja"] .hover\:bg-emerald-600:hover,
+[data-skin="laranja"] .hover\:bg-emerald-700:hover,
+[data-skin="laranja"] .dark\:hover\:bg-emerald-500:hover,
+[data-skin="orange"] .hover\:bg-emerald-500:hover,
+.skin-laranja .hover\:bg-emerald-500:hover,
+body.theme-orange .hover\:bg-emerald-500:hover,
+body.theme-laranja .hover\:bg-emerald-500:hover,
+.theme-orange .hover\:bg-emerald-500:hover,
+.theme-laranja .hover\:bg-emerald-500:hover {
+  background-color: #FF8533 !important;
+}
+
+[data-skin="laranja"] .text-emerald-600,
+[data-skin="laranja"] .text-emerald-500,
+[data-skin="laranja"] .text-emerald-700,
+[data-skin="orange"] .text-emerald-600,
+[data-skin="orange"] .text-emerald-500,
+.skin-laranja .text-emerald-600,
+.skin-laranja .text-emerald-500,
+body.theme-orange .text-emerald-600,
+body.theme-orange .text-emerald-500,
+body.theme-laranja .text-emerald-600,
+body.theme-laranja .text-emerald-500,
+.theme-orange .text-emerald-600,
+.theme-laranja .text-emerald-600 {
+  color: #FF6B00 !important;
+}
+
+[data-skin="laranja"] .dark .dark\:text-emerald-400,
+[data-skin="laranja"] .dark .dark\:text-emerald-300,
+[data-skin="laranja"] .dark\:text-emerald-400,
+[data-skin="laranja"] .dark\:text-emerald-300,
+[data-skin="laranja"] .text-emerald-400,
+[data-skin="orange"] .dark\:text-emerald-400,
+[data-skin="orange"] .text-emerald-400,
+.skin-laranja .dark\:text-emerald-400,
+.skin-laranja .text-emerald-400,
+body.theme-orange .dark\:text-emerald-400,
+body.theme-orange .text-emerald-400,
+body.theme-laranja .dark\:text-emerald-400,
+body.theme-laranja .text-emerald-400,
+.theme-orange .dark\:text-emerald-400,
+.theme-laranja .dark\:text-emerald-400 {
+  color: #FFCC00 !important;
+}
+
+[data-skin="laranja"] .border-emerald-500,
+[data-skin="laranja"] .border-emerald-400,
+[data-skin="orange"] .border-emerald-500,
+.skin-laranja .border-emerald-500,
+body.theme-orange .border-emerald-500,
+body.theme-laranja .border-emerald-500,
+.theme-orange .border-emerald-500,
+.theme-laranja .border-emerald-500 {
+  border-color: #FF8533 !important;
+}
+
+[data-skin="laranja"] .border-emerald-200,
+[data-skin="laranja"] .border-emerald-300,
+[data-skin="laranja"] .dark\:border-emerald-800\/50,
+[data-skin="laranja"] .dark\:border-emerald-800\/60,
+[data-skin="laranja"] .border-emerald-500\/20,
+[data-skin="laranja"] .border-emerald-500\/25,
+[data-skin="laranja"] .border-emerald-500\/30,
+[data-skin="laranja"] .border-emerald-500\/40,
+[data-skin="orange"] .border-emerald-500\/30,
+.skin-laranja .border-emerald-500\/30,
+body.theme-orange .border-emerald-500\/30,
+body.theme-laranja .border-emerald-500\/30,
+.theme-orange .border-emerald-500\/30,
+.theme-laranja .border-emerald-500\/30 {
+  border-color: rgba(255, 107, 0, 0.3) !important;
+}
+
+[data-skin="laranja"] .bg-emerald-50,
+[data-skin="laranja"] .bg-emerald-100,
+[data-skin="laranja"] .bg-emerald-500\/10,
+[data-skin="laranja"] .bg-emerald-500\/15,
+[data-skin="laranja"] .bg-emerald-500\/20,
+[data-skin="orange"] .bg-emerald-500\/15,
+.skin-laranja .bg-emerald-500\/15,
+body.theme-orange .bg-emerald-500\/15,
+body.theme-laranja .bg-emerald-500\/15,
+.theme-orange .bg-emerald-500\/15,
+.theme-laranja .bg-emerald-500\/15 {
+  background-color: rgba(255, 107, 0, 0.12) !important;
+}
+
+[data-skin="laranja"] .dark\:bg-emerald-950\/20,
+[data-skin="laranja"] .dark\:bg-emerald-950\/30,
+[data-skin="laranja"] .dark\:bg-emerald-950\/40,
+[data-skin="laranja"] .dark\:bg-emerald-900\/60,
+[data-skin="laranja"] .bg-emerald-950\/60,
+[data-skin="orange"] .dark\:bg-emerald-950\/30,
+.skin-laranja .dark\:bg-emerald-950\/30,
+body.theme-orange .dark\:bg-emerald-950\/30,
+body.theme-laranja .dark\:bg-emerald-950\/30,
+.theme-orange .dark\:bg-emerald-950\/30,
+.theme-laranja .dark\:bg-emerald-950\/30 {
+  background-color: rgba(255, 107, 0, 0.22) !important;
+}
+
+[data-skin="laranja"] .focus\:ring-emerald-500:focus,
+[data-skin="laranja"] .ring-emerald-500,
+[data-skin="laranja"] .ring-emerald-500\/20,
+[data-skin="laranja"] .ring-emerald-500\/30,
+[data-skin="laranja"] .ring-emerald-500\/40 {
+  --tw-ring-color: #FF8533 !important;
+}
+
+[data-skin="laranja"] .from-emerald-600,
+[data-skin="laranja"] .from-emerald-500 {
+  --tw-gradient-from: #FF6B00 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(255, 107, 0, 0) var(--tw-gradient-from-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+[data-skin="laranja"] .to-teal-500,
+[data-skin="laranja"] .to-teal-400,
+[data-skin="laranja"] .to-emerald-400 {
+  --tw-gradient-to: #FFCC00 var(--tw-gradient-to-position) !important;
+}
+
+[data-skin="laranja"] .rounded-xl.border,
+[data-skin="laranja"] .rounded-2xl.border {
+  box-shadow: 0 4px 16px -2px rgba(255, 107, 0, 0.07), 0 2px 5px -1px rgba(255, 204, 0, 0.04);
+}
+
+/* ==========================================================================
+   BANNER PRINCIPAL DINÂMICO - TEMAS VERDE, AZUL E ROSA SUAVE
+   Garante que o fundo (gradient/glow), pílula "Concurso Ativo",
+   textos de destaque (cargo/progresso) e barra de progresso respeitem o tema selecionado.
+   ========================================================================== */
+
+/* 1. Integração Direta com Variáveis CSS do Tema (.banner-principal / .card-banner) */
+.banner-principal,
+.card-banner:not(.metas-xp-banner) {
+  background: var(--banner-bg, radial-gradient(ellipse at 85% 25%, rgba(16, 185, 129, 0.25) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #064e3b 50%, #022c22 100%)) !important;
+  border-color: var(--banner-border, rgba(16, 185, 129, 0.35)) !important;
+  box-shadow: var(--banner-glow, 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.18)) !important;
+}
+
+.banner-principal .badge-ativo,
+.card-banner .badge-ativo {
+  background-color: var(--banner-badge-bg, rgba(16, 185, 129, 0.2)) !important;
+  color: var(--banner-badge-text, #6ee7b7) !important;
+  border-color: var(--banner-badge-border, rgba(16, 185, 129, 0.35)) !important;
+}
+
+.banner-principal .cargo-destaque,
+.card-banner .cargo-destaque,
+.banner-principal .cargo-destaque.text-brand,
+.card-banner .cargo-destaque.text-brand,
+.cargo-destaque {
+  color: var(--banner-highlight-text, var(--primary-text-dark, var(--primary-color))) !important;
+}
+
+.banner-principal .progresso-icone,
+.card-banner .progresso-icone,
+.banner-principal .progresso-texto,
+.card-banner .progresso-texto {
+  color: var(--banner-highlight-text, #6ee7b7) !important;
+}
+
+.banner-principal .progresso-trilho,
+.card-banner .progresso-trilho {
+  border-color: var(--banner-progress-border, rgba(16, 185, 129, 0.25)) !important;
+}
+
+.banner-principal .barra-progresso,
+.banner-principal .progresso-barra,
+.card-banner .barra-progresso,
+.card-banner .progresso-barra {
+  background: linear-gradient(to right, var(--banner-progress-from, #10b981), var(--banner-progress-to, #2dd4bf)) !important;
+}
+
+/* 2. Overrides Específicos de Alta Especificidade para Tema AZUL */
+body.theme-blue .banner-principal,
+body.skin-azul .banner-principal,
+[data-skin="azul"] .banner-principal,
+body.theme-blue .card-banner:not(.metas-xp-banner),
+body.skin-azul .card-banner:not(.metas-xp-banner),
+[data-skin="azul"] .card-banner:not(.metas-xp-banner) {
+  background: radial-gradient(ellipse at 85% 25%, rgba(37, 99, 235, 0.45) 0%, transparent 65%), linear-gradient(135deg, #0b1329 0%, #172554 50%, #0f172a 100%) !important;
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3) !important;
+}
+
+body.theme-blue .banner-principal .badge-ativo,
+body.skin-azul .banner-principal .badge-ativo,
+[data-skin="azul"] .banner-principal .badge-ativo,
+body.theme-blue .card-banner .badge-ativo,
+body.skin-azul .card-banner .badge-ativo,
+[data-skin="azul"] .card-banner .badge-ativo {
+  background-color: rgba(37, 99, 235, 0.25) !important;
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.45) !important;
+}
+
+body.theme-blue .banner-principal .cargo-destaque,
+body.skin-azul .banner-principal .cargo-destaque,
+[data-skin="azul"] .banner-principal .cargo-destaque,
+body.theme-blue .card-banner .cargo-destaque,
+body.skin-azul .card-banner .cargo-destaque,
+[data-skin="azul"] .card-banner .cargo-destaque,
+body.theme-blue .banner-principal .progresso-icone,
+body.skin-azul .banner-principal .progresso-icone,
+[data-skin="azul"] .banner-principal .progresso-icone,
+body.theme-blue .card-banner .progresso-icone,
+body.skin-azul .card-banner .progresso-icone,
+[data-skin="azul"] .card-banner .progresso-icone,
+body.theme-blue .banner-principal .progresso-texto,
+body.skin-azul .banner-principal .progresso-texto,
+[data-skin="azul"] .banner-principal .progresso-texto,
+body.theme-blue .card-banner .progresso-texto,
+body.skin-azul .card-banner .progresso-texto,
+[data-skin="azul"] .card-banner .progresso-texto {
+  color: #60a5fa !important;
+}
+
+body.theme-blue .banner-principal .progresso-trilho,
+body.skin-azul .banner-principal .progresso-trilho,
+[data-skin="azul"] .banner-principal .progresso-trilho,
+body.theme-blue .card-banner .progresso-trilho,
+body.skin-azul .card-banner .progresso-trilho,
+[data-skin="azul"] .card-banner .progresso-trilho {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+body.theme-blue .banner-principal .barra-progresso,
+body.theme-blue .banner-principal .progresso-barra,
+body.skin-azul .banner-principal .barra-progresso,
+body.skin-azul .banner-principal .progresso-barra,
+[data-skin="azul"] .banner-principal .barra-progresso,
+[data-skin="azul"] .banner-principal .progresso-barra,
+body.theme-blue .card-banner .barra-progresso,
+body.theme-blue .card-banner .progresso-barra,
+body.skin-azul .card-banner .barra-progresso,
+body.skin-azul .card-banner .progresso-barra,
+[data-skin="azul"] .card-banner .barra-progresso,
+[data-skin="azul"] .card-banner .progresso-barra {
+  background: linear-gradient(to right, #2563eb, #38bdf8) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5) !important;
+}
+
+body.theme-blue .banner-principal .dias-restantes-card,
+body.skin-azul .banner-principal .dias-restantes-card,
+[data-skin="azul"] .banner-principal .dias-restantes-card,
+body.theme-blue .card-banner .dias-restantes-card,
+body.skin-azul .card-banner .dias-restantes-card,
+[data-skin="azul"] .card-banner .dias-restantes-card {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+}
+
+body.theme-blue .banner-principal .dias-restantes-card span:first-child,
+body.skin-azul .banner-principal .dias-restantes-card span:first-child,
+[data-skin="azul"] .banner-principal .dias-restantes-card span:first-child,
+body.theme-blue .card-banner .dias-restantes-card span:first-child,
+body.skin-azul .card-banner .dias-restantes-card span:first-child,
+[data-skin="azul"] .card-banner .dias-restantes-card span:first-child {
+  color: #93c5fd !important;
+}
+
+/* 3. Overrides Específicos de Alta Especificidade para Tema ROSA SUAVE */
+body.theme-pink .banner-principal,
+body.skin-rosa .banner-principal,
+[data-skin="rosa"] .banner-principal,
+body.theme-pink .card-banner:not(.metas-xp-banner),
+body.skin-rosa .card-banner:not(.metas-xp-banner),
+[data-skin="rosa"] .card-banner:not(.metas-xp-banner) {
+  background: radial-gradient(ellipse at 85% 25%, rgba(219, 39, 119, 0.4) 0%, transparent 65%), linear-gradient(135deg, #180914 0%, #831843 50%, #0f172a 100%) !important;
+  border-color: rgba(244, 114, 182, 0.4) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(219, 39, 119, 0.25) !important;
+}
+
+body.theme-pink .banner-principal .badge-ativo,
+body.skin-rosa .banner-principal .badge-ativo,
+[data-skin="rosa"] .banner-principal .badge-ativo,
+body.theme-pink .card-banner .badge-ativo,
+body.skin-rosa .card-banner .badge-ativo,
+[data-skin="rosa"] .card-banner .badge-ativo {
+  background-color: rgba(219, 39, 119, 0.25) !important;
+  color: #fbcfe8 !important;
+  border-color: rgba(244, 114, 182, 0.45) !important;
+}
+
+body.theme-pink .banner-principal .cargo-destaque,
+body.skin-rosa .banner-principal .cargo-destaque,
+[data-skin="rosa"] .banner-principal .cargo-destaque,
+body.theme-pink .card-banner .cargo-destaque,
+body.skin-rosa .card-banner .cargo-destaque,
+[data-skin="rosa"] .card-banner .cargo-destaque,
+body.theme-pink .banner-principal .progresso-icone,
+body.skin-rosa .banner-principal .progresso-icone,
+[data-skin="rosa"] .banner-principal .progresso-icone,
+body.theme-pink .card-banner .progresso-icone,
+body.skin-rosa .card-banner .progresso-icone,
+[data-skin="rosa"] .card-banner .progresso-icone,
+body.theme-pink .banner-principal .progresso-texto,
+body.skin-rosa .banner-principal .progresso-texto,
+[data-skin="rosa"] .banner-principal .progresso-texto,
+body.theme-pink .card-banner .progresso-texto,
+body.skin-rosa .card-banner .progresso-texto,
+[data-skin="rosa"] .card-banner .progresso-texto {
+  color: #f472b6 !important;
+}
+
+body.theme-pink .banner-principal .progresso-trilho,
+body.skin-rosa .banner-principal .progresso-trilho,
+[data-skin="rosa"] .banner-principal .progresso-trilho,
+body.theme-pink .card-banner .progresso-trilho,
+body.skin-rosa .card-banner .progresso-trilho,
+[data-skin="rosa"] .card-banner .progresso-trilho {
+  border-color: rgba(244, 114, 182, 0.3) !important;
+}
+
+body.theme-pink .banner-principal .barra-progresso,
+body.theme-pink .banner-principal .progresso-barra,
+body.skin-rosa .banner-principal .barra-progresso,
+body.skin-rosa .banner-principal .progresso-barra,
+[data-skin="rosa"] .banner-principal .barra-progresso,
+[data-skin="rosa"] .banner-principal .progresso-barra,
+body.theme-pink .card-banner .barra-progresso,
+body.theme-pink .card-banner .progresso-barra,
+body.skin-rosa .card-banner .barra-progresso,
+body.skin-rosa .card-banner .progresso-barra,
+[data-skin="rosa"] .card-banner .barra-progresso,
+[data-skin="rosa"] .card-banner .progresso-barra {
+  background: linear-gradient(to right, #db2777, #f472b6) !important;
+  box-shadow: 0 0 12px rgba(244, 114, 182, 0.5) !important;
+}
+
+body.theme-pink .banner-principal .dias-restantes-card,
+body.skin-rosa .banner-principal .dias-restantes-card,
+[data-skin="rosa"] .banner-principal .dias-restantes-card,
+body.theme-pink .card-banner .dias-restantes-card,
+body.skin-rosa .card-banner .dias-restantes-card,
+[data-skin="rosa"] .card-banner .dias-restantes-card {
+  border-color: rgba(244, 114, 182, 0.45) !important;
+}
+
+body.theme-pink .banner-principal .dias-restantes-card span:first-child,
+body.skin-rosa .banner-principal .dias-restantes-card span:first-child,
+[data-skin="rosa"] .banner-principal .dias-restantes-card span:first-child,
+body.theme-pink .card-banner .dias-restantes-card span:first-child,
+body.skin-rosa .card-banner .dias-restantes-card span:first-child,
+[data-skin="rosa"] .card-banner .dias-restantes-card span:first-child {
+  color: #f472b6 !important;
+}
+
+/* 4. Overrides Específicos para Tema VERDE (Padrão) */
+body.theme-green .banner-principal,
+body.skin-verde .banner-principal,
+[data-skin="verde"] .banner-principal,
+body.theme-green .card-banner:not(.metas-xp-banner),
+body.skin-verde .card-banner:not(.metas-xp-banner),
+[data-skin="verde"] .card-banner:not(.metas-xp-banner) {
+  background: radial-gradient(ellipse at 85% 25%, rgba(16, 185, 129, 0.25) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #064e3b 50%, #022c22 100%) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.18) !important;
+}
+
+body.theme-green .banner-principal .badge-ativo,
+body.skin-verde .banner-principal .badge-ativo,
+[data-skin="verde"] .banner-principal .badge-ativo,
+body.theme-green .card-banner .badge-ativo,
+body.skin-verde .card-banner .badge-ativo,
+[data-skin="verde"] .card-banner .badge-ativo {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+body.theme-green .banner-principal .cargo-destaque,
+body.skin-verde .banner-principal .cargo-destaque,
+[data-skin="verde"] .banner-principal .cargo-destaque,
+body.theme-green .card-banner .cargo-destaque,
+body.skin-verde .card-banner .cargo-destaque,
+[data-skin="verde"] .card-banner .cargo-destaque,
+body.theme-green .banner-principal .progresso-icone,
+body.skin-verde .banner-principal .progresso-icone,
+[data-skin="verde"] .banner-principal .progresso-icone,
+body.theme-green .card-banner .progresso-icone,
+body.skin-verde .card-banner .progresso-icone,
+[data-skin="verde"] .card-banner .progresso-icone,
+body.theme-green .banner-principal .progresso-texto,
+body.skin-verde .banner-principal .progresso-texto,
+[data-skin="verde"] .banner-principal .progresso-texto,
+body.theme-green .card-banner .progresso-texto,
+body.skin-verde .card-banner .progresso-texto,
+[data-skin="verde"] .card-banner .progresso-texto {
+  color: #6ee7b7 !important;
+}
+
+body.theme-green .banner-principal .progresso-trilho,
+body.skin-verde .banner-principal .progresso-trilho,
+[data-skin="verde"] .banner-principal .progresso-trilho,
+body.theme-green .card-banner .progresso-trilho,
+body.skin-verde .card-banner .progresso-trilho,
+[data-skin="verde"] .card-banner .progresso-trilho {
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+body.theme-green .banner-principal .barra-progresso,
+body.theme-green .banner-principal .progresso-barra,
+body.skin-verde .banner-principal .barra-progresso,
+body.skin-verde .banner-principal .progresso-barra,
+[data-skin="verde"] .banner-principal .barra-progresso,
+[data-skin="verde"] .banner-principal .progresso-barra,
+body.theme-green .card-banner .barra-progresso,
+body.theme-green .card-banner .progresso-barra,
+body.skin-verde .card-banner .barra-progresso,
+body.skin-verde .card-banner .progresso-barra,
+[data-skin="verde"] .card-banner .barra-progresso,
+[data-skin="verde"] .card-banner .progresso-barra {
+  background: linear-gradient(to right, #10b981, #2dd4bf) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* ==========================================================================
+   BANNER DE REVISÕES ESPAÇADAS DINÂMICO - .revisoes-banner
+   Garante que o fundo escuro com glow/gradient e a pílula/tag
+   "Repetição Espaçada (SRS)" respeitem as cores do tema ativo.
+   ========================================================================== */
+
+/* 1. Estrutura Base com Variáveis CSS (Opção A) */
+.revisoes-banner {
+  border-color: var(--revisoes-banner-border, rgba(16, 185, 129, 0.35)) !important;
+  box-shadow: var(--revisoes-banner-glow, 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.18)) !important;
+}
+
+.revisoes-banner .revisoes-pill,
+.revisoes-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.25rem 0.625rem !important;
+  border-radius: 9999px !important;
+  background-color: var(--revisoes-pill-bg, rgba(16, 185, 129, 0.2)) !important;
+  border: 1px solid var(--revisoes-pill-border, rgba(16, 185, 129, 0.35)) !important;
+  width: fit-content !important;
+}
+
+.revisoes-banner .revisoes-pill-icon,
+.revisoes-banner .revisoes-pill svg,
+.revisoes-pill svg {
+  color: var(--revisoes-pill-icon, #34d399) !important;
+}
+
+.revisoes-banner .revisoes-pill-text,
+.revisoes-banner .revisoes-pill span,
+.revisoes-pill span {
+  color: var(--revisoes-pill-text, #6ee7b7) !important;
+}
+
+/* Cards internos de métricas do Banner de Revisões (Fundo escuro mantido em todos os temas e modos) */
+.revisoes-banner .bg-slate-900\/80,
+.revisoes-banner .rounded-2xl {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
+  box-shadow: none !important;
+}
+
+.revisoes-banner .border-rose-900\/50 {
+  border-color: rgba(136, 19, 55, 0.5) !important;
+}
+
+/* Botão Configurar no Banner de Revisões (outline transparente com texto branco) */
+.revisoes-banner button.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.revisoes-banner button.bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+}
+
+/* 2. Overrides Específicos para Tema AZUL (.theme-blue / .skin-azul / [data-skin="azul"]) */
+body.theme-blue .revisoes-banner,
+body.skin-azul .revisoes-banner,
+[data-skin="azul"] .revisoes-banner {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3) !important;
+}
+
+body.theme-blue .revisoes-banner .revisoes-pill,
+body.skin-azul .revisoes-banner .revisoes-pill,
+[data-skin="azul"] .revisoes-banner .revisoes-pill {
+  background-color: rgba(37, 99, 235, 0.25) !important;
+  border-color: rgba(59, 130, 246, 0.45) !important;
+}
+
+body.theme-blue .revisoes-banner .revisoes-pill-icon,
+body.theme-blue .revisoes-banner .revisoes-pill svg,
+body.skin-azul .revisoes-banner .revisoes-pill-icon,
+body.skin-azul .revisoes-banner .revisoes-pill svg,
+[data-skin="azul"] .revisoes-banner .revisoes-pill-icon,
+[data-skin="azul"] .revisoes-banner .revisoes-pill svg {
+  color: #60a5fa !important;
+}
+
+body.theme-blue .revisoes-banner .revisoes-pill-text,
+body.theme-blue .revisoes-banner .revisoes-pill span,
+body.skin-azul .revisoes-banner .revisoes-pill-text,
+body.skin-azul .revisoes-banner .revisoes-pill span,
+[data-skin="azul"] .revisoes-banner .revisoes-pill-text,
+[data-skin="azul"] .revisoes-banner .revisoes-pill span {
+  color: #93c5fd !important;
+}
+
+/* 3. Overrides Específicos para Tema ROSA SUAVE (.theme-pink / .skin-rosa / [data-skin="rosa"]) */
+body.theme-pink .revisoes-banner,
+body.skin-rosa .revisoes-banner,
+[data-skin="rosa"] .revisoes-banner {
+  border-color: rgba(244, 114, 182, 0.4) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(219, 39, 119, 0.25) !important;
+}
+
+body.theme-pink .revisoes-banner .revisoes-pill,
+body.skin-rosa .revisoes-banner .revisoes-pill,
+[data-skin="rosa"] .revisoes-banner .revisoes-pill {
+  background-color: rgba(219, 39, 119, 0.25) !important;
+  border-color: rgba(244, 114, 182, 0.45) !important;
+}
+
+body.theme-pink .revisoes-banner .revisoes-pill-icon,
+body.theme-pink .revisoes-banner .revisoes-pill svg,
+body.skin-rosa .revisoes-banner .revisoes-pill-icon,
+body.skin-rosa .revisoes-banner .revisoes-pill svg,
+[data-skin="rosa"] .revisoes-banner .revisoes-pill-icon,
+[data-skin="rosa"] .revisoes-banner .revisoes-pill svg {
+  color: #f472b6 !important;
+}
+
+body.theme-pink .revisoes-banner .revisoes-pill-text,
+body.theme-pink .revisoes-banner .revisoes-pill span,
+body.skin-rosa .revisoes-banner .revisoes-pill-text,
+body.skin-rosa .revisoes-banner .revisoes-pill span,
+[data-skin="rosa"] .revisoes-banner .revisoes-pill-text,
+[data-skin="rosa"] .revisoes-banner .revisoes-pill span {
+  color: #fbcfe8 !important;
+}
+
+/* 4. Overrides Específicos para Tema VERDE (Padrão) (.theme-green / .skin-verde / [data-skin="verde"]) */
+body.theme-green .revisoes-banner,
+body.skin-verde .revisoes-banner,
+[data-skin="verde"] .revisoes-banner {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.18) !important;
+}
+
+body.theme-green .revisoes-banner .revisoes-pill,
+body.skin-verde .revisoes-banner .revisoes-pill,
+[data-skin="verde"] .revisoes-banner .revisoes-pill {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+body.theme-green .revisoes-banner .revisoes-pill-icon,
+body.theme-green .revisoes-banner .revisoes-pill svg,
+body.skin-verde .revisoes-banner .revisoes-pill-icon,
+body.skin-verde .revisoes-banner .revisoes-pill svg,
+[data-skin="verde"] .revisoes-banner .revisoes-pill-icon,
+[data-skin="verde"] .revisoes-banner .revisoes-pill svg {
+  color: #34d399 !important;
+}
+
+body.theme-green .revisoes-banner .revisoes-pill-text,
+body.theme-green .revisoes-banner .revisoes-pill span,
+body.skin-verde .revisoes-banner .revisoes-pill-text,
+body.skin-verde .revisoes-banner .revisoes-pill span,
+[data-skin="verde"] .revisoes-banner .revisoes-pill-text,
+[data-skin="verde"] .revisoes-banner .revisoes-pill span {
+  color: #6ee7b7 !important;
+}
+
+/* 5. Overrides Específicos para Tema ROXO (.theme-purple / .skin-roxo / [data-skin="roxo"]) */
+body.theme-purple .revisoes-banner,
+body.skin-roxo .revisoes-banner,
+body.skin-purple .revisoes-banner,
+[data-skin="roxo"] .revisoes-banner,
+[data-skin="purple"] .revisoes-banner {
+  border-color: rgba(167, 139, 250, 0.45) !important;
+  box-shadow: 0 14px 35px -5px rgba(91, 33, 182, 0.5), 0 0 32px rgba(124, 58, 237, 0.4) !important;
+}
+
+body.theme-purple .revisoes-banner h2,
+body.skin-roxo .revisoes-banner h2,
+body.skin-purple .revisoes-banner h2,
+[data-skin="roxo"] .revisoes-banner h2,
+[data-skin="purple"] .revisoes-banner h2 {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(167, 139, 250, 0.95), 0 0 18px rgba(139, 92, 246, 0.85), 0 0 32px rgba(124, 58, 237, 0.65) !important;
+}
+
+body.theme-purple .revisoes-banner .revisoes-pill,
+body.skin-roxo .revisoes-banner .revisoes-pill,
+body.skin-purple .revisoes-banner .revisoes-pill,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill,
+[data-skin="purple"] .revisoes-banner .revisoes-pill {
+  background-color: rgba(91, 33, 182, 0.6) !important;
+  border-color: rgba(167, 139, 250, 0.5) !important;
+}
+
+body.theme-purple .revisoes-banner .revisoes-pill-icon,
+body.theme-purple .revisoes-banner .revisoes-pill svg,
+body.skin-roxo .revisoes-banner .revisoes-pill-icon,
+body.skin-roxo .revisoes-banner .revisoes-pill svg,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill-icon,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill svg,
+[data-skin="purple"] .revisoes-banner .revisoes-pill-icon,
+[data-skin="purple"] .revisoes-banner .revisoes-pill svg {
+  color: #C4B5FD !important;
+}
+
+body.theme-purple .revisoes-banner .revisoes-pill-text,
+body.theme-purple .revisoes-banner .revisoes-pill span,
+body.skin-roxo .revisoes-banner .revisoes-pill-text,
+body.skin-roxo .revisoes-banner .revisoes-pill span,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill-text,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill span,
+[data-skin="purple"] .revisoes-banner .revisoes-pill-text,
+[data-skin="purple"] .revisoes-banner .revisoes-pill span {
+  color: #E9D5FF !important;
+}
+
+/* ==========================================================================
+   TEMA 4: ROXO - .theme-purple / [data-skin="roxo"] / [data-skin="purple"]
+   Paleta:
+   - Modo Claro: Fundo lilás pálido (#F4F0FC), Sidebar lavanda claro (#EBE4F7), Cartões brancos (#FFFFFF), Textos chumbo (#333333)
+   - Modo Escuro: Fundo berinjela/índigo escuro (#130F1C), Sidebar e Cartões escuro fosco levemente arroxeado (#1F192E), Textos brancos (#F8FAFC)
+   - Acentos Compartilhados: Roxo Vibrante/Violeta (#7C3AED / #8B5CF6 / #A78BFA)
+   - Banners: Elegante degradê roxo (#7C3AED a #5B21B6) com textos brancos e glow roxo
+   - Post-it Dias Restantes: Fundo bege/papel (#FDF6E3) com números escuros (#1A202C) em ambos os modos
+   ========================================================================== */
+
+:root:has([data-skin="roxo"]),
+:root:has([data-skin="purple"]),
+[data-skin="roxo"],
+[data-skin="purple"],
+.skin-roxo,
+.skin-purple,
+body.theme-purple,
+.theme-purple {
+  --primary-color: #7C3AED;
+  --primary-hover: #8B5CF6;
+  --primary-active: #6D28D9;
+  --primary-text: #7C3AED;
+  --primary-text-dark: #A78BFA;
+  --primary-light: rgba(124, 58, 237, 0.12);
+  --primary-light-border: rgba(124, 58, 237, 0.3);
+  --secondary-color: #6D28D9;
+  --accent-color: #A78BFA;
+  --chart-glow: rgba(124, 58, 237, 0.35);
+  --card-shadow: 0 8px 24px rgba(124, 58, 237, 0.08);
+  --banner-bg: radial-gradient(ellipse at 85% 25%, rgba(167, 139, 250, 0.3) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #2e1065 50%, #581c87 100%);
+  --banner-border: rgba(167, 139, 250, 0.4);
+  --banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(124, 58, 237, 0.25);
+  --banner-badge-bg: rgba(124, 58, 237, 0.25);
+  --banner-badge-text: #C4B5FD;
+  --banner-badge-border: rgba(167, 139, 250, 0.45);
+  --banner-highlight-text: #E9D5FF;
+  --banner-progress-from: #8B5CF6;
+  --banner-progress-to: #C4B5FD;
+  --banner-progress-border: rgba(167, 139, 250, 0.3);
+  --revisoes-banner-bg: radial-gradient(ellipse at 15% 25%, rgba(167, 139, 250, 0.3) 0%, transparent 60%), linear-gradient(135deg, #0f172a 0%, #2e1065 50%, #581c87 100%);
+  --revisoes-banner-border: rgba(167, 139, 250, 0.4);
+  --revisoes-banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(124, 58, 237, 0.25);
+  --revisoes-pill-bg: rgba(124, 58, 237, 0.25);
+  --revisoes-pill-border: rgba(167, 139, 250, 0.45);
+  --revisoes-pill-text: #C4B5FD;
+  --revisoes-pill-icon: #C4B5FD;
+  --badge-pill-bg: rgba(124, 58, 237, 0.18);
+  --badge-pill-text: #C4B5FD;
+  --badge-pill-border: rgba(167, 139, 250, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   1. REGRAS COMPARTILHADAS (AMBOS OS MODOS: CLARO E ESCURO)
+   -------------------------------------------------------------------------- */
+
+/* Acentos, Botões Primários e Badges */
+body.theme-purple button.bg-emerald-600,
+body.theme-purple a.bg-emerald-600,
+body.theme-purple .bg-emerald-600,
+body.theme-purple .theme-btn-primary,
+.theme-purple button.bg-emerald-600,
+.theme-purple a.bg-emerald-600,
+.theme-purple .bg-emerald-600,
+.theme-purple .theme-btn-primary,
+[data-skin="roxo"] button.bg-emerald-600,
+[data-skin="roxo"] a.bg-emerald-600,
+[data-skin="roxo"] .bg-emerald-600,
+[data-skin="roxo"] .theme-btn-primary {
+  background-color: #7C3AED !important;
+  background-image: linear-gradient(135deg, #7C3AED, #6D28D9) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35) !important;
+}
+
+body.theme-purple button.bg-emerald-600:hover,
+body.theme-purple .theme-btn-primary:hover,
+.theme-purple button.bg-emerald-600:hover,
+.theme-purple .theme-btn-primary:hover,
+[data-skin="roxo"] button.bg-emerald-600:hover,
+[data-skin="roxo"] .theme-btn-primary:hover {
+  background-image: linear-gradient(135deg, #8B5CF6, #7C3AED) !important;
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5) !important;
+}
+
+/* Barras de progresso e Destaques */
+body.theme-purple .bg-emerald-500,
+body.theme-purple .bg-emerald-400,
+.theme-purple .bg-emerald-500,
+.theme-purple .bg-emerald-400,
+[data-skin="roxo"] .bg-emerald-500,
+[data-skin="roxo"] .bg-emerald-400 {
+  background-color: #7C3AED !important;
+}
+
+body.theme-purple .text-emerald-500,
+body.theme-purple .text-emerald-600,
+body.theme-purple .text-teal-400,
+.theme-purple .text-emerald-500,
+.theme-purple .text-emerald-600,
+.theme-purple .text-teal-400,
+[data-skin="roxo"] .text-emerald-500,
+[data-skin="roxo"] .text-emerald-600,
+[data-skin="roxo"] .text-teal-400 {
+  color: #7C3AED !important;
+}
+
+/* Itens ativos na Sidebar */
+body.theme-purple aside button.theme-primary-bg,
+body.theme-purple aside button.theme-btn-primary,
+.theme-purple aside button.theme-primary-bg,
+.theme-purple aside button.theme-btn-primary,
+[data-skin="roxo"] aside button.theme-primary-bg {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4) !important;
+}
+
+/* Gráficos da Semana */
+body.theme-purple [class*="from-emerald-"],
+body.theme-purple [class*="to-emerald-"],
+body.theme-purple [class*="to-teal-"],
+.theme-purple [class*="from-emerald-"],
+.theme-purple [class*="to-emerald-"],
+.theme-purple [class*="to-teal-"] {
+  --tw-gradient-from: #7C3AED var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: #A78BFA var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+/* Banner Principal ("Receita Federal do Brasil") - Ambos os Modos */
+body.theme-purple .banner-principal,
+body.theme-purple .card-banner:not(.metas-xp-banner),
+.theme-purple .banner-principal,
+.theme-purple .card-banner:not(.metas-xp-banner),
+[data-skin="roxo"] .banner-principal,
+[data-skin="roxo"] .card-banner:not(.metas-xp-banner),
+[data-skin="purple"] .banner-principal,
+[data-skin="purple"] .card-banner:not(.metas-xp-banner) {
+  background: radial-gradient(ellipse at 85% 25%, rgba(167, 139, 250, 0.3) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #2e1065 50%, #581c87 100%) !important;
+  border: 1px solid rgba(167, 139, 250, 0.4) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(124, 58, 237, 0.25) !important;
+}
+
+body.theme-purple .banner-principal *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+body.theme-purple .card-banner:not(.metas-xp-banner) *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+.theme-purple .banner-principal *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+.theme-purple .card-banner:not(.metas-xp-banner) *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+[data-skin="roxo"] .banner-principal *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+[data-skin="roxo"] .card-banner:not(.metas-xp-banner) *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *) {
+  color: #FFFFFF !important;
+}
+
+body.theme-purple .banner-principal h2,
+body.theme-purple .card-banner h2,
+.theme-purple .banner-principal h2,
+.theme-purple .card-banner h2 {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.theme-purple .banner-principal .cargo-destaque,
+body.theme-purple .card-banner .cargo-destaque,
+.theme-purple .banner-principal .cargo-destaque,
+.theme-purple .card-banner .cargo-destaque,
+[data-skin="roxo"] .banner-principal .cargo-destaque,
+[data-skin="roxo"] .card-banner .cargo-destaque {
+  color: var(--primary-text-dark, #A78BFA) !important;
+  font-weight: 800 !important;
+}
+
+body.theme-purple .banner-principal .badge-ativo,
+body.theme-purple .card-banner .badge-ativo,
+.theme-purple .banner-principal .badge-ativo,
+.theme-purple .card-banner .badge-ativo,
+[data-skin="roxo"] .banner-principal .badge-ativo,
+[data-skin="roxo"] .card-banner .badge-ativo {
+  background-color: rgba(91, 33, 182, 0.6) !important;
+  color: #E9D5FF !important;
+  border: 1px solid rgba(167, 139, 250, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 800 !important;
+}
+
+body.theme-purple .banner-principal .progresso-icone,
+body.theme-purple .banner-principal .progresso-texto,
+body.theme-purple .card-banner .progresso-icone,
+body.theme-purple .card-banner .progresso-texto,
+[data-skin="roxo"] .banner-principal .progresso-texto,
+[data-skin="roxo"] .card-banner .progresso-texto {
+  color: #E9D5FF !important;
+}
+
+body.theme-purple .banner-principal .progresso-trilho,
+body.theme-purple .card-banner .progresso-trilho,
+[data-skin="roxo"] .banner-principal .progresso-trilho,
+[data-skin="roxo"] .card-banner .progresso-trilho {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+body.theme-purple .banner-principal .barra-progresso,
+body.theme-purple .banner-principal .progresso-barra,
+body.theme-purple .card-banner .barra-progresso,
+body.theme-purple .card-banner .progresso-barra,
+[data-skin="roxo"] .banner-principal .barra-progresso,
+[data-skin="roxo"] .card-banner .barra-progresso {
+  background: linear-gradient(to right, #C4B5FD, #FFFFFF) !important;
+  box-shadow: 0 0 12px rgba(196, 181, 253, 0.6) !important;
+}
+
+/* Badge "Dias Restantes" (Fundo Escuro Fixo com Texto Branco Puro) */
+body.theme-purple .banner-principal .dias-restantes-card,
+body.theme-purple .card-banner .dias-restantes-card,
+body.skin-roxo .banner-principal .dias-restantes-card,
+body.skin-roxo .card-banner .dias-restantes-card,
+[data-skin="roxo"] .banner-principal .dias-restantes-card,
+[data-skin="roxo"] .card-banner .dias-restantes-card,
+[data-skin="purple"] .banner-principal .dias-restantes-card,
+[data-skin="purple"] .card-banner .dias-restantes-card {
+  background-color: #000000 !important;
+  border-color: rgba(167, 139, 250, 0.4) !important;
+}
+
+body.theme-purple .dias-restantes-card *,
+body.skin-roxo .dias-restantes-card *,
+[data-skin="roxo"] .dias-restantes-card *,
+[data-skin="purple"] .dias-restantes-card * {
+  color: #FFFFFF !important;
+}
+
+/* Banner de Revisões Espaçadas - Ambos os Modos */
+body.theme-purple .revisoes-banner,
+.theme-purple .revisoes-banner,
+[data-skin="roxo"] .revisoes-banner,
+[data-skin="purple"] .revisoes-banner {
+  border: 1px solid rgba(167, 139, 250, 0.35) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(124, 58, 237, 0.18) !important;
+}
+
+body.theme-purple .revisoes-banner h2,
+.theme-purple .revisoes-banner h2,
+[data-skin="roxo"] .revisoes-banner h2,
+[data-skin="purple"] .revisoes-banner h2 {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(167, 139, 250, 0.95), 0 0 18px rgba(139, 92, 246, 0.85), 0 0 32px rgba(124, 58, 237, 0.65) !important;
+}
+
+body.theme-purple .revisoes-banner p,
+.theme-purple .revisoes-banner p,
+body.theme-purple .revisoes-banner .text-slate-300,
+.theme-purple .revisoes-banner .text-slate-300 {
+  color: #E9D5FF !important;
+}
+
+body.theme-purple .revisoes-banner .revisoes-pill,
+.theme-purple .revisoes-banner .revisoes-pill,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill {
+  background-color: rgba(124, 58, 237, 0.2) !important;
+  border: 1px solid rgba(167, 139, 250, 0.35) !important;
+}
+
+body.theme-purple .revisoes-banner .revisoes-pill-icon,
+body.theme-purple .revisoes-banner .revisoes-pill svg,
+.theme-purple .revisoes-banner .revisoes-pill-icon,
+.theme-purple .revisoes-banner .revisoes-pill svg,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill-icon,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill svg {
+  color: #C4B5FD !important;
+}
+
+body.theme-purple .revisoes-banner .revisoes-pill-text,
+body.theme-purple .revisoes-banner .revisoes-pill span,
+.theme-purple .revisoes-banner .revisoes-pill-text,
+.theme-purple .revisoes-banner .revisoes-pill span,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill-text,
+[data-skin="roxo"] .revisoes-banner .revisoes-pill span {
+  color: #E9D5FF !important;
+  font-weight: 800 !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. TEMA ROXO - MODO CLARO (Light Mode)
+   Fundo: #F4F0FC / Sidebar e Painéis de Destaque: #EBE4F7 / Cartões: #FFFFFF / Textos: #333333
+   -------------------------------------------------------------------------- */
+html:not(.dark):not(.dark-mode) body.theme-purple,
+html:not(.dark):not(.dark-mode) .theme-purple,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"],
+html:not(.dark):not(.dark-mode) [data-skin="purple"],
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .min-h-screen,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] .min-h-screen,
+html:not(.dark):not(.dark-mode) body.theme-purple .min-h-screen {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* Sidebar e Painéis de Destaque no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-purple aside,
+html:not(.dark):not(.dark-mode) .theme-purple aside,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] aside,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] aside,
+html:not(.dark):not(.dark-mode) body.theme-purple header,
+html:not(.dark):not(.dark-mode) .theme-purple header,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] header,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+html:not(.dark):not(.dark-mode) body.theme-purple aside .bg-emerald-50\/70,
+html:not(.dark):not(.dark-mode) .theme-purple aside .bg-emerald-50\/70,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] aside .bg-emerald-50\/70 {
+  background-color: rgba(124, 58, 237, 0.08) !important;
+  border-color: rgba(124, 58, 237, 0.2) !important;
+}
+
+/* Cartões Principais no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-purple .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) .theme-purple .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) .theme-purple .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-purple .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) .theme-purple .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *) {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Textos Principais no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-purple h1:not(.provas-banner-title),
+html:not(.dark):not(.dark-mode) body.theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html:not(.dark):not(.dark-mode) body.theme-purple h3,
+html:not(.dark):not(.dark-mode) body.theme-purple h4:not(.text-white):not(.proximo-estudo-title),
+html:not(.dark):not(.dark-mode) .theme-purple h1:not(.provas-banner-title),
+html:not(.dark):not(.dark-mode) .theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html:not(.dark):not(.dark-mode) .theme-purple h3,
+html:not(.dark):not(.dark-mode) .theme-purple h4:not(.text-white):not(.proximo-estudo-title),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h1:not(.provas-banner-title),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h3,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h4:not(.text-white):not(.proximo-estudo-title),
+html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-900,
+html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-800,
+html:not(.dark):not(.dark-mode) .theme-purple .text-slate-900,
+html:not(.dark):not(.dark-mode) .theme-purple .text-slate-800,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-900,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-800 {
+  color: #0f172a !important;
+}
+
+/* Textos Secundários no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-500:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-400:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) .theme-purple .text-slate-500:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) .theme-purple .text-slate-400:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-500:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-400:not(.dias-restantes-card *) {
+  color: #64748B !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. TEMA ROXO - MODO ESCURO (.dark-mode.theme-purple / html.dark body.theme-purple)
+   Fundo: #020617 (slate-950) / Sidebar e Cartões: #0f172a (slate-900)
+   -------------------------------------------------------------------------- */
+body.dark.theme-purple,
+body.dark-mode.theme-purple,
+html.dark body.theme-purple,
+html.dark-mode body.theme-purple,
+html.dark [data-skin="roxo"],
+html.dark-mode [data-skin="roxo"],
+html.dark [data-skin="purple"],
+html.dark-mode [data-skin="purple"],
+body.dark.theme-purple .min-h-screen,
+body.dark-mode.theme-purple .min-h-screen,
+html.dark body.theme-purple .min-h-screen,
+html.dark-mode body.theme-purple .min-h-screen,
+html.dark [data-skin="roxo"] .min-h-screen,
+html.dark-mode [data-skin="roxo"] .min-h-screen {
+  background-color: #020617 !important;
+  color: #F8FAFC !important;
+}
+
+/* Sidebar no Modo Escuro */
+body.dark.theme-purple aside,
+body.dark-mode.theme-purple aside,
+html.dark body.theme-purple aside,
+html.dark-mode body.theme-purple aside,
+html.dark [data-skin="roxo"] aside,
+html.dark-mode [data-skin="roxo"] aside,
+body.dark.theme-purple header,
+body.dark-mode.theme-purple header,
+html.dark body.theme-purple header,
+html.dark-mode body.theme-purple header,
+html.dark [data-skin="roxo"] header,
+html.dark-mode [data-skin="roxo"] header {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+body.dark.theme-purple aside .dark\:bg-emerald-950\/30,
+body.dark-mode.theme-purple aside .dark\:bg-emerald-950\/30,
+html.dark body.theme-purple aside .dark\:bg-emerald-950\/30,
+html.dark-mode body.theme-purple aside .dark\:bg-emerald-950\/30 {
+  background-color: rgba(124, 58, 237, 0.18) !important;
+  border-color: rgba(167, 139, 250, 0.25) !important;
+}
+
+/* Cartões no Modo Escuro */
+body.dark.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark body.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark-mode body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark-mode body.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="roxo"] .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="roxo"] .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario) {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Textos Principais no Modo Escuro: Branco ou cinza claro (#F8FAFC) */
+body.dark.theme-purple h1,
+body.dark.theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+body.dark.theme-purple h3,
+body.dark.theme-purple h4,
+body.dark-mode.theme-purple h1,
+body.dark-mode.theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+body.dark-mode.theme-purple h3,
+body.dark-mode.theme-purple h4,
+html.dark body.theme-purple h1,
+html.dark body.theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html.dark body.theme-purple h3,
+html.dark body.theme-purple h4,
+html.dark-mode body.theme-purple h1,
+html.dark-mode body.theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html.dark-mode body.theme-purple h3,
+html.dark-mode body.theme-purple h4,
+body.dark.theme-purple .text-slate-900,
+body.dark.theme-purple .dark\:text-slate-100,
+body.dark-mode.theme-purple .text-slate-900,
+body.dark-mode.theme-purple .dark\:text-slate-100,
+html.dark body.theme-purple .text-slate-900,
+html.dark body.theme-purple .dark\:text-slate-100,
+html.dark-mode body.theme-purple .text-slate-900,
+html.dark-mode body.theme-purple .dark\:text-slate-100,
+html.dark [data-skin="roxo"] .text-slate-900,
+html.dark [data-skin="roxo"] .dark\:text-slate-100 {
+  color: #F8FAFC !important;
+}
+
+/* Textos Secundários no Modo Escuro */
+body.dark.theme-purple .text-slate-500:not(.dias-restantes-card *),
+body.dark.theme-purple .text-slate-400:not(.dias-restantes-card *),
+body.dark.theme-purple .dark\:text-slate-400:not(.dias-restantes-card *),
+body.dark-mode.theme-purple .text-slate-500:not(.dias-restantes-card *),
+body.dark-mode.theme-purple .text-slate-400:not(.dias-restantes-card *),
+body.dark-mode.theme-purple .dark\:text-slate-400:not(.dias-restantes-card *),
+html.dark body.theme-purple .text-slate-500:not(.dias-restantes-card *),
+html.dark body.theme-purple .text-slate-400:not(.dias-restantes-card *),
+html.dark body.theme-purple .dark\:text-slate-400:not(.dias-restantes-card *),
+html.dark-mode body.theme-purple .text-slate-500:not(.dias-restantes-card *),
+html.dark-mode body.theme-purple .text-slate-400:not(.dias-restantes-card *),
+html.dark-mode body.theme-purple .dark\:text-slate-400:not(.dias-restantes-card *) {
+  color: #94A3B8 !important;
+}
+
+/* Caixas de estatísticas no banner de revisões no Modo Escuro */
+body.dark.theme-purple .revisoes-banner .bg-slate-900\/80,
+body.dark-mode.theme-purple .revisoes-banner .bg-slate-900\/80,
+html.dark body.theme-purple .revisoes-banner .bg-slate-900\/80,
+html.dark-mode body.theme-purple .revisoes-banner .bg-slate-900\/80 {
+  background-color: rgba(31, 25, 46, 0.9) !important;
+  border-color: rgba(167, 139, 250, 0.35) !important;
+}
+
+/* ==========================================================================
+   TEMA 5: LARANJA - .theme-orange / .theme-laranja / [data-skin="laranja"]
+   Paleta:
+   - Modo Claro: Fundo creme suave (#FFF8F0), Sidebar e Cartões brancos (#FFFFFF), Textos escuros (#1A202C / #333333)
+   - Modo Escuro: Fundo escuro azulado (#0A0F1D), Sidebar e Cartões azul marinho (#111A33), Textos brancos (#F8FAFC)
+   - Acentos Compartilhados: Laranja Vibrante (#FF6B00 / #D83100), Amarelo (#FFCC00)
+   - Banners: Forte degradê Laranja/Vermelho com textos brancos em ambos os modos
+   - Post-it Dias Restantes: Fundo amarelo/laranja claro (#FFE4A0) com números pretos (#000000)
+   ========================================================================== */
+
+:root:has([data-skin="laranja"]),
+:root:has([data-skin="orange"]),
+:root:has([data-skin="dbz"]),
+[data-skin="laranja"],
+[data-skin="orange"],
+[data-skin="dbz"],
+.skin-laranja,
+.skin-orange,
+.skin-dbz,
+body.theme-orange,
+body.theme-laranja,
+body.theme-dbz,
+.theme-orange,
+.theme-laranja,
+.theme-dbz {
+  --primary-color: #FF6B00;
+  --primary-hover: #FF8533;
+  --primary-active: #D83100;
+  --primary-text: #FF6B00;
+  --primary-text-dark: #FFCC00;
+  --primary-light: rgba(255, 107, 0, 0.15);
+  --primary-light-border: rgba(255, 107, 0, 0.35);
+  --secondary-color: #D83100;
+  --accent-color: #FFCC00;
+  --chart-glow: rgba(255, 107, 0, 0.35);
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --banner-bg: radial-gradient(ellipse at 85% 25%, rgba(255, 153, 0, 0.32) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #431407 45%, #7c2d12 75%, #c2410c 100%);
+  --banner-border: rgba(255, 107, 0, 0.45);
+  --banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(255, 107, 0, 0.25);
+  --banner-badge-bg: rgba(255, 107, 0, 0.25);
+  --banner-badge-text: #FFCC00;
+  --banner-badge-border: rgba(255, 204, 0, 0.55);
+  --banner-highlight-text: #FF8533;
+  --banner-progress-from: #FF6B00;
+  --banner-progress-to: #FFCC00;
+  --banner-progress-border: rgba(255, 204, 0, 0.3);
+  --revisoes-banner-bg: radial-gradient(ellipse at 15% 25%, rgba(255, 153, 0, 0.32) 0%, transparent 60%), linear-gradient(135deg, #0f172a 0%, #431407 45%, #7c2d12 75%, #c2410c 100%);
+  --revisoes-banner-border: rgba(255, 107, 0, 0.45);
+  --revisoes-banner-glow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(255, 107, 0, 0.25);
+  --revisoes-pill-bg: rgba(255, 107, 0, 0.25);
+  --revisoes-pill-border: rgba(255, 204, 0, 0.55);
+  --revisoes-pill-text: #FFCC00;
+  --revisoes-pill-icon: #FFCC00;
+  --badge-pill-bg: rgba(255, 107, 0, 0.18);
+  --badge-pill-text: #FFCC00;
+  --badge-pill-border: rgba(255, 204, 0, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   1. REGRAS COMPARTILHADAS (AMBOS OS MODOS: CLARO E ESCURO)
+   -------------------------------------------------------------------------- */
+
+/* Acentos, Botões Primários e Badges */
+body.theme-orange button.bg-emerald-600,
+body.theme-orange a.bg-emerald-600,
+body.theme-orange .bg-emerald-600,
+body.theme-orange .theme-btn-primary,
+body.theme-laranja button.bg-emerald-600,
+body.theme-laranja a.bg-emerald-600,
+body.theme-laranja .bg-emerald-600,
+body.theme-laranja .theme-btn-primary,
+[data-skin="laranja"] button.bg-emerald-600,
+[data-skin="laranja"] a.bg-emerald-600,
+[data-skin="laranja"] .bg-emerald-600,
+[data-skin="laranja"] .theme-btn-primary {
+  background-color: #FF6B00 !important;
+  background-image: linear-gradient(135deg, #FF6B00, #D83100) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(255, 107, 0, 0.35) !important;
+}
+
+body.theme-orange button.bg-emerald-600:hover,
+body.theme-orange .theme-btn-primary:hover,
+body.theme-laranja button.bg-emerald-600:hover,
+body.theme-laranja .theme-btn-primary:hover,
+[data-skin="laranja"] button.bg-emerald-600:hover,
+[data-skin="laranja"] .theme-btn-primary:hover {
+  background-image: linear-gradient(135deg, #FF8533, #FF6B00) !important;
+  box-shadow: 0 6px 20px rgba(255, 107, 0, 0.5) !important;
+}
+
+/* Barras de progresso e Destaques */
+body.theme-orange .bg-emerald-500,
+body.theme-orange .bg-emerald-400,
+body.theme-laranja .bg-emerald-500,
+body.theme-laranja .bg-emerald-400,
+[data-skin="laranja"] .bg-emerald-500,
+[data-skin="laranja"] .bg-emerald-400 {
+  background-color: #FF6B00 !important;
+}
+
+body.theme-orange .text-emerald-500,
+body.theme-orange .text-emerald-600,
+body.theme-orange .text-teal-400,
+body.theme-laranja .text-emerald-500,
+body.theme-laranja .text-emerald-600,
+body.theme-laranja .text-teal-400,
+[data-skin="laranja"] .text-emerald-500,
+[data-skin="laranja"] .text-emerald-600,
+[data-skin="laranja"] .text-teal-400 {
+  color: #FF6B00 !important;
+}
+
+/* Itens ativos na Sidebar */
+body.theme-orange aside button.theme-primary-bg,
+body.theme-laranja aside button.theme-primary-bg,
+[data-skin="laranja"] aside button.theme-primary-bg {
+  background: linear-gradient(135deg, #FF6B00 0%, #D83100 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(255, 107, 0, 0.4) !important;
+}
+
+/* Banner Principal ("Receita Federal do Brasil") - Ambos os Modos */
+body.theme-orange .banner-principal,
+body.theme-orange .card-banner:not(.metas-xp-banner),
+body.theme-laranja .banner-principal,
+body.theme-laranja .card-banner:not(.metas-xp-banner),
+[data-skin="laranja"] .banner-principal,
+[data-skin="laranja"] .card-banner:not(.metas-xp-banner) {
+  background: radial-gradient(ellipse at 85% 25%, rgba(255, 153, 0, 0.32) 0%, transparent 65%), linear-gradient(135deg, #0f172a 0%, #431407 45%, #7c2d12 75%, #c2410c 100%) !important;
+  border: 1px solid rgba(255, 107, 0, 0.45) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 28px rgba(255, 107, 0, 0.25) !important;
+}
+
+body.theme-orange .banner-principal *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+body.theme-orange .card-banner:not(.metas-xp-banner) *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+body.theme-laranja .banner-principal *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+body.theme-laranja .card-banner:not(.metas-xp-banner) *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+[data-skin="laranja"] .banner-principal *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *),
+[data-skin="laranja"] .card-banner:not(.metas-xp-banner) *:not(.dias-restantes-card *):not(.badge-ativo *):not(.badge-ativo):not(.cargo-destaque):not(.cargo-destaque *) {
+  color: #FFFFFF !important;
+}
+
+body.theme-orange .banner-principal h2,
+body.theme-orange .card-banner h2,
+body.theme-laranja .banner-principal h2,
+body.theme-laranja .card-banner h2,
+[data-skin="laranja"] .banner-principal h2,
+[data-skin="laranja"] .card-banner h2 {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.theme-orange .banner-principal .cargo-destaque,
+body.theme-orange .card-banner .cargo-destaque,
+body.theme-laranja .banner-principal .cargo-destaque,
+body.theme-laranja .card-banner .cargo-destaque,
+[data-skin="laranja"] .banner-principal .cargo-destaque,
+[data-skin="laranja"] .card-banner .cargo-destaque {
+  color: var(--primary-hover, #FF8533) !important;
+  font-weight: 900 !important;
+}
+
+body.theme-orange .banner-principal .badge-ativo,
+body.theme-orange .card-banner .badge-ativo,
+body.theme-laranja .banner-principal .badge-ativo,
+body.theme-laranja .card-banner .badge-ativo,
+[data-skin="laranja"] .banner-principal .badge-ativo,
+[data-skin="laranja"] .card-banner .badge-ativo {
+  background-color: rgba(255, 107, 0, 0.25) !important;
+  color: #FFCC00 !important;
+  border: 1px solid rgba(255, 204, 0, 0.55) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 800 !important;
+}
+
+body.theme-orange .banner-principal .barra-progresso,
+body.theme-orange .banner-principal .progresso-barra,
+body.theme-orange .card-banner .barra-progresso,
+body.theme-orange .card-banner .progresso-barra,
+body.theme-laranja .banner-principal .barra-progresso,
+body.theme-laranja .banner-principal .progresso-barra,
+body.theme-laranja .card-banner .barra-progresso,
+body.theme-laranja .card-banner .progresso-barra,
+[data-skin="laranja"] .banner-principal .barra-progresso,
+[data-skin="laranja"] .card-banner .barra-progresso {
+  background: linear-gradient(to right, #FFCC00, #FFFFFF) !important;
+  box-shadow: 0 0 12px rgba(255, 204, 0, 0.6) !important;
+}
+
+/* Badge "Dias Restantes" (Fundo Escuro Fixo com Texto Branco Puro) */
+body.theme-orange .banner-principal .dias-restantes-card,
+body.theme-orange .card-banner .dias-restantes-card,
+body.theme-laranja .banner-principal .dias-restantes-card,
+body.theme-laranja .card-banner .dias-restantes-card,
+[data-skin="laranja"] .banner-principal .dias-restantes-card,
+[data-skin="laranja"] .card-banner .dias-restantes-card {
+  background-color: #000000 !important;
+  border-color: rgba(255, 204, 0, 0.4) !important;
+}
+
+body.theme-orange .dias-restantes-card *,
+body.theme-laranja .dias-restantes-card *,
+[data-skin="laranja"] .dias-restantes-card * {
+  color: #FFFFFF !important;
+}
+
+/* Banner de Revisões Espaçadas - Ambos os Modos */
+body.theme-orange .revisoes-banner,
+body.theme-laranja .revisoes-banner,
+[data-skin="laranja"] .revisoes-banner {
+  border: 1px solid rgba(255, 107, 0, 0.35) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 107, 0, 0.18) !important;
+}
+
+body.theme-orange .revisoes-banner h2,
+body.theme-laranja .revisoes-banner h2,
+.theme-orange .revisoes-banner h2,
+.theme-laranja .revisoes-banner h2,
+[data-skin="laranja"] .revisoes-banner h2,
+[data-skin="orange"] .revisoes-banner h2 {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(251, 146, 60, 0.95), 0 0 18px rgba(249, 115, 22, 0.85), 0 0 32px rgba(234, 88, 12, 0.65) !important;
+}
+
+body.theme-orange .revisoes-banner .revisoes-pill,
+body.theme-laranja .revisoes-banner .revisoes-pill,
+[data-skin="laranja"] .revisoes-banner .revisoes-pill {
+  background-color: rgba(255, 107, 0, 0.2) !important;
+  border: 1px solid rgba(255, 204, 0, 0.35) !important;
+}
+
+body.theme-orange .revisoes-banner .revisoes-pill-icon,
+body.theme-orange .revisoes-banner .revisoes-pill svg,
+body.theme-laranja .revisoes-banner .revisoes-pill-icon,
+body.theme-laranja .revisoes-banner .revisoes-pill svg,
+[data-skin="laranja"] .revisoes-banner .revisoes-pill-icon,
+[data-skin="laranja"] .revisoes-banner .revisoes-pill svg {
+  color: #FFCC00 !important;
+}
+
+body.theme-orange .revisoes-banner .revisoes-pill-text,
+body.theme-orange .revisoes-banner .revisoes-pill span,
+body.theme-laranja .revisoes-banner .revisoes-pill-text,
+body.theme-laranja .revisoes-banner .revisoes-pill span,
+[data-skin="laranja"] .revisoes-banner .revisoes-pill-text,
+[data-skin="laranja"] .revisoes-banner .revisoes-pill span {
+  color: #FFCC00 !important;
+  font-weight: 800 !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. TEMA LARANJA - MODO CLARO (Light Mode)
+   Fundo: #FFF8F0 / Sidebar e Cartões: #FFFFFF / Textos: #1A202C (#333333)
+   -------------------------------------------------------------------------- */
+html:not(.dark):not(.dark-mode) body.theme-orange,
+html:not(.dark):not(.dark-mode) body.theme-laranja,
+html:not(.dark):not(.dark-mode) .theme-orange,
+html:not(.dark):not(.dark-mode) .theme-laranja,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"],
+html:not(.dark):not(.dark-mode) [data-skin="orange"],
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .min-h-screen,
+html:not(.dark):not(.dark-mode) body.theme-orange .min-h-screen,
+html:not(.dark):not(.dark-mode) body.theme-laranja .min-h-screen {
+  background-color: #f8fafc !important;
+  color: #1A202C !important;
+}
+
+/* Sidebar no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-orange aside,
+html:not(.dark):not(.dark-mode) body.theme-laranja aside,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] aside,
+html:not(.dark):not(.dark-mode) body.theme-orange header,
+html:not(.dark):not(.dark-mode) body.theme-laranja header,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] header {
+  background-color: #FFFFFF !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Cartões no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-orange .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-orange .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-laranja .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-orange .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) body.theme-laranja .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *) {
+  background-color: #FFFFFF !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Textos Principais no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-orange h1:not(.provas-banner-title),
+html:not(.dark):not(.dark-mode) body.theme-orange h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html:not(.dark):not(.dark-mode) body.theme-orange h3,
+html:not(.dark):not(.dark-mode) body.theme-orange h4:not(.text-white):not(.proximo-estudo-title),
+html:not(.dark):not(.dark-mode) body.theme-laranja h1:not(.provas-banner-title),
+html:not(.dark):not(.dark-mode) body.theme-laranja h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html:not(.dark):not(.dark-mode) body.theme-laranja h3,
+html:not(.dark):not(.dark-mode) body.theme-laranja h4:not(.text-white):not(.proximo-estudo-title),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h1:not(.provas-banner-title),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h3,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h4:not(.text-white):not(.proximo-estudo-title),
+html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-900,
+html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-800,
+html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-900,
+html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-800,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-900,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-800 {
+  color: #0f172a !important;
+}
+
+/* Textos Secundários no Modo Claro */
+html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-500:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-400:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-500:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-400:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-500:not(.dias-restantes-card *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-400:not(.dias-restantes-card *) {
+  color: #64748B !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. TEMA LARANJA - MODO ESCURO (Dark Mode)
+   Fundo: #020617 (slate-950) / Sidebar e Cartões: #0f172a (slate-900)
+   -------------------------------------------------------------------------- */
+body.dark.theme-orange,
+body.dark.theme-laranja,
+body.dark-mode.theme-orange,
+body.dark-mode.theme-laranja,
+html.dark body.theme-orange,
+html.dark body.theme-laranja,
+html.dark-mode body.theme-orange,
+html.dark-mode body.theme-laranja,
+html.dark [data-skin="laranja"],
+html.dark-mode [data-skin="laranja"],
+body.dark.theme-orange .min-h-screen,
+body.dark.theme-laranja .min-h-screen,
+html.dark [data-skin="laranja"] .min-h-screen {
+  background-color: #020617 !important;
+  color: #F8FAFC !important;
+}
+
+/* Sidebar no Modo Escuro */
+body.dark.theme-orange aside,
+body.dark.theme-laranja aside,
+body.dark-mode.theme-orange aside,
+body.dark-mode.theme-laranja aside,
+html.dark [data-skin="laranja"] aside,
+html.dark-mode [data-skin="laranja"] aside,
+body.dark.theme-orange header,
+body.dark.theme-laranja header,
+html.dark [data-skin="laranja"] header {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+/* Cartões no Modo Escuro */
+body.dark.theme-orange .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-orange .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-theme-laranja .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-laranja .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-orange .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="laranja"] .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="laranja"] .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario) {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Textos Principais no Modo Escuro */
+body.dark.theme-orange h1,
+body.dark.theme-orange h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+body.dark.theme-orange h3,
+body.dark.theme-orange h4,
+body.dark.theme-laranja h1,
+body.dark.theme-laranja h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+body.dark.theme-laranja h3,
+body.dark.theme-laranja h4,
+body.dark-mode.theme-orange h1,
+body.dark-mode.theme-orange h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+body.dark-mode.theme-orange h3,
+body.dark-mode.theme-orange h4,
+body.dark-mode.theme-laranja h1,
+body.dark-mode.theme-laranja h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+body.dark-mode.theme-laranja h3,
+body.dark-mode.theme-laranja h4,
+body.dark.theme-orange .text-slate-900,
+body.dark.theme-orange .dark\:text-slate-100,
+body.dark.theme-laranja .text-slate-900,
+body.dark.theme-laranja .dark\:text-slate-100,
+html.dark [data-skin="laranja"] h1,
+html.dark [data-skin="laranja"] h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
+html.dark [data-skin="laranja"] h3,
+html.dark [data-skin="laranja"] h4,
+html.dark [data-skin="laranja"] .text-slate-900,
+html.dark [data-skin="laranja"] .dark\:text-slate-100 {
+  color: #F8FAFC !important;
+}
+
+/* Textos Secundários no Modo Escuro */
+body.dark.theme-orange .text-slate-500:not(.dias-restantes-card *),
+body.dark.theme-orange .text-slate-400:not(.dias-restantes-card *),
+body.dark.theme-orange .dark\:text-slate-400:not(.dias-restantes-card *),
+body.dark.theme-laranja .text-slate-500:not(.dias-restantes-card *),
+body.dark.theme-laranja .text-slate-400:not(.dias-restantes-card *),
+body.dark.theme-laranja .dark\:text-slate-400:not(.dias-restantes-card *),
+body.dark-mode.theme-orange .text-slate-500:not(.dias-restantes-card *),
+body.dark-mode.theme-orange .text-slate-400:not(.dias-restantes-card *),
+body.dark-mode.theme-laranja .text-slate-500:not(.dias-restantes-card *),
+body.dark-mode.theme-laranja .text-slate-400:not(.dias-restantes-card *),
+html.dark [data-skin="laranja"] .text-slate-500:not(.dias-restantes-card *),
+html.dark [data-skin="laranja"] .text-slate-400:not(.dias-restantes-card *) {
+  color: #94A3B8 !important;
+}
+
+/* ==========================================================================
+   REGRA DE ESTILO DO CARD: 'DIAS RESTANTES' (BANNER DO CONCURSO ATIVO)
+   Compatível com todos os 5 temas (Laranja, Roxo, Verde, Azul, Rosa) e Dark/Light mode
+   ========================================================================== */
+.dias-restantes-card,
+body .dias-restantes-card,
+html body .dias-restantes-card,
+.banner-principal .dias-restantes-card,
+.card-banner .dias-restantes-card {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.dias-restantes-card .text-primary,
+.dias-restantes-card .text-destaque-tema,
+.banner-principal .dias-restantes-card .text-primary,
+.banner-principal .dias-restantes-card .text-destaque-tema,
+.card-banner .dias-restantes-card .text-primary,
+.card-banner .dias-restantes-card .text-destaque-tema {
+  color: var(--primary-color) !important;
+}
+
+/* ==========================================================================
+   PADRONIZAÇÃO UNIVERSAL DO DARK MODE (VERDE, LARANJA, ROXO)
+   O fundo principal do app é estritamente #020617 (cinza muito escuro/preto)
+   em todos os temas. O tema altera apenas os detalhes e botões.
+   ========================================================================== */
+html.dark,
+html.dark body,
+html.dark #root,
+html.dark .min-h-screen,
+html.dark-mode,
+html.dark-mode body,
+html.dark-mode #root,
+html.dark-mode .min-h-screen {
+  background-color: #020617 !important;
+}
+
+/* ==========================================================================
+   BLOCO DO CRONÔMETRO (Sessão de Estudo em Foco)
+   O container do cronômetro tem fundo escuro (#020617 / bg-slate-950) e borda escura (#1e293b)
+   em TODOS os temas (Verde, Azul, Rosa, Roxo, Laranja) tanto no modo claro quanto escuro.
+   ========================================================================== */
+.timer-focus-box,
+div.timer-focus-box,
+[data-skin] .timer-focus-box,
+body .timer-focus-box,
+body.theme-purple .timer-focus-box,
+body.theme-orange .timer-focus-box,
+body.theme-laranja .timer-focus-box,
+[data-skin="roxo"] .timer-focus-box,
+[data-skin="laranja"] .timer-focus-box,
+[data-skin="rosa"] .timer-focus-box,
+[data-skin="azul"] .timer-focus-box,
+[data-skin="verde"] .timer-focus-box {
+  background-color: #020617 !important;
+  border: 1px solid #1e293b !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   CARDS DE PLANOS & ASSINATURA - NEON GLASSMORPHISM (DARK MODE)
+   Fundo translúcido, borda fina na cor do tema, forte brilho neon externo/interno,
+   badge com glow halo, tipografia de alto contraste e botão de ação translúcido com borda neon.
+   ========================================================================== */
+
+/* Efeito Neon Glassmorphism no Modo Escuro */
+html.dark .plano-card,
+html.dark-mode .plano-card,
+body.dark .plano-card,
+body.dark-mode .plano-card,
+.dark .plano-card {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  background-image: radial-gradient(circle at 50% 0%, var(--primary-light, rgba(16, 185, 129, 0.12)) 0%, transparent 75%) !important;
+  border: 1px solid var(--primary-color) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow: 0 0 16px -2px var(--primary-color),
+              0 12px 30px -4px rgba(0, 0, 0, 0.7),
+              inset 0 1px 1px 0 rgba(255, 255, 255, 0.15),
+              inset 0 0 18px -4px var(--primary-color) !important;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+html.dark .plano-card:hover,
+html.dark-mode .plano-card:hover,
+body.dark .plano-card:hover,
+body.dark-mode .plano-card:hover,
+.dark .plano-card:hover {
+  transform: translateY(-6px) !important;
+  border-color: var(--primary-hover, var(--primary-color)) !important;
+  box-shadow: 0 0 28px 2px var(--primary-color),
+              0 18px 38px -4px rgba(0, 0, 0, 0.8),
+              inset 0 1px 2px 0 rgba(255, 255, 255, 0.25),
+              inset 0 0 26px -2px var(--primary-color) !important;
+}
+
+/* Card Destacado (Plano Anual PRO - Recomendado) */
+html.dark .plano-card.plano-highlight,
+html.dark-mode .plano-card.plano-highlight,
+body.dark .plano-card.plano-highlight,
+body.dark-mode .plano-card.plano-highlight,
+.dark .plano-card.plano-highlight {
+  border-width: 1.5px !important;
+  border-color: var(--primary-hover, var(--primary-color)) !important;
+  background-color: rgba(15, 23, 42, 0.55) !important;
+  box-shadow: 0 0 24px 1px var(--primary-color),
+              0 16px 36px -4px rgba(0, 0, 0, 0.75),
+              inset 0 1px 2px 0 rgba(255, 255, 255, 0.2),
+              inset 0 0 24px -2px var(--primary-color) !important;
+}
+
+html.dark .plano-card.plano-highlight:hover,
+html.dark-mode .plano-card.plano-highlight:hover,
+body.dark .plano-card.plano-highlight:hover,
+body.dark-mode .plano-card.plano-highlight:hover,
+.dark .plano-card.plano-highlight:hover {
+  box-shadow: 0 0 36px 4px var(--primary-color),
+              0 22px 42px -4px rgba(0, 0, 0, 0.85),
+              inset 0 1px 3px 0 rgba(255, 255, 255, 0.3),
+              inset 0 0 32px 0 var(--primary-color) !important;
+}
+
+/* Badges com Glow Halo Neon nos Cards de Planos */
+html.dark .plano-card .plano-badge,
+html.dark-mode .plano-card .plano-badge,
+.dark .plano-card .plano-badge {
+  background-color: rgba(15, 23, 42, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 10px currentColor, inset 0 0 5px currentColor !important;
+  filter: drop-shadow(0 0 5px currentColor) !important;
+}
+
+/* Botão de Ação dos Planos no Modo Escuro (Fundo escuro transparente com borda fina na cor do tema) */
+html.dark .plano-btn-action,
+html.dark-mode .plano-btn-action,
+body.dark .plano-btn-action,
+body.dark-mode .plano-btn-action,
+.dark .plano-btn-action {
+  background-color: rgba(2, 6, 23, 0.65) !important;
+  border: 1px solid var(--primary-color) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: 0 0 10px -1px var(--primary-color),
+              inset 0 0 8px rgba(255, 255, 255, 0.04) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+html.dark .plano-btn-action:hover,
+html.dark-mode .plano-btn-action:hover,
+body.dark .plano-btn-action:hover,
+body.dark-mode .plano-btn-action:hover,
+.dark .plano-btn-action:hover {
+  background-color: var(--primary-light, rgba(16, 185, 129, 0.18)) !important;
+  border-color: var(--primary-hover, var(--primary-color)) !important;
+  box-shadow: 0 0 18px 1px var(--primary-color),
+              inset 0 0 12px rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Botão do Plano Destacado */
+html.dark .plano-btn-action.plano-btn-highlight,
+html.dark-mode .plano-btn-action.plano-btn-highlight,
+.dark .plano-btn-action.plano-btn-highlight {
+  background-color: rgba(2, 6, 23, 0.75) !important;
+  border: 1.5px solid var(--primary-color) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px 0 var(--primary-color),
+              inset 0 0 10px var(--primary-light, rgba(16, 185, 129, 0.1)) !important;
+}
+
+html.dark .plano-btn-action.plano-btn-highlight:hover,
+html.dark-mode .plano-btn-action.plano-btn-highlight:hover,
+.dark .plano-btn-action.plano-btn-highlight:hover {
+  background-color: var(--primary-light, rgba(16, 185, 129, 0.25)) !important;
+  border-color: var(--primary-hover, var(--primary-color)) !important;
+  box-shadow: 0 0 24px 2px var(--primary-color),
+              inset 0 0 14px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Botão Plano Atual (Desabilitado) */
+html.dark .plano-btn-current,
+html.dark-mode .plano-btn-current,
+.dark .plano-btn-current {
+  background-color: rgba(15, 23, 42, 0.4) !important;
+  border: 1px solid rgba(51, 65, 85, 0.5) !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   ABAS DE NAVEGAÇÃO - REVISÕES ESPAÇADAS (ESTADO ATIVO DARK PILL)
+   A aba ativa com estilo escuro (ex: Configurações) mantém fundo escuro (#0f172a / bg-slate-900)
+   e texto branco (#ffffff) perfeitamente visível em todos os temas (Verde, Azul, Rosa, Roxo, Laranja).
+   ========================================================================== */
+button.revisao-tab-active-dark,
+.revisoes-nav-tabs button.revisao-tab-active-dark,
+[data-skin] button.revisao-tab-active-dark,
+body.theme-purple button.revisao-tab-active-dark,
+body.theme-orange button.revisao-tab-active-dark,
+body.theme-laranja button.revisao-tab-active-dark,
+[data-skin="roxo"] button.revisao-tab-active-dark,
+[data-skin="laranja"] button.revisao-tab-active-dark,
+[data-skin="azul"] button.revisao-tab-active-dark,
+[data-skin="verde"] button.revisao-tab-active-dark,
+[data-skin="rosa"] button.revisao-tab-active-dark {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1) !important;
+  border-color: transparent !important;
+}
+
+/* --- Cards Seletores de Formato de Estudo (Ciclo / Cronograma) --- */
+.card-seletor-icon-active,
+button .card-seletor-icon-active,
+[class*="card-seletor"] .card-seletor-icon-active,
+.card-seletor-modo .card-seletor-icon-active {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.card-seletor-icon-active svg,
+.card-seletor-icon-active * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* ==========================================================================
+   ISOLAMENTO SEMÂNTICO ESTRITO DE MÉTRICAS (EDITAL VERTICALIZADO & QUESTÕES)
+   Cores semânticas fixas e universais (Verde, Vermelho, Amarelo, Neutro)
+   NUNCA herdam as cores dos temas (Azul, Roxo, Rosa, Laranja, Verde)
+   ========================================================================== */
+
+/* Coluna / Badge CERTAS (Verde / Emerald Universal) */
+.metric-certas,
+[data-metric="certas"],
+.edital-badge-certas,
+[data-skin] .metric-certas,
+body.theme-purple .metric-certas,
+body.theme-orange .metric-certas,
+body.theme-laranja .metric-certas,
+.theme-purple .metric-certas,
+.theme-orange .metric-certas,
+.theme-laranja .metric-certas,
+[data-skin="roxo"] .metric-certas,
+[data-skin="rosa"] .metric-certas,
+[data-skin="laranja"] .metric-certas,
+[data-skin="azul"] .metric-certas,
+[data-skin="verde"] .metric-certas {
+  background-color: #ecfdf5 !important; /* bg-emerald-50 */
+  color: #047857 !important; /* text-emerald-700 */
+  border-color: #a7f3d0 !important; /* border-emerald-200 */
+}
+
+html.dark .metric-certas,
+html.dark-mode .metric-certas,
+.dark .metric-certas,
+[data-skin] .dark .metric-certas,
+[data-skin].dark .metric-certas,
+html.dark [data-skin] .metric-certas,
+html.dark body.theme-purple .metric-certas,
+html.dark body.theme-orange .metric-certas,
+html.dark body.theme-laranja .metric-certas,
+html.dark [data-skin="roxo"] .metric-certas,
+html.dark [data-skin="rosa"] .metric-certas,
+html.dark [data-skin="laranja"] .metric-certas,
+html.dark [data-skin="azul"] .metric-certas,
+html.dark [data-skin="verde"] .metric-certas {
+  background-color: rgba(6, 78, 59, 0.4) !important; /* dark:bg-emerald-950/40 */
+  color: #34d399 !important; /* dark:text-emerald-400 */
+  border-color: #065f46 !important; /* dark:border-emerald-800 */
+}
+
+/* Coluna / Badge ERRADAS (Vermelho / Rose Universal) */
+.metric-erradas,
+[data-metric="erradas"],
+.edital-badge-erradas,
+[data-skin] .metric-erradas,
+body.theme-purple .metric-erradas,
+body.theme-orange .metric-erradas,
+body.theme-laranja .metric-erradas,
+.theme-purple .metric-erradas,
+.theme-orange .metric-erradas,
+.theme-laranja .metric-erradas,
+[data-skin="roxo"] .metric-erradas,
+[data-skin="rosa"] .metric-erradas,
+[data-skin="laranja"] .metric-erradas,
+[data-skin="azul"] .metric-erradas,
+[data-skin="verde"] .metric-erradas {
+  background-color: #fff1f2 !important; /* bg-rose-50 */
+  color: #be123c !important; /* text-rose-700 */
+  border-color: #fecdd3 !important; /* border-rose-200 */
+}
+
+html.dark .metric-erradas,
+html.dark-mode .metric-erradas,
+.dark .metric-erradas,
+[data-skin] .dark .metric-erradas,
+[data-skin].dark .metric-erradas,
+html.dark [data-skin] .metric-erradas,
+html.dark body.theme-purple .metric-erradas,
+html.dark body.theme-orange .metric-erradas,
+html.dark body.theme-laranja .metric-erradas,
+html.dark [data-skin="roxo"] .metric-erradas,
+html.dark [data-skin="rosa"] .metric-erradas,
+html.dark [data-skin="laranja"] .metric-erradas,
+html.dark [data-skin="azul"] .metric-erradas,
+html.dark [data-skin="verde"] .metric-erradas {
+  background-color: rgba(76, 5, 25, 0.4) !important; /* dark:bg-rose-950/40 */
+  color: #fb7185 !important; /* dark:text-rose-400 */
+  border-color: #9f1239 !important; /* dark:border-rose-800 */
+}
+
+/* Coluna / Badge TOTAL (Neutro / Slate Universal) */
+.metric-total,
+[data-metric="total"],
+.edital-badge-total,
+[data-skin] .metric-total {
+  background-color: #f1f5f9 !important; /* bg-slate-100 */
+  color: #334155 !important; /* text-slate-700 */
+  border-color: #e2e8f0 !important; /* border-slate-200 */
+}
+
+html.dark .metric-total,
+html.dark-mode .metric-total,
+.dark .metric-total,
+html.dark [data-skin] .metric-total {
+  background-color: #1e293b !important; /* dark:bg-slate-800 */
+  color: #cbd5e1 !important; /* dark:text-slate-300 */
+  border-color: #334155 !important; /* dark:border-slate-700 */
+}
+
+/* Cabeçalho CERTAS */
+.metric-header-certas,
+.metric-header-certas *,
+[data-skin] .metric-header-certas,
+[data-skin] .metric-header-certas *,
+body.theme-purple .metric-header-certas,
+body.theme-purple .metric-header-certas *,
+body.theme-purple span.metric-header-certas,
+body.theme-orange .metric-header-certas,
+body.theme-orange .metric-header-certas *,
+body.theme-orange span.metric-header-certas,
+body.theme-laranja .metric-header-certas,
+body.theme-laranja .metric-header-certas *,
+body.theme-laranja span.metric-header-certas,
+body[class*="theme-"] .metric-header-certas,
+body[class*="theme-"] .metric-header-certas *,
+[data-skin="roxo"] .metric-header-certas,
+[data-skin="roxo"] .metric-header-certas *,
+[data-skin="laranja"] .metric-header-certas,
+[data-skin="laranja"] .metric-header-certas *,
+[data-skin="rosa"] .metric-header-certas,
+[data-skin="rosa"] .metric-header-certas *,
+[data-skin="azul"] .metric-header-certas,
+[data-skin="azul"] .metric-header-certas *,
+[data-skin="verde"] .metric-header-certas,
+[data-skin="verde"] .metric-header-certas * {
+  color: #059669 !important; /* text-emerald-600 */
+}
+html.dark .metric-header-certas,
+html.dark .metric-header-certas *,
+html.dark-mode .metric-header-certas,
+html.dark-mode .metric-header-certas *,
+.dark .metric-header-certas,
+.dark .metric-header-certas *,
+html.dark body.theme-purple .metric-header-certas,
+html.dark body.theme-purple .metric-header-certas *,
+html.dark body.theme-orange .metric-header-certas,
+html.dark body.theme-orange .metric-header-certas *,
+html.dark body.theme-laranja .metric-header-certas,
+html.dark body.theme-laranja .metric-header-certas *,
+html.dark body[class*="theme-"] .metric-header-certas,
+html.dark body[class*="theme-"] .metric-header-certas *,
+html.dark [data-skin="roxo"] .metric-header-certas,
+html.dark [data-skin="roxo"] .metric-header-certas *,
+html.dark [data-skin="laranja"] .metric-header-certas,
+html.dark [data-skin="laranja"] .metric-header-certas * {
+  color: #34d399 !important; /* dark:text-emerald-400 */
+}
+
+/* Cabeçalho ERRADAS */
+.metric-header-erradas,
+[data-skin] .metric-header-erradas {
+  color: #e11d48 !important; /* text-rose-600 */
+}
+html.dark .metric-header-erradas,
+html.dark-mode .metric-header-erradas,
+.dark .metric-header-erradas,
+html.dark [data-skin] .metric-header-erradas {
+  color: #fb7185 !important; /* dark:text-rose-400 */
+}
+
+/* Badges de % Acerto por faixa de desempenho */
+.metric-acerto-sem-dados,
+[data-skin] .metric-acerto-sem-dados {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border-color: #e2e8f0 !important;
+}
+html.dark .metric-acerto-sem-dados,
+html.dark [data-skin] .metric-acerto-sem-dados {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+}
+
+.metric-acerto-alerta,
+[data-skin] .metric-acerto-alerta {
+  background-color: #fef2f2 !important; /* bg-red-50 */
+  color: #dc2626 !important; /* text-red-600 */
+  border-color: #fecaca !important; /* border-red-200 */
+}
+html.dark .metric-acerto-alerta,
+html.dark [data-skin] .metric-acerto-alerta {
+  background-color: rgba(69, 10, 10, 0.4) !important; /* dark:bg-red-950/40 */
+  color: #f87171 !important; /* dark:text-red-400 */
+  border-color: #991b1b !important; /* dark:border-red-800 */
+}
+
+.metric-acerto-medio,
+[data-skin] .metric-acerto-medio {
+  background-color: #fffbeb !important; /* bg-amber-50 */
+  color: #d97706 !important; /* text-amber-600 */
+  border-color: #fde68a !important; /* border-amber-200 */
+}
+html.dark .metric-acerto-medio,
+html.dark [data-skin] .metric-acerto-medio {
+  background-color: rgba(69, 26, 3, 0.4) !important; /* dark:bg-amber-950/40 */
+  color: #fbbf24 !important; /* dark:text-amber-400 */
+  border-color: #92400e !important; /* dark:border-amber-800 */
+}
+
+.metric-acerto-bom,
+[data-skin] .metric-acerto-bom {
+  background-color: #ecfdf5 !important; /* bg-emerald-50 */
+  color: #059669 !important; /* text-emerald-600 */
+  border-color: #6ee7b7 !important; /* border-emerald-300 */
+}
+html.dark .metric-acerto-bom,
+html.dark [data-skin] .metric-acerto-bom {
+  background-color: rgba(6, 78, 59, 0.4) !important; /* dark:bg-emerald-950/40 */
+  color: #6ee7b7 !important; /* dark:text-emerald-300 */
+  border-color: #047857 !important; /* dark:border-emerald-700 */
+}
+
+.metric-acerto-excelente,
+[data-skin] .metric-acerto-excelente {
+  background-color: #d1fae5 !important; /* bg-emerald-100 */
+  color: #065f46 !important; /* text-emerald-800 */
+  border-color: #34d399 !important; /* border-emerald-400 */
+}
+html.dark .metric-acerto-excelente,
+html.dark [data-skin] .metric-acerto-excelente {
+  background-color: rgba(6, 78, 59, 0.5) !important; /* dark:bg-emerald-900/50 */
+  color: #a7f3d0 !important; /* dark:text-emerald-200 */
+  border-color: #059669 !important; /* dark:border-emerald-600 */
+}
+
+/* Classes para texto métrico isolado */
+.metric-text-sem-dados, [data-skin] .metric-text-sem-dados { color: #64748b !important; }
+html.dark .metric-text-sem-dados, html.dark [data-skin] .metric-text-sem-dados { color: #94a3b8 !important; }
+
+.metric-text-alerta, [data-skin] .metric-text-alerta { color: #dc2626 !important; }
+html.dark .metric-text-alerta, html.dark [data-skin] .metric-text-alerta { color: #f87171 !important; }
+
+.metric-text-medio, [data-skin] .metric-text-medio { color: #d97706 !important; }
+html.dark .metric-text-medio, html.dark [data-skin] .metric-text-medio { color: #fbbf24 !important; }
+
+.metric-text-bom, [data-skin] .metric-text-bom { color: #059669 !important; }
+html.dark .metric-text-bom, html.dark [data-skin] .metric-text-bom { color: #34d399 !important; }
+
+.metric-text-excelente, [data-skin] .metric-text-excelente { color: #065f46 !important; }
+html.dark .metric-text-excelente, html.dark [data-skin] .metric-text-excelente { color: #6ee7b7 !important; }
+
+/* Legenda de Faixas de Acerto - Preservação estrita das cores */
+.legend-pill-alerta-box,
+[data-skin] .legend-pill-alerta-box,
+body[class*="theme-"] .legend-pill-alerta-box {
+  background-color: #FEF2F2 !important;
+  border: 1px solid #FECACA !important;
+}
+.legend-pill-alerta, [data-skin] .legend-pill-alerta,
+.legend-pill-alerta-text, [data-skin] .legend-pill-alerta-text,
+body[class*="theme-"] .legend-pill-alerta-text {
+  color: #B91C1C !important;
+}
+html.dark .legend-pill-alerta-box, .dark .legend-pill-alerta-box {
+  background-color: rgba(69, 10, 10, 0.4) !important;
+  border: 1px solid rgba(153, 27, 27, 0.6) !important;
+}
+html.dark .legend-pill-alerta, html.dark [data-skin] .legend-pill-alerta,
+html.dark .legend-pill-alerta-text, .dark .legend-pill-alerta-text {
+  color: #f87171 !important;
+}
+
+.legend-pill-medio-box,
+[data-skin] .legend-pill-medio-box,
+body[class*="theme-"] .legend-pill-medio-box {
+  background-color: #FFFBEB !important;
+  border: 1px solid #FDE68A !important;
+}
+.legend-pill-medio, [data-skin] .legend-pill-medio,
+.legend-pill-medio-text, [data-skin] .legend-pill-medio-text,
+body[class*="theme-"] .legend-pill-medio-text {
+  color: #B45309 !important;
+}
+html.dark .legend-pill-medio-box, .dark .legend-pill-medio-box {
+  background-color: rgba(69, 26, 3, 0.4) !important;
+  border: 1px solid rgba(146, 64, 14, 0.6) !important;
+}
+html.dark .legend-pill-medio, html.dark [data-skin] .legend-pill-medio,
+html.dark .legend-pill-medio-text, .dark .legend-pill-medio-text {
+  color: #fbbf24 !important;
+}
+
+.legend-pill-bom-box,
+[data-skin] .legend-pill-bom-box,
+body[class*="theme-"] .legend-pill-bom-box {
+  background-color: #ECFDF5 !important;
+  border: 1px solid #A7F3D0 !important;
+}
+.legend-pill-bom, [data-skin] .legend-pill-bom,
+.legend-pill-bom-text, [data-skin] .legend-pill-bom-text,
+body[class*="theme-"] .legend-pill-bom-text {
+  color: #047857 !important;
+}
+html.dark .legend-pill-bom-box, .dark .legend-pill-bom-box {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+  border: 1px solid rgba(6, 95, 70, 0.6) !important;
+}
+html.dark .legend-pill-bom-text, .dark .legend-pill-bom-text, html.dark .legend-pill-bom, html.dark [data-skin] .legend-pill-bom {
+  color: #34d399 !important;
+}
+
+.legend-pill-excelente-box,
+[data-skin] .legend-pill-excelente-box,
+body[class*="theme-"] .legend-pill-excelente-box {
+  background-color: #D1FAE5 !important;
+  border: 1px solid #6EE7B7 !important;
+}
+.legend-pill-excelente, [data-skin] .legend-pill-excelente,
+.legend-pill-excelente-text, [data-skin] .legend-pill-excelente-text,
+body[class*="theme-"] .legend-pill-excelente-text {
+  color: #064E3B !important;
+}
+html.dark .legend-pill-excelente-box, .dark .legend-pill-excelente-box {
+  background-color: rgba(6, 78, 59, 0.55) !important;
+  border: 1px solid rgba(4, 120, 87, 0.7) !important;
+}
+html.dark .legend-pill-excelente-text, .dark .legend-pill-excelente-text, html.dark .legend-pill-excelente, html.dark [data-skin] .legend-pill-excelente {
+  color: #6ee7b7 !important;
+}
+
+.legend-pill-crown,
+.legend-pill-excelente-box svg,
+[data-skin] .legend-pill-crown,
+[data-skin] .legend-pill-excelente-box svg,
+body[class*="theme-"] .legend-pill-crown {
+  color: #D97706 !important;
+  fill: #FBBF24 !important;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)) !important;
+}
+
+
+
+
+
+
+/* Keyframes de Shake para validação de tempo zerado */
+@keyframes shake-gentle {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake-gentle {
+  animation: shake-gentle 0.45s ease-in-out;
+}
+
+/* ==========================================================================
+   BLINDAGEM ESTILOS PILULAS DE ESTUDO & MODAL DE REGISTRO
+   Garante estilo ativo e inativo perfeito em todos os temas e modos (claro/escuro)
+   ========================================================================== */
+
+/* Pílula Inativa */
+.study-type-pill-inactive {
+  background-color: #ffffff !important;
+  color: #334155 !important; /* slate-700 */
+  border: 1px solid #e2e8f0 !important; /* slate-200 */
+}
+html.dark .study-type-pill-inactive,
+html.dark-mode .study-type-pill-inactive,
+body.dark .study-type-pill-inactive,
+body.dark-mode .study-type-pill-inactive {
+  background-color: rgba(15, 23, 42, 0.6) !important; /* slate-900/60 */
+  color: #cbd5e1 !important; /* slate-300 */
+  border: 1px solid #1e293b !important; /* slate-800 */
+}
+.study-type-pill-inactive:hover {
+  border-color: #cbd5e1 !important;
+}
+html.dark .study-type-pill-inactive:hover,
+html.dark-mode .study-type-pill-inactive:hover {
+  border-color: #334155 !important;
+}
+
+/* Pílula Ativa - Cores Específicas por Tema */
+.study-type-pill-active {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Tema Verde */
+:root .study-type-pill-active,
+[data-skin="verde"] .study-type-pill-active,
+.theme-green .study-type-pill-active,
+.skin-verde .study-type-pill-active {
+  background-color: #059669 !important;
+  border: 1px solid #059669 !important;
+}
+
+/* Tema Azul */
+[data-skin="azul"] .study-type-pill-active,
+.theme-blue .study-type-pill-active,
+.skin-azul .study-type-pill-active {
+  background-color: #2563eb !important;
+  border: 1px solid #2563eb !important;
+}
+
+/* Tema Rosa */
+[data-skin="rosa"] .study-type-pill-active,
+.theme-pink .study-type-pill-active,
+.skin-rosa .study-type-pill-active {
+  background-color: #db2777 !important;
+  border: 1px solid #db2777 !important;
+}
+
+/* Tema Roxo (Garante fundo violeta e texto branco em todos os modos) */
+[data-skin="roxo"] .study-type-pill-active,
+[data-skin="purple"] .study-type-pill-active,
+body.theme-purple .study-type-pill-active,
+.theme-purple .study-type-pill-active,
+.skin-roxo .study-type-pill-active {
+  background-color: #7c3aed !important;
+  border: 1px solid #7c3aed !important;
+  color: #ffffff !important;
+}
+
+/* Tema Laranja (Garante fundo laranja vibrante e texto branco em todos os modos) */
+[data-skin="laranja"] .study-type-pill-active,
+[data-skin="orange"] .study-type-pill-active,
+[data-skin="dbz"] .study-type-pill-active,
+body.theme-orange .study-type-pill-active,
+body.theme-laranja .study-type-pill-active,
+.theme-orange .study-type-pill-active,
+.theme-laranja .study-type-pill-active,
+.skin-laranja .study-type-pill-active {
+  background-color: #ea580c !important;
+  border: 1px solid #ea580c !important;
+  color: #ffffff !important;
+}
+
+/* Proteção estrita para o botão de salvar no modal em qualquer tema */
+.modal-btn-salvar-estudo {
+  color: #ffffff !important;
+}
+.modal-btn-salvar-estudo * {
+  color: #ffffff !important;
+}
+
+/* Badges de destaque no Modal de Registro ("Manual" e "Edital Verticalizado")
+   Fonte em tom mais escuro para máxima legibilidade, respeitando cada tema e modo (claro e escuro) */
+html:not(.dark):not(.dark-mode) .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) [data-skin="verde"] .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) .theme-green .study-modal-theme-badge {
+  color: #064e3b !important; /* emerald-900 */
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+html:not(.dark):not(.dark-mode) [data-skin="azul"] .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) .theme-blue .study-modal-theme-badge {
+  color: #1e3a8a !important; /* blue-900 */
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  border-color: rgba(37, 99, 235, 0.35) !important;
+}
+html:not(.dark):not(.dark-mode) [data-skin="rosa"] .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) .theme-pink .study-modal-theme-badge {
+  color: #831843 !important; /* pink-900 */
+  background-color: rgba(219, 39, 119, 0.15) !important;
+  border-color: rgba(219, 39, 119, 0.35) !important;
+}
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) body.theme-purple .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) .theme-purple .study-modal-theme-badge {
+  color: #4c1d95 !important; /* violet-900 */
+  background-color: rgba(124, 58, 237, 0.15) !important;
+  border-color: rgba(124, 58, 237, 0.35) !important;
+}
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) [data-skin="orange"] .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) body.theme-orange .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) body.theme-laranja .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) .theme-orange .study-modal-theme-badge,
+html:not(.dark):not(.dark-mode) .theme-laranja .study-modal-theme-badge {
+  color: #7c2d12 !important; /* orange-900 */
+  background-color: rgba(255, 107, 0, 0.16) !important;
+  border-color: rgba(255, 107, 0, 0.38) !important;
+}
+
+/* Modo Escuro (Dark Mode) - preserva as regras de contraste de cada tema */
+html.dark .study-modal-theme-badge,
+html.dark [data-skin="verde"] .study-modal-theme-badge,
+html.dark .theme-green .study-modal-theme-badge {
+  color: #6ee7b7 !important; /* emerald-300 */
+  background-color: rgba(6, 78, 59, 0.65) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+html.dark [data-skin="azul"] .study-modal-theme-badge,
+html.dark .theme-blue .study-modal-theme-badge {
+  color: #93c5fd !important; /* blue-300 */
+  background-color: rgba(30, 58, 138, 0.55) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+html.dark [data-skin="rosa"] .study-modal-theme-badge,
+html.dark .theme-pink .study-modal-theme-badge {
+  color: #fbcfe8 !important; /* pink-200 */
+  background-color: rgba(131, 24, 67, 0.55) !important;
+  border-color: rgba(236, 72, 153, 0.4) !important;
+}
+html.dark [data-skin="roxo"] .study-modal-theme-badge,
+html.dark [data-skin="purple"] .study-modal-theme-badge,
+html.dark body.theme-purple .study-modal-theme-badge,
+html.dark .theme-purple .study-modal-theme-badge {
+  color: #ddd6fe !important; /* violet-200 */
+  background-color: rgba(76, 29, 149, 0.55) !important;
+  border-color: rgba(139, 92, 246, 0.4) !important;
+}
+html.dark [data-skin="laranja"] .study-modal-theme-badge,
+html.dark [data-skin="orange"] .study-modal-theme-badge,
+html.dark body.theme-orange .study-modal-theme-badge,
+html.dark body.theme-laranja .study-modal-theme-badge,
+html.dark .theme-orange .study-modal-theme-badge,
+html.dark .theme-laranja .study-modal-theme-badge {
+  color: #fed7aa !important; /* orange-200 */
+  background-color: rgba(124, 45, 18, 0.6) !important;
+  border-color: rgba(255, 133, 51, 0.45) !important;
+}
+
+/* Título da disciplina no card destacado de Tópico Atual / Próximo Estudo sempre branco em todos os temas e modos */
+h4.proximo-estudo-title,
+body.theme-purple h4.proximo-estudo-title,
+body.theme-orange h4.proximo-estudo-title,
+body.theme-laranja h4.proximo-estudo-title,
+[data-skin="roxo"] h4.proximo-estudo-title,
+[data-skin="purple"] h4.proximo-estudo-title,
+[data-skin="laranja"] h4.proximo-estudo-title,
+[data-skin="orange"] h4.proximo-estudo-title,
+[data-skin="verde"] h4.proximo-estudo-title,
+[data-skin="azul"] h4.proximo-estudo-title,
+[data-skin="rosa"] h4.proximo-estudo-title {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   BANNER DE REVISÃO E ATIVAÇÃO DO CONCURSO (PASSO 3 DO MODAL)
+   Garante contraste absoluto, elegância e legibilidade impecável em
+   TODOS os temas (Verde, Azul, Roxo, Laranja, Rosa) tanto no Modo Claro quanto Escuro.
+   ========================================================================== */
+
+.banner-revisao-concurso,
+.banner-escuro-revisao {
+  background-color: #0f172a !important; /* slate-900 sólido de alto contraste */
+  border: 1px solid #1e293b !important; /* slate-800 */
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+}
+
+.banner-revisao-concurso h4,
+.banner-revisao-concurso .titulo-orgao {
+  color: #ffffff !important;
+}
+
+.banner-revisao-concurso p.cargo-subtitulo,
+.banner-revisao-concurso .cargo-subtitulo {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+.banner-revisao-concurso p.detalhes-edital,
+.banner-revisao-concurso .detalhes-edital {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+.banner-revisao-concurso .btn-recolher-topicos {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.banner-revisao-concurso .btn-recolher-topicos:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+  border-color: #475569 !important;
+}
+
+/* Badges temáticos de alto contraste dentro do Banner de Revisão */
+.banner-revisao-concurso .badge-configurado {
+  background-color: rgba(16, 185, 129, 0.18) !important;
+  color: #6ee7b7 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+}
+
+.banner-revisao-concurso .badge-pronto-ativar {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+}
+
+/* Tema Roxo / Purple */
+body.theme-purple .banner-revisao-concurso .badge-configurado,
+body.skin-roxo .banner-revisao-concurso .badge-configurado,
+[data-skin="roxo"] .banner-revisao-concurso .badge-configurado,
+[data-skin="purple"] .banner-revisao-concurso .badge-configurado {
+  background-color: rgba(124, 58, 237, 0.28) !important;
+  color: #e9d5ff !important;
+  border: 1px solid rgba(167, 139, 250, 0.45) !important;
+}
+
+body.theme-purple .banner-revisao-concurso .badge-pronto-ativar,
+body.skin-roxo .banner-revisao-concurso .badge-pronto-ativar,
+[data-skin="roxo"] .banner-revisao-concurso .badge-pronto-ativar,
+[data-skin="purple"] .banner-revisao-concurso .badge-pronto-ativar {
+  background-color: rgba(124, 58, 237, 0.32) !important;
+  color: #c4b5fd !important;
+  border: 1px solid rgba(167, 139, 250, 0.5) !important;
+}
+
+/* Tema Laranja / Orange */
+body.theme-orange .banner-revisao-concurso .badge-configurado,
+body.theme-laranja .banner-revisao-concurso .badge-configurado,
+body.skin-laranja .banner-revisao-concurso .badge-configurado,
+[data-skin="laranja"] .banner-revisao-concurso .badge-configurado,
+[data-skin="orange"] .banner-revisao-concurso .badge-configurado {
+  background-color: rgba(255, 107, 0, 0.25) !important;
+  color: #fde047 !important;
+  border: 1px solid rgba(255, 153, 0, 0.5) !important;
+}
+
+body.theme-orange .banner-revisao-concurso .badge-pronto-ativar,
+body.theme-laranja .banner-revisao-concurso .badge-pronto-ativar,
+body.skin-laranja .banner-revisao-concurso .badge-pronto-ativar,
+[data-skin="laranja"] .banner-revisao-concurso .badge-pronto-ativar,
+[data-skin="orange"] .banner-revisao-concurso .badge-pronto-ativar {
+  background-color: rgba(255, 107, 0, 0.28) !important;
+  color: #fde047 !important;
+  border: 1px solid rgba(255, 204, 0, 0.55) !important;
+}
+
+/* Tema Azul / Blue */
+body.theme-blue .banner-revisao-concurso .badge-configurado,
+body.skin-azul .banner-revisao-concurso .badge-configurado,
+[data-skin="azul"] .banner-revisao-concurso .badge-configurado {
+  background-color: rgba(37, 99, 235, 0.25) !important;
+  color: #93c5fd !important;
+  border: 1px solid rgba(59, 130, 246, 0.45) !important;
+}
+
+body.theme-blue .banner-revisao-concurso .badge-pronto-ativar,
+body.skin-azul .banner-revisao-concurso .badge-pronto-ativar,
+[data-skin="azul"] .banner-revisao-concurso .badge-pronto-ativar {
+  background-color: rgba(37, 99, 235, 0.3) !important;
+  color: #bfdbfe !important;
+  border: 1px solid rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Tema Rosa / Pink */
+body.theme-pink .banner-revisao-concurso .badge-configurado,
+body.skin-rosa .banner-revisao-concurso .badge-configurado,
+[data-skin="rosa"] .banner-revisao-concurso .badge-configurado {
+  background-color: rgba(219, 39, 119, 0.25) !important;
+  color: #fbcfe8 !important;
+  border: 1px solid rgba(244, 114, 182, 0.45) !important;
+}
+
+body.theme-pink .banner-revisao-concurso .badge-pronto-ativar,
+body.skin-rosa .banner-revisao-concurso .badge-pronto-ativar,
+[data-skin="rosa"] .banner-revisao-concurso .badge-pronto-ativar {
+  background-color: rgba(219, 39, 119, 0.3) !important;
+  color: #fbcfe8 !important;
+  border: 1px solid rgba(244, 114, 182, 0.5) !important;
+}
+
+/* =========================================================================
+   Efeito Neon no Título do Banner de Provas ("Simulados e Próximas Provas")
+   ========================================================================= */
+.skin-roxo .provas-banner-title,
+.skin-purple .provas-banner-title,
+body.theme-purple .provas-banner-title,
+body.theme-purple .revisoes-banner h2.provas-banner-title,
+body.skin-roxo .provas-banner-title,
+body.skin-purple .provas-banner-title,
+[data-skin="roxo"] .provas-banner-title,
+[data-skin="roxo"] .revisoes-banner h2.provas-banner-title,
+[data-skin="purple"] .provas-banner-title {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(167, 139, 250, 0.95), 0 0 18px rgba(139, 92, 246, 0.85), 0 0 32px rgba(124, 58, 237, 0.65) !important;
+}
+
+.skin-laranja .provas-banner-title,
+.skin-orange .provas-banner-title,
+body.theme-orange .provas-banner-title,
+body.theme-laranja .provas-banner-title,
+body.theme-orange .revisoes-banner h2.provas-banner-title,
+body.theme-laranja .revisoes-banner h2.provas-banner-title,
+body.skin-laranja .provas-banner-title,
+body.skin-orange .provas-banner-title,
+[data-skin="laranja"] .provas-banner-title,
+[data-skin="laranja"] .revisoes-banner h2.provas-banner-title,
+[data-skin="orange"] .provas-banner-title {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(251, 146, 60, 0.95), 0 0 18px rgba(249, 115, 22, 0.85), 0 0 32px rgba(234, 88, 12, 0.65) !important;
+}
+
+.skin-verde .provas-banner-title,
+body.theme-green .provas-banner-title,
+body.skin-verde .provas-banner-title,
+[data-skin="verde"] .provas-banner-title {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(52, 211, 153, 0.95), 0 0 18px rgba(16, 185, 129, 0.8), 0 0 32px rgba(5, 150, 105, 0.6) !important;
+}
+
+.skin-azul .provas-banner-title,
+body.theme-blue .provas-banner-title,
+body.skin-azul .provas-banner-title,
+[data-skin="azul"] .provas-banner-title {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(96, 165, 250, 0.95), 0 0 18px rgba(37, 99, 235, 0.8), 0 0 32px rgba(29, 78, 216, 0.6) !important;
+}
+
+.skin-rosa .provas-banner-title,
+body.theme-pink .provas-banner-title,
+body.skin-rosa .provas-banner-title,
+[data-skin="rosa"] .provas-banner-title {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(244, 114, 182, 0.95), 0 0 18px rgba(219, 39, 119, 0.8), 0 0 32px rgba(190, 24, 93, 0.6) !important;
+}
+
+/* REGRA GLOBAL INCONDICIONAL: Título do Banner de Provas SEMPRE BRANCO (#FFFFFF) em Qualquer Tema, Modo Claro e Modo Escuro */
+h1.provas-banner-title,
+.provas-banner-title,
+html h1.provas-banner-title,
+body h1.provas-banner-title,
+html:not(.dark):not(.dark-mode) h1.provas-banner-title,
+html:not(.dark):not(.dark-mode) .provas-banner-title,
+html:not(.dark):not(.dark-mode) body h1.provas-banner-title,
+html.dark h1.provas-banner-title,
+html.dark .provas-banner-title,
+body.dark h1.provas-banner-title,
+body.dark-mode h1.provas-banner-title,
+body.theme-purple h1.provas-banner-title,
+body.theme-orange h1.provas-banner-title,
+body.theme-laranja h1.provas-banner-title,
+body.skin-roxo h1.provas-banner-title,
+body.skin-laranja h1.provas-banner-title,
+[data-skin="roxo"] h1.provas-banner-title,
+[data-skin="laranja"] h1.provas-banner-title {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+/* =========================================================================
+   Botões de Alternância de Aba ("Concursos" e "Provas") com Efeito Neon / Glow
+   ========================================================================= */
+:root,
+[data-skin="verde"],
+.skin-verde,
+body.theme-green {
+  --primary-theme-color: #10b981;
+  --primary-theme-glow: rgba(16, 185, 129, 0.65);
+  --primary-theme-glow-soft: rgba(16, 185, 129, 0.28);
+}
+
+[data-skin="azul"],
+.skin-azul,
+body.theme-blue {
+  --primary-theme-color: #3b82f6;
+  --primary-theme-glow: rgba(59, 130, 246, 0.65);
+  --primary-theme-glow-soft: rgba(59, 130, 246, 0.28);
+}
+
+[data-skin="rosa"],
+.skin-rosa,
+body.theme-pink {
+  --primary-theme-color: #ec4899;
+  --primary-theme-glow: rgba(236, 72, 153, 0.65);
+  --primary-theme-glow-soft: rgba(236, 72, 153, 0.28);
+}
+
+[data-skin="roxo"],
+[data-skin="purple"],
+.skin-roxo,
+.skin-purple,
+body.theme-purple {
+  --primary-theme-color: #8B5CF6;
+  --primary-theme-glow: rgba(139, 92, 246, 0.7);
+  --primary-theme-glow-soft: rgba(139, 92, 246, 0.32);
+}
+
+[data-skin="laranja"],
+[data-skin="orange"],
+[data-skin="dbz"],
+.skin-laranja,
+.skin-orange,
+body.theme-orange,
+body.theme-laranja {
+  --primary-theme-color: #FF6B00;
+  --primary-theme-glow: rgba(255, 107, 0, 0.7);
+  --primary-theme-glow-soft: rgba(255, 107, 0, 0.32);
+}
+
+.concursos-tab-btn-active {
+  background-color: var(--primary-theme-color) !important;
+  box-shadow: 0 0 15px var(--primary-theme-glow), 0 0 30px var(--primary-theme-glow-soft) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  transition: all 0.25s ease-in-out !important;
+}
+
+.concursos-tab-btn-active:hover {
+  box-shadow: 0 0 20px var(--primary-theme-glow), 0 0 38px var(--primary-theme-glow) !important;
+  transform: translateY(-1px);
+}
+
+.concursos-tab-btn-inactive {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1.5px solid var(--primary-theme-color) !important;
+  box-shadow: inset 0 0 8px var(--primary-theme-glow-soft), 0 0 10px var(--primary-theme-glow-soft) !important;
+  color: var(--primary-theme-color) !important;
+  transition: all 0.25s ease-in-out !important;
+}
+
+.concursos-tab-btn-inactive:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 0 12px var(--primary-theme-glow-soft), 0 0 18px var(--primary-theme-glow) !important;
+  transform: translateY(-1px);
+}
+
+/* =========================================================================
+   Botão Secundário de Banners (.btn-banner-secundario) — Fundo Preto em Todos os Temas (incluindo Roxo e Laranja)
+   ========================================================================= */
+html body .btn-banner-secundario,
+html:not(.dark):not(.dark-mode) body.theme-purple button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) .theme-purple button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] button.btn-banner-secundario,
+body.dark.theme-purple button.btn-banner-secundario,
+body.dark-mode.theme-purple button.btn-banner-secundario,
+html.dark body.theme-purple button.btn-banner-secundario,
+html.dark-mode body.theme-purple button.btn-banner-secundario,
+html.dark [data-skin="roxo"] button.btn-banner-secundario,
+html.dark [data-skin="purple"] button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) body.theme-orange button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) body.theme-laranja button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) .theme-orange button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) .theme-laranja button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] button.btn-banner-secundario,
+html:not(.dark):not(.dark-mode) [data-skin="orange"] button.btn-banner-secundario,
+body.dark.theme-orange button.btn-banner-secundario,
+body.dark.theme-laranja button.btn-banner-secundario,
+body.dark-mode.theme-orange button.btn-banner-secundario,
+body.dark-mode.theme-laranja button.btn-banner-secundario,
+html.dark body.theme-orange button.btn-banner-secundario,
+html.dark body.theme-laranja button.btn-banner-secundario,
+html.dark [data-skin="laranja"] button.btn-banner-secundario,
+html.dark [data-skin="orange"] button.btn-banner-secundario {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+html body .btn-banner-secundario:hover,
+html:not(.dark):not(.dark-mode) body.theme-purple button.btn-banner-secundario:hover,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] button.btn-banner-secundario:hover,
+body.dark.theme-purple button.btn-banner-secundario:hover,
+html.dark [data-skin="roxo"] button.btn-banner-secundario:hover,
+html:not(.dark):not(.dark-mode) body.theme-orange button.btn-banner-secundario:hover,
+html:not(.dark):not(.dark-mode) body.theme-laranja button.btn-banner-secundario:hover,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] button.btn-banner-secundario:hover,
+body.dark.theme-orange button.btn-banner-secundario:hover,
+body.dark.theme-laranja button.btn-banner-secundario:hover,
+html.dark [data-skin="laranja"] button.btn-banner-secundario:hover {
+  background-color: #171717 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* =========================================================================
+   Banner Dinâmico de Nível & XP em "Metas & Desempenho" (.metas-xp-banner)
+   Garante borda e sombra temáticas sem sobrescrever a imagem do Supabase
+   ========================================================================= */
+.metas-xp-banner {
+  border-color: var(--banner-border, rgba(16, 185, 129, 0.35)) !important;
+  box-shadow: var(--banner-glow, 0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.18)) !important;
+}
+
+/* =========================================================================
+   Plano de Fundo da Área Principal: Tema Verde + Modo Claro
+   Camada translúcida branca (0.70) para suavização e máxima legibilidade
+   ========================================================================= */
+body[data-theme='verde']:not(.dark):not(.dark-mode) main,
+.theme-verde:not(.dark):not(.dark-mode) main,
+[data-theme='green']:not(.dark):not(.dark-mode) main,
+body[data-skin='verde']:not(.dark):not(.dark-mode) main,
+body[data-theme='green']:not(.dark):not(.dark-mode) main,
+body.theme-green:not(.dark):not(.dark-mode) main,
+body.skin-verde:not(.dark):not(.dark-mode) main,
+html:not(.dark):not(.dark-mode) [data-skin='verde'] main,
+html:not(.dark):not(.dark-mode) [data-theme='verde'] main,
+html:not(.dark):not(.dark-mode) [data-theme='green'] main,
+html:not(.dark):not(.dark-mode) .theme-green main,
+html:not(.dark):not(.dark-mode) .skin-verde main,
+html:not(.dark):not(.dark-mode) .theme-verde main,
+.theme-green:not(.dark):not(.dark-mode) main,
+.skin-verde:not(.dark):not(.dark-mode) main,
+[data-skin='verde']:not(.dark):not(.dark-mode) main,
+[data-theme='verde']:not(.dark):not(.dark-mode) main {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.70)),
+    url('https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Planos%20de%20Fundo/Plano-de-fundo-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvUGxhbm9zIGRlIEZ1bmRvL1BsYW5vLWRlLWZ1bmRvLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI3NjI2NjgsImV4cCI6NDk0NjM2MjY2OH0._pUhToYMdMMPH-eTJRg1eYo2TeTaV7y_c_gqZLpdKgXMOJ66xCcuZOLB5Qr8yUcxehMxPazfX-_yhXqvSZEVkg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
