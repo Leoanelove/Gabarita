@@ -66,11 +66,88 @@ interface DashboardViewProps {
 }
 
 const BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjI1NTM4LCJleHAiOjQ5NDYyMjU1Mzh9.ArxxE_UX_A6Ikdp8CLFt3A8CRGzF4QxQEjgdPp2Hh2lykhvDP_Ix_-0YEggcyHLsu5axwsmxl-3WGKOOmreYFw',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MjU1NjUsImV4cCI6NDk0NjIyNTU2NX0.4A0Cmv4yd9x88edVjKNmD9QSqUCf1ksrROtIKinkgK-oubcvysMO07FJDZTArggurMsKj0HS2DGMaox5MHqyBg',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MjU1NzksImV4cCI6NDk0NjIyNTU3OX0.oFJ7fTkQxmp0-5XFnrRWvJfnmZkuMgYLXtujf-dy-Vutw3wonJttoea9ND2G1Mf0M1fSbuatjpmWZh1Y_vVyrg',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MjU1OTMsImV4cCI6NDk0NjIyNTU5M30.Vj9vCNHfv_Z_9hd0udBcSPV92Vb_olfUAFpDpmBwcokSBy31ulz_SXLI38IM5GIZU8rL93_UGmzh8Jy6F44_Eg',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MjU2MTIsImV4cCI6NDk0NjIyNTYxMn0.BJXszk7E1hduxjImbSotHAgO3yUEs4avfrFoX7wQb8O98Abp4ErIpTLaze-73iFx9Wieci4FwIXy7q7U1PNyiQ',
+  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyOTQ5NzAwLCJleHAiOjQ5NDY1NDk3MDB9.i7OM-fgyxszWN1uInDFexStQCElbxJT09kM-4kz-mI0xbnR8j_f9w_v5oE2UA1okrvVNr8ECFXccAT_V_AK03Q",
+  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3MjUsImV4cCI6NDk0NjU0OTcyNX0.wGZYLBnjGgYxW0JzmmwPRiBqwkl91QwR4zpCfat6sO0kRlO71-n_RA65sD5HV2DW2-lW867PLUZQaUeT8zijqQ",
+  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3MzYsImV4cCI6NDk0NjU0OTczNn0._YrS5RXScu3j5NrAxENk9gEJLyAkuPsKEAb3FhiDyt-uZIVfd8P2VrXKD8JY-xrd9N05H6XmmDz-P7ESnZgDgQ",
+  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3NTcsImV4cCI6NDk0NjU0OTc1N30.6bexjnIm7u6FdTp0T3M881N5bJdTXSxDiNkhZF7zBJp50-ixHRSQ5yl1WNsjwllzUjs9_CrdBzbBH6gZKmD04w",
+  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3NjksImV4cCI6NDk0NjU0OTc2OX0.rDHY-aqNny3su6V_W1oAVxBOHk0Gk5SmnaecKhXXsuTliJtlO5Hm3dK1Rl1oCTWofg40TavqwQG3ns2p_ET2tg",
+};
+
+// Aliases tolerantes a variações em inglês/português e IDs compostos
+BANNER_THEMES.green = BANNER_THEMES.verde;
+BANNER_THEMES.emerald = BANNER_THEMES.verde;
+BANNER_THEMES.blue = BANNER_THEMES.azul;
+BANNER_THEMES.sky = BANNER_THEMES.azul;
+BANNER_THEMES.cyan = BANNER_THEMES.azul;
+BANNER_THEMES.purple = BANNER_THEMES.roxo;
+BANNER_THEMES.violet = BANNER_THEMES.roxo;
+BANNER_THEMES.pink = BANNER_THEMES.rosa;
+BANNER_THEMES.rose = BANNER_THEMES.rosa;
+BANNER_THEMES.orange = BANNER_THEMES.laranja;
+BANNER_THEMES.amber = BANNER_THEMES.laranja;
+BANNER_THEMES.dbz = BANNER_THEMES.laranja;
+
+export const normalizeThemeSkin = (themeContext: any): 'verde' | 'azul' | 'roxo' | 'rosa' | 'laranja' => {
+  // Cascata prioritária conforme especificação
+  const activeKey =
+    (typeof themeContext?.colorSkin === 'string' ? themeContext.colorSkin : '') ||
+    (typeof themeContext?.palette?.id === 'string' ? themeContext.palette.id : '') ||
+    (typeof themeContext?.palette?.name === 'string' ? themeContext.palette.name : '') ||
+    (typeof themeContext?.activeTheme === 'string' ? themeContext.activeTheme : '') ||
+    (typeof themeContext?.theme === 'string' ? themeContext.theme : '') ||
+    (typeof themeContext?.colorSkin === 'object' && themeContext?.colorSkin?.id ? String(themeContext.colorSkin.id) : '') ||
+    (typeof themeContext?.colorSkin === 'object' && themeContext?.colorSkin?.name ? String(themeContext.colorSkin.name) : '') ||
+    'verde';
+
+  const candidates: any[] = [
+    activeKey,
+    themeContext?.colorSkin,
+    themeContext?.palette?.id,
+    themeContext?.palette?.name,
+    themeContext?.activeTheme,
+  ];
+
+  if (typeof document !== 'undefined') {
+    try {
+      const dataSkin = document.documentElement.getAttribute('data-skin') || document.body.getAttribute('data-skin');
+      if (dataSkin) candidates.push(dataSkin);
+      const classList = `${document.documentElement.className} ${document.body.className}`;
+      candidates.push(classList);
+    } catch {}
+    try {
+      const savedSkin = localStorage.getItem('gabarita_color_skin');
+      if (savedSkin) candidates.push(savedSkin);
+    } catch {}
+  }
+
+  for (const item of candidates) {
+    if (!item) continue;
+    const str = (typeof item === 'string' ? item : String(item?.id || item?.name || '')).trim().toLowerCase();
+    if (!str) continue;
+
+    // Roxo: 'roxo', 'purple', 'violet'
+    if (str.includes('roxo') || str.includes('purple') || str.includes('violet')) {
+      return 'roxo';
+    }
+    // Laranja: 'laranja', 'orange', 'amber', 'dbz'
+    if (str.includes('laranja') || str.includes('orange') || str.includes('amber') || str.includes('dbz')) {
+      return 'laranja';
+    }
+    // Rosa: 'rosa', 'pink', 'rose'
+    if (str.includes('rosa') || str.includes('pink') || str.includes('rose')) {
+      return 'rosa';
+    }
+    // Azul: 'azul', 'blue', 'sky', 'cyan'
+    if (str.includes('azul') || str.includes('blue') || str.includes('sky') || str.includes('cyan')) {
+      return 'azul';
+    }
+    // Verde: 'verde', 'green', 'emerald'
+    if (str.includes('verde') || str.includes('green') || str.includes('emerald')) {
+      return 'verde';
+    }
+  }
+
+  return 'verde';
 };
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -91,17 +168,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onCompleteRevisao,
   onRetry,
 }) => {
-  const { palette, colorSkin } = useTheme();
+  const themeContext = useTheme();
+  const { palette } = themeContext;
 
-  // Mapeamento dinâmico da imagem de fundo do banner por tema ativo (independente de Dark/Light mode)
-  const rawSkin = String(colorSkin || palette?.id || 'verde').trim().toLowerCase();
-  const normalizedSkin =
-    rawSkin === 'purple' ? 'roxo' :
-    rawSkin === 'orange' || rawSkin === 'dbz' ? 'laranja' :
-    rawSkin === 'blue' ? 'azul' :
-    rawSkin === 'pink' ? 'rosa' :
-    rawSkin === 'green' ? 'verde' :
-    rawSkin;
+  // Normalização robusta tolerante a variações para identificação inequívoca do tema ativo
+  const normalizedSkin = normalizeThemeSkin(themeContext);
   const bannerUrl = BANNER_THEMES[normalizedSkin] || BANNER_THEMES.verde;
 
   const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
@@ -628,26 +699,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="space-y-6 max-w-7xl mx-auto">
       {activeConcurso ? (
         <div
-          className="card-banner banner-principal relative overflow-hidden rounded-2xl md:rounded-3xl p-6 sm:p-8 text-white shadow-xl min-h-[220px] md:min-h-[240px] border border-slate-700/50 bg-slate-950"
-          style={{
-            backgroundImage: `url('${bannerUrl}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
+          className="card-banner banner-principal relative overflow-hidden rounded-2xl md:rounded-3xl p-6 sm:p-8 text-white shadow-xl min-h-[220px] md:min-h-[240px] border border-slate-700/50 bg-slate-900 dark:bg-slate-950"
         >
-          {/* Ilustração 3D Oficial do Gabarita correspondente ao tema ativo */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
+          {/* Camada da imagem PNG oficial do Supabase preenchendo 100% do banner de ponta a ponta sem bordas internas */}
+          <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
             <img 
               key={bannerUrl}
               src={bannerUrl} 
               alt="Banner Painel Geral" 
-              className="w-full h-full object-cover object-center scale-100 transition-transform duration-300 pointer-events-none select-none" 
+              className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300" 
             />
           </div>
-
-          {/* Gradiente de alto contraste à esquerda para legibilidade refinada */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/45 to-transparent pointer-events-none z-[1]" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">

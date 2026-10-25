@@ -30,6 +30,7 @@ import { Button } from '../../design-system/Button';
 import { Modal } from '../../design-system/Modal';
 import { FlashcardPlayer, ReviewSessionStats } from './FlashcardPlayer';
 import { useTheme } from '../../contexts/ThemeContext';
+import { DatabaseService } from '../../services/db';
 
 export const FLASHCARDS_BANNER_THEMES: Record<string, string> = {
   verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Flashcards/Banner-Flashcard-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBGbGFzaGNhcmRzL0Jhbm5lci1GbGFzaGNhcmQtdmVyZGUucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY3MzAxOCwiZXhwIjo0OTQ2MjczMDE4fQ.bUX6pEhu81GWiSFf7TSYaSRDmwR77OUyqM2p9GqMXq-dKP0mDbjAFRwny2WwZnzAvDl397t51dWbYdaKEG4PVQ",
@@ -144,43 +145,16 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
   const [formVerso, setFormVerso] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // 1. Carregamento inicial do localStorage com higienização estrita de dados fictícios
+  // 1. Carregamento com sincronização no DatabaseService
   useEffect(() => {
-    try {
-      const storedCards = localStorage.getItem(STORAGE_KEY_FLASHCARDS);
-      const storedDecks = localStorage.getItem(STORAGE_KEY_DECKS);
-
-      const MOCK_CARD_IDS = new Set(['card-1', 'card-2', 'card-3', 'card-4']);
-      const MOCK_DECK_IDS = new Set(['deck-1', 'deck-2', 'deck-3']);
-
-      if (storedCards) {
-        const parsed: Flashcard[] = JSON.parse(storedCards);
-        const cleaned = Array.isArray(parsed) ? parsed.filter(c => !MOCK_CARD_IDS.has(c.id)) : [];
-        if (cleaned.length !== parsed.length) {
-          localStorage.setItem(STORAGE_KEY_FLASHCARDS, JSON.stringify(cleaned));
-        }
-        setFlashcards(cleaned);
-      } else {
-        localStorage.setItem(STORAGE_KEY_FLASHCARDS, JSON.stringify([]));
-        setFlashcards([]);
-      }
-
-      if (storedDecks) {
-        const parsed: Deck[] = JSON.parse(storedDecks);
-        const cleaned = Array.isArray(parsed) ? parsed.filter(d => !MOCK_DECK_IDS.has(d.id)) : [];
-        if (cleaned.length !== parsed.length) {
-          localStorage.setItem(STORAGE_KEY_DECKS, JSON.stringify(cleaned));
-        }
-        setDecks(cleaned);
-      } else {
-        localStorage.setItem(STORAGE_KEY_DECKS, JSON.stringify([]));
-        setDecks([]);
-      }
-    } catch (e) {
-      console.error('Erro ao ler flashcards do localStorage:', e);
-      setFlashcards([]);
-      setDecks([]);
-    }
+    let isMounted = true;
+    DatabaseService.getDecks().then(d => {
+      if (isMounted) setDecks(d);
+    });
+    DatabaseService.getFlashcards().then(c => {
+      if (isMounted) setFlashcards(c);
+    });
+    return () => { isMounted = false; };
   }, []);
 
   // Timer para sumir toast de sucesso
@@ -193,15 +167,15 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
     }
   }, [successToast]);
 
-  // Persistência
+  // Persistência com sincronização em nuvem e cache local
   const saveDecksToStorage = (updatedDecks: Deck[]) => {
     setDecks(updatedDecks);
-    localStorage.setItem(STORAGE_KEY_DECKS, JSON.stringify(updatedDecks));
+    DatabaseService.saveDecks(updatedDecks);
   };
 
   const saveCardsToStorage = (updatedCards: Flashcard[]) => {
     setFlashcards(updatedCards);
-    localStorage.setItem(STORAGE_KEY_FLASHCARDS, JSON.stringify(updatedCards));
+    DatabaseService.saveFlashcards(updatedCards);
   };
 
   // Nomes de disciplinas unificados (do plano de estudos + dos baralhos existentes)

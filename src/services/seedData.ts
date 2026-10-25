@@ -20,8 +20,8 @@ import {
 } from '../types';
 
 export const INITIAL_USER: UserProfile = {
-  id: 'user_demo_01',
-  email: 'usuario@gabarita.com.br',
+  id: '',
+  email: '',
   name: 'Concurseiro(a)',
   role: 'aluno',
   photoURL: '',
@@ -74,50 +74,7 @@ export const INITIAL_QUESTOES: Questao[] = [];
 
 export const INITIAL_SIMULADOS: Simulado[] = [];
 
-export const INITIAL_PROVAS: Prova[] = [
-  {
-    id: 'prova_tcego_2026',
-    organ: 'TCE-GO',
-    role: 'Auditor de Controle Externo',
-    banca: 'FGV',
-    year: 2026,
-    examDate: new Date(Date.now() + 86400000 * 42).toISOString().split('T')[0],
-    category: 'CONTROLE',
-    status: 'agendada',
-    questionsCount: 120,
-    durationMinutes: 300,
-    notes: 'Prova discursiva e objetiva. Levar documento original com foto e caneta preta.',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'prova_pf_2026',
-    organ: 'Polícia Federal',
-    role: 'Agente de Polícia Federal',
-    banca: 'Cebraspe',
-    year: 2026,
-    examDate: new Date(Date.now() + 86400000 * 85).toISOString().split('T')[0],
-    category: 'POLICIAL',
-    status: 'agendada',
-    questionsCount: 120,
-    durationMinutes: 270,
-    notes: 'Estilo Certo/Errado Cebraspe. Foco em Contabilidade e Informática.',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'prova_inss_2025',
-    organ: 'INSS',
-    role: 'Técnico do Seguro Social',
-    banca: 'Cebraspe',
-    year: 2025,
-    examDate: new Date(Date.now() - 86400000 * 18).toISOString().split('T')[0],
-    category: 'ADMINISTRATIVO',
-    status: 'concluida',
-    questionsCount: 120,
-    durationMinutes: 210,
-    notes: 'Gabarito oficial conferido: 96 acertos líquidos.',
-    createdAt: new Date().toISOString(),
-  }
-];
+export const INITIAL_PROVAS: Prova[] = [];
 
 export const INITIAL_SESSOES: SessaoEstudo[] = [];
 
@@ -127,7 +84,7 @@ export const INITIAL_STUDY_PLAN: StudyPlan = {
   id: 'plan_default',
   concursoId: '',
   concursoTitle: '',
-  userId: 'user_demo_01',
+  userId: '',
   startDate: new Date().toISOString().split('T')[0],
   targetExamDate: new Date(Date.now() + 86400000 * 90).toISOString().split('T')[0],
   dailyAverageMinutes: 240,
@@ -152,7 +109,7 @@ export const INITIAL_STUDY_PLAN: StudyPlan = {
 
 export const INITIAL_STUDY_CYCLE: StudyCycle = {
   id: 'cycle_default',
-  userId: 'user_demo_01',
+  userId: '',
   concursoId: '',
   concursoTitle: 'Ciclo de Estudos Principal',
   currentBlockIndex: 0,

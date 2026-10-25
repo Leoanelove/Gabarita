@@ -1,0 +1,6 @@
+{
+  "summary":  "Plano de implementação detalhado e à prova de regressão para a migração completa de dados fictícios para persistência real no Supabase com script SQL, RLS, serviços assíncronos e roteiro faseado.",
+  "updatedAt":  "2026-10-25T16:01:47.331201113Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

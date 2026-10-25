@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AuthService, AuthState } from '../services/auth';
+import { AuthService, AuthState, RegisterResult } from '../services/auth';
 import { UserProfile } from '../types';
 
 interface AuthContextType extends AuthState {
   loginWithEmail: (email: string, pass: string) => Promise<UserProfile>;
-  registerWithEmail: (name: string, email: string, pass: string, consentGiven?: boolean) => Promise<UserProfile>;
-  loginWithGoogle: () => Promise<UserProfile>;
+  registerWithEmail: (name: string, email: string, pass: string, consentGiven?: boolean) => Promise<RegisterResult>;
+  loginWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;

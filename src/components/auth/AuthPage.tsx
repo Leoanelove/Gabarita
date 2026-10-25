@@ -7,6 +7,8 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  AlertCircle,
+  Loader2,
   ShieldCheck,
   Sparkles,
   FileText,
@@ -20,8 +22,9 @@ import { GezinhoLogo } from '../common/GezinhoLogo';
 
 type AuthTab = 'login' | 'register';
 const LOGIN_BG_URL = 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_Tela_Login_verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfVGVsYV9Mb2dpbl92ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNzY4MzYzLCJleHAiOjQ5NDYzNjgzNjN9.tGSJVlCp1EecgtHwh9cLPgmWf4z93LT-VHGUtf7uOaKeaINSO1h4SIUoh_2U3eQlddVHyht6MTiRogysfvXSNw';
+
 export const AuthPage: React.FC = () => {
-  const { loginWithEmail, registerWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithEmail, registerWithEmail, loginWithGoogle, resetPassword } = useAuth();
   const { palette } = useTheme();
 
   const [activeTab, setActiveTab] = useState<AuthTab>('login');
@@ -31,34 +34,108 @@ export const AuthPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
-  const [forgotPasswordNotice, setForgotPasswordNotice] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleMainAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    setForgotPasswordNotice(null);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const cleanEmail = email.trim();
 
     if (activeTab === 'login') {
-      await loginWithEmail(email || 'estudante@gabarita.com.br', password || '123456');
+      if (!cleanEmail) {
+        setErrorMessage('Preencha o e-mail para continuar.');
+        return;
+      }
+      if (!password) {
+        setErrorMessage('Preencha a senha para continuar.');
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        await loginWithEmail(cleanEmail, password);
+      } catch (err: any) {
+        console.error("Erro Supabase Auth:", err);
+        setErrorMessage(err.message || 'E-mail ou senha incorretos.');
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
-      await registerWithEmail(
-        name || 'Concurseiro(a)',
-        email || 'estudante@gabarita.com.br',
-        password || '123456',
-        acceptedTerms
-      );
+      const cleanName = name.trim();
+      if (!cleanName) {
+        setErrorMessage('Por favor, informe seu nome completo.');
+        return;
+      }
+      if (!cleanEmail) {
+        setErrorMessage('Por favor, informe seu e-mail para cadastro.');
+        return;
+      }
+      if (!password) {
+        setErrorMessage('Por favor, informe uma senha.');
+        return;
+      }
+      if (password.length < 6) {
+        setErrorMessage('A senha deve conter no mínimo 6 caracteres.');
+        return;
+      }
+      if (!acceptedTerms) {
+        setErrorMessage('Você deve aceitar os Termos de Uso e Política de Privacidade para criar uma conta.');
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const result = await registerWithEmail(cleanName, cleanEmail, password, acceptedTerms);
+        if (result?.needsEmailConfirmation) {
+          setSuccessMessage('Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de entrar.');
+        } else {
+          setSuccessMessage('Cadastro realizado com sucesso! Redirecionando...');
+        }
+      } catch (err: any) {
+        console.error("Erro Supabase Auth:", err);
+        setErrorMessage(err.message || 'Não foi possível cadastrar seu usuário no Supabase.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleGoogleAction = async () => {
-    setForgotPasswordNotice(null);
-    await loginWithGoogle();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setIsSubmitting(true);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      console.error("Erro Supabase Auth:", err);
+      setErrorMessage(err.message || 'Erro ao conectar com Google.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleForgotPasswordClick = () => {
-    const targetEmail = email.trim() || 'seu e-mail cadastrado';
-    setForgotPasswordNotice(
-      `Link de recuperação simulado enviado para ${targetEmail}. Você também pode clicar em "Entrar" para acessar imediatamente.`
-    );
+  const handleForgotPasswordClick = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setErrorMessage('Informe seu e-mail no campo acima para enviarmos o link de recuperação de senha.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await resetPassword(cleanEmail);
+      setSuccessMessage('Link de redefinição de senha enviado para seu e-mail!');
+    } catch (err: any) {
+      console.error("Erro Supabase Auth:", err);
+      setErrorMessage(err.message || 'Não foi possível enviar o e-mail de recuperação.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -113,7 +190,8 @@ export const AuthPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setActiveTab('login');
-                  setForgotPasswordNotice(null);
+                  setErrorMessage(null);
+                  setSuccessMessage(null);
                 }}
                 className={`py-2.5 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   activeTab === 'login'
@@ -127,7 +205,8 @@ export const AuthPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setActiveTab('register');
-                  setForgotPasswordNotice(null);
+                  setErrorMessage(null);
+                  setSuccessMessage(null);
                 }}
                 className={`py-2.5 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   activeTab === 'register'
@@ -138,14 +217,6 @@ export const AuthPage: React.FC = () => {
                 Criar Conta
               </button>
             </div>
-
-            {/* Feedback de Esqueci Minha Senha */}
-            {forgotPasswordNotice && (
-              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs flex items-start gap-2.5 animate-fade-in">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500 mt-0.5" />
-                <span>{forgotPasswordNotice}</span>
-              </div>
-            )}
 
             {/* Formulário Principal */}
             <form onSubmit={handleMainAction} className="space-y-4" noValidate>
@@ -268,15 +339,35 @@ export const AuthPage: React.FC = () => {
                 </div>
               )}
 
+              {/* Mensagem de Erro de Validação ou Supabase (Posicionada diretamente acima do botão) */}
+              {errorMessage && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2.5 animate-fade-in shadow-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                  <span className="font-medium leading-relaxed">{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Feedback de Sucesso (Posicionado diretamente acima do botão) */}
+              {successMessage && (
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs flex items-start gap-2.5 animate-fade-in shadow-xs">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500 mt-0.5" />
+                  <span className="font-medium leading-relaxed">{successMessage}</span>
+                </div>
+              )}
+
               {/* Botão Principal de Ação ('Entrar' / 'Cadastrar') */}
               <Button
                 type="submit"
                 variant="primary"
                 size="lg"
-                className="w-full font-bold text-sm tracking-wide shadow-md mt-2 py-3 rounded-xl cursor-pointer"
-                rightIcon={<ArrowRight className="w-4 h-4" />}
+                disabled={isSubmitting}
+                className="w-full font-bold text-sm tracking-wide shadow-md mt-2 py-3 rounded-xl cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                leftIcon={isSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : undefined}
+                rightIcon={!isSubmitting ? <ArrowRight className="w-4 h-4" /> : undefined}
               >
-                {activeTab === 'login' ? 'Entrar' : 'Cadastrar'}
+                {isSubmitting 
+                  ? (activeTab === 'login' ? 'Entrando...' : 'Cadastrando...') 
+                  : (activeTab === 'login' ? 'Entrar' : 'Cadastrar')}
               </Button>
             </form>
 
@@ -297,30 +388,35 @@ export const AuthPage: React.FC = () => {
               type="button"
               variant="outline"
               size="lg"
+              disabled={isSubmitting}
               onClick={handleGoogleAction}
-              className="w-full py-2.5 rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold text-sm cursor-pointer transition-all"
+              className="w-full py-2.5 rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold text-sm cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               leftIcon={
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="#EA4335"
-                    d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                  />
-                  <path
-                    fill="#4285F4"
-                    d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
-                  />
-                </svg>
+                isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#EA4335"
+                      d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
+                    />
+                    <path
+                      fill="#4285F4"
+                      d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
+                    />
+                  </svg>
+                )
               }
             >
-              Entrar com Google
+              {isSubmitting ? 'Conectando...' : 'Entrar com Google'}
             </Button>
 
             {/* Rodapé do Card com Link para Termos de Uso */}

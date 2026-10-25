@@ -49,18 +49,28 @@ import { Badge } from '../../design-system/Badge';
 import { Modal } from '../../design-system/Modal';
 import { EmptyContestState } from '../common/EmptyContestState';
 import { useTheme } from '../../contexts/ThemeContext';
+import { normalizeThemeSkin } from '../dashboard/DashboardView';
 
 export const CADERNO_ERROS_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MzU3NDksImV4cCI6NDk0NjIzNTc0OX0.R7KWTgPLRidbW2dAePpT7oGSiUI4fQxz6rDgz5Y2EWxDQsR59pC1ahnJl0fDeArri70ti3KGb1Yx2TM-t4lMDA",
-
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzNTc2MSwiZXhwIjoxODAxMjc1NzYxfQ.UuDrY3ycsvE4ilCV3vU-_9RIrylWm9pH71KGesUhAnRLELcSwHUlbfYmaxiGEHJtNNMs1tpcZdJDQcApDkW--A",
-
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzNTc3NiwiZXhwIjo0OTQ2MjM1Nzc2fQ.MO9Z9pppkWkhdO1iRHAVmsLqAlNS-k-5bCeX358olZ8X1p-9y3krGmCcK19SfEBYXB8FHWe16gFHkczyrU1ptw",
-
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzNTc4OCwiZXhwIjoxODAxMjc1Nzg4fQ.wcqt-zmdvteg70eGx7xE31FChFEZDDXmMsMN6J-_udfvqPRuIJ1w3BPagsgXboJhyW6E59BbH8OWMZIs0DAGSw",
-
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzNTgwMCwiZXhwIjoxODA5OTE1ODAwfQ.1-atdcLazi-hbgFdG4a_IChDOTCksf_xLBRNABKKP0Xj9iYksmWL_mCLV-pgxj_QxQJ87OOs1SrV46Y_cZwCiQ"
+  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTg2NDQsImV4cCI6NDk0NjU1ODY0NH0.wZXSonyNoWWdLeP4MAH152JvdWvciAVYyZN-vKCebaq-K3yDFNtV9Kvo_fg7hnWOMAOvykQCk--lm-TfrpLCOg',
+  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1ODY2MCwiZXhwIjo0OTQ2NTU4NjYwfQ.l3lTr0ev7lOmZ5T3h22wHeTKny1N0JBZKr5uoz1-QShlx4LGPi5o_KlyFc5svt88LWt8ok2vQJsBSAd8NlPcEQ',
+  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1ODY3OCwiZXhwIjo0OTQ2NTU4Njc4fQ.-0l-47yWRQG2XZKAsKcHaCf9snSOKUkZTZo51vlvKBxONqh3u1DjjeLKPrSWq5lIWlopFOH2nsdxpaOgViscSA',
+  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1ODY5MCwiZXhwIjo0OTQ2NTU4NjkwfQ.rDm6DSByuR7GWHhNZTJOpF472zA3AptJyOSKMgVL_29ravZMTaYo1HDL5zWvCB-AmEZuKNj1TdI0hI_wUmj25w',
+  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Caderno%20de%20Erros/Banner-Caderno-Erros-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDYWRlcm5vIGRlIEVycm9zL0Jhbm5lci1DYWRlcm5vLUVycm9zLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1ODcwMywiZXhwIjo0OTQ2NTU4NzAzfQ.x0gPCKrjObDUWdD5iNzwqsOxQGxpkFbZMDc1EbUNZ2t-VLj8Mr8dzwCe9OeMzfiYaSHCT2xOyEtr_3zy3FmVjQ'
 };
+
+CADERNO_ERROS_BANNER_THEMES.green = CADERNO_ERROS_BANNER_THEMES.verde;
+CADERNO_ERROS_BANNER_THEMES.emerald = CADERNO_ERROS_BANNER_THEMES.verde;
+CADERNO_ERROS_BANNER_THEMES.blue = CADERNO_ERROS_BANNER_THEMES.azul;
+CADERNO_ERROS_BANNER_THEMES.sky = CADERNO_ERROS_BANNER_THEMES.azul;
+CADERNO_ERROS_BANNER_THEMES.cyan = CADERNO_ERROS_BANNER_THEMES.azul;
+CADERNO_ERROS_BANNER_THEMES.purple = CADERNO_ERROS_BANNER_THEMES.roxo;
+CADERNO_ERROS_BANNER_THEMES.violet = CADERNO_ERROS_BANNER_THEMES.roxo;
+CADERNO_ERROS_BANNER_THEMES.pink = CADERNO_ERROS_BANNER_THEMES.rosa;
+CADERNO_ERROS_BANNER_THEMES.rose = CADERNO_ERROS_BANNER_THEMES.rosa;
+CADERNO_ERROS_BANNER_THEMES.orange = CADERNO_ERROS_BANNER_THEMES.laranja;
+CADERNO_ERROS_BANNER_THEMES.amber = CADERNO_ERROS_BANNER_THEMES.laranja;
+CADERNO_ERROS_BANNER_THEMES.dbz = CADERNO_ERROS_BANNER_THEMES.laranja;
 
 export interface CadernoErrosViewProps {
   cadernoErros: ItemCadernoErros[];
@@ -171,15 +181,9 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
   onOpenStudyTimer,
   onNavigateTab,
 }) => {
-  const { colorSkin, palette } = useTheme();
-  const currentTheme = (
-    colorSkin === 'purple' ? 'roxo' :
-    colorSkin === 'orange' || colorSkin === 'dbz' ? 'laranja' :
-    colorSkin || palette?.id || 'laranja'
-  ).toLowerCase();
-
-  const themeKey = (currentTheme || 'laranja').toLowerCase();
-  const bannerUrl = CADERNO_ERROS_BANNER_THEMES[themeKey] || CADERNO_ERROS_BANNER_THEMES.laranja;
+  const themeContext = useTheme();
+  const themeKey = normalizeThemeSkin(themeContext);
+  const bannerUrl = CADERNO_ERROS_BANNER_THEMES[themeKey] || CADERNO_ERROS_BANNER_THEMES.verde;
 
   const themeGlowStyles = useMemo(() => {
     switch (themeKey) {
@@ -535,28 +539,15 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       )}
 
       {/* Banner Principal Dinâmico por Tema - Caderno de Erros */}
-      <div
-        className="caderno-erros-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8"
-        style={{
-          backgroundImage: `url('${bannerUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        {/* Imagem correspondente cobrindo 100% do container em PC, Tablet e Mobile */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+      <div className="caderno-erros-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8">
+        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
           <img
             key={bannerUrl}
             src={bannerUrl}
-            alt="Banner Caderno de Erros"
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
+            alt="Banner Caderno de Erros & Reincidências"
+            className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300"
           />
         </div>
-
-        {/* Overlay suave para garantir legibilidade e contraste em modo claro e escuro */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-950/20 pointer-events-none" />
-
         <div className="relative z-10 w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">

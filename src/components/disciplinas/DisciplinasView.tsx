@@ -49,11 +49,42 @@ import { useTheme } from '../../contexts/ThemeContext';
 
 // Banners do menu "Edital Verticalizado" por tema (Supabase)
 export const EDITAL_VERTICALIZADO_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MzI2NjYsImV4cCI6NDk0NjIzMjY2Nn0.nN9OKLcECzRbF7TBTT0AWIVI-SM_7rPn_dO_N2sTrXa7AqvqxnuIANUfuLuM3gRHOE0AaTNKo-MOaPOfrOyoEg',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMjY4MywiZXhwIjo0OTQ2MjMyNjgzfQ.dKom-tGRpJG0-b5MY5Wn4lvSUsLP3pdUL8agHpFnpBhV1DMP2wMQIqu15aZ1T8P4tLZ_hf5x9K9hq6vjnmpYmg',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMjcwMiwiZXhwIjo0OTQ2MjMyNzAyfQ.RWNqkLnImwmHFOCHLK8Jic2FNH8uElDyZRvcQuu9tsSVdCHUMmeqTWjoO3K-IC77TLKQi4meEfRz7IK2yNrYEw',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMjcxOCwiZXhwIjo0OTQ2MjMyNzE4fQ.sXOgy922CiRsLzVpmp7IZX5zn6n5OtGdBtwKvyl8JiZN6tjKo4jQrLgIBImxo7six1eb7isE2He5TssPPzwEpA',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMjczNCwiZXhwIjo0OTQ2MjMyNzM0fQ.8xaj8tQPIQlAXuV7oB_66eujNFW6vhAJ4akU96-XFeLT4SZw-J6trvbnc_NUozMdsrXuncYkoy9Rh3UnDV9k3w',
+  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTc4ODksImV4cCI6NDk0NjU1Nzg4OX0.y-2f1TvSRR_2dsAsiFEVXUZrVWEosRMF3abA_ZE1WJkqpEK9nEFtaqIpwJulCf5EptCbcQrxazZ09rqdlZnwbg',
+  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1NzkwNSwiZXhwIjo0OTQ2NTU3OTA1fQ.juuoZQPyCCzGgGK7PFBPJbJHkI3n3ZWOTlfmpCO_tdXgj4MrteKS26IYktPlGNRNLx6pWuSwXQJM1DjfL5kQIw',
+  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1NzkxNiwiZXhwIjo0OTQ2NTU3OTE2fQ.MKO8InE8xt5qsWu7JMyg6exo7PHBdNafAbs-r1pCK71Z5ES74ZMky_Y1D1NSNxKt2s5_D6jNqe54f3Et7Ig1nQ',
+  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1NzkyOCwiZXhwIjo0OTQ2NTU3OTI4fQ.vtswNEuLiMfH2LFNcPrLxHqDVcIvglKMZL8a2oH7yyYHmytPcqULo1asg9KxOFUc3H4aeFVMJYZ2SZ2lpD_Umw',
+  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1Nzk0MCwiZXhwIjo0OTQ2NTU3OTQwfQ.BIPUFZh5LZjcDUZkeeA5qCAJ_1c0xdmTFyuGYIKmBZOnOso3-H-hS10P2jL4E3TAwNXp9kIbkYhm_UcMm3iapA',
+};
+
+// Aliases tolerantes a variações em inglês/português
+EDITAL_VERTICALIZADO_BANNER_THEMES.green = EDITAL_VERTICALIZADO_BANNER_THEMES.verde;
+EDITAL_VERTICALIZADO_BANNER_THEMES.emerald = EDITAL_VERTICALIZADO_BANNER_THEMES.verde;
+EDITAL_VERTICALIZADO_BANNER_THEMES.blue = EDITAL_VERTICALIZADO_BANNER_THEMES.azul;
+EDITAL_VERTICALIZADO_BANNER_THEMES.sky = EDITAL_VERTICALIZADO_BANNER_THEMES.azul;
+EDITAL_VERTICALIZADO_BANNER_THEMES.cyan = EDITAL_VERTICALIZADO_BANNER_THEMES.azul;
+EDITAL_VERTICALIZADO_BANNER_THEMES.purple = EDITAL_VERTICALIZADO_BANNER_THEMES.roxo;
+EDITAL_VERTICALIZADO_BANNER_THEMES.violet = EDITAL_VERTICALIZADO_BANNER_THEMES.roxo;
+EDITAL_VERTICALIZADO_BANNER_THEMES.pink = EDITAL_VERTICALIZADO_BANNER_THEMES.rosa;
+EDITAL_VERTICALIZADO_BANNER_THEMES.rose = EDITAL_VERTICALIZADO_BANNER_THEMES.rosa;
+EDITAL_VERTICALIZADO_BANNER_THEMES.orange = EDITAL_VERTICALIZADO_BANNER_THEMES.laranja;
+EDITAL_VERTICALIZADO_BANNER_THEMES.amber = EDITAL_VERTICALIZADO_BANNER_THEMES.laranja;
+EDITAL_VERTICALIZADO_BANNER_THEMES.dbz = EDITAL_VERTICALIZADO_BANNER_THEMES.laranja;
+
+const normalizeEditalThemeSkin = (themeContext: any): 'verde' | 'azul' | 'roxo' | 'rosa' | 'laranja' => {
+  const activeKey =
+    (typeof themeContext?.colorSkin === 'string' ? themeContext.colorSkin : '') ||
+    (typeof themeContext?.palette?.id === 'string' ? themeContext.palette.id : '') ||
+    (typeof themeContext?.palette?.name === 'string' ? themeContext.palette.name : '') ||
+    (typeof themeContext?.activeTheme === 'string' ? themeContext.activeTheme : '') ||
+    (typeof themeContext?.theme === 'string' ? themeContext.theme : '') ||
+    'verde';
+
+  const str = String(activeKey).toLowerCase().trim();
+  if (str.includes('roxo') || str.includes('purple') || str.includes('violet')) return 'roxo';
+  if (str.includes('laranja') || str.includes('orange') || str.includes('amber') || str.includes('dbz')) return 'laranja';
+  if (str.includes('rosa') || str.includes('pink') || str.includes('rose')) return 'rosa';
+  if (str.includes('azul') || str.includes('blue') || str.includes('sky') || str.includes('cyan')) return 'azul';
+  return 'verde';
 };
 
 interface DisciplinasViewProps {
@@ -108,15 +139,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
   onOpenStudyTimer: _onOpenStudyTimer,
   onNavigateTab,
 }) => {
-  const { colorSkin, palette } = useTheme();
-  const currentTheme = (
-    colorSkin === 'purple' ? 'roxo' :
-    colorSkin === 'orange' || colorSkin === 'dbz' ? 'laranja' :
-    colorSkin || palette?.id || 'verde'
-  ).toLowerCase();
-
-  // Normaliza para minúsculo caso o estado retorne 'Verde', 'AZUL', etc.
-  const themeKey = (currentTheme || 'verde').toLowerCase();
+  const themeContext = useTheme();
+  const themeKey = normalizeEditalThemeSkin(themeContext);
 
   // Seleciona a imagem correspondente ou usa 'verde' como fallback de segurança
   const bannerEditalUrl = EDITAL_VERTICALIZADO_BANNER_THEMES[themeKey] || EDITAL_VERTICALIZADO_BANNER_THEMES.verde;
@@ -854,25 +878,16 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
           ========================================================================= */}
       <div
         className="w-full relative overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[220px] flex items-center bg-slate-950"
-        style={{
-          backgroundImage: `url('${bannerEditalUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
       >
-        {/* Imagem correspondente quando carregada da base do Supabase */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+        {/* Camada da imagem PNG oficial do Supabase preenchendo 100% do banner de ponta a ponta sem bordas internas */}
+        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
           <img
             key={bannerEditalUrl}
             src={bannerEditalUrl}
             alt="Banner Edital Verticalizado"
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
+            className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300"
           />
         </div>
-
-        {/* Gradiente sutil para garantir legibilidade de alto contraste sobre o fundo */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/45 to-transparent pointer-events-none" />
 
         {/* Conteúdo à esquerda alinhado no mesmo padrão de Concursos & Provas e Plano de Estudos */}
         <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4">

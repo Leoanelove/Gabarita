@@ -7,19 +7,55 @@ import { fileURLToPath } from 'url';
 import { sanitizeSyllabusData, parseSyllabusLocally, type ParsedSyllabusItem } from './src/services/editalParser.ts';
 import { createClient } from '@supabase/supabase-js';
 
-// Normaliza o URL do Supabase garantindo que nenhum erro tipográfico (zuzzcq) seja usado
-const rawSupabaseUrl = process.env.SUPABASE_URL || 'https://zuzzoqdytblgswwlevjc.supabase.co';
-const SUPABASE_URL = rawSupabaseUrl.includes('zuzzcq')
-  ? rawSupabaseUrl.replace('zuzzcq', 'zuzzoq')
-  : rawSupabaseUrl;
+function sanitizeServerUrl(raw: string): string {
+  if (!raw || typeof raw !== 'string') return '';
+  let u = raw.trim().replace(/^["']|["']$/g, '');
+  if (!u) return '';
+  if (!u.startsWith('http://') && !u.startsWith('https://')) {
+    u = `https://${u}`;
+  }
+  if (u.includes('zuzzcq')) {
+    u = u.replace('zuzzcq', 'zuzzoq');
+  }
+  try {
+    const parsed = new URL(u);
+    if (parsed.hostname.endsWith('.supabase.co') || parsed.pathname.includes('/rest') || parsed.pathname.includes('/auth')) {
+      return parsed.origin;
+    }
+    return `${parsed.origin}${parsed.pathname}`.replace(/\/+(rest|auth)(\/v1)?\/?$/i, '').replace(/\/+$/, '');
+  } catch {
+    return u.replace(/\/+(rest|auth)(\/v1)?\/?$/i, '').replace(/\/+$/, '');
+  }
+}
+
+// Normaliza o URL do Supabase garantindo a URL base limpa
+const rawSupabaseUrl = 
+  process.env.VITE_SUPABASE_URL ||
+  process.env.SUPABASE_URL || 
+  'https://zuzzoqdytblgswwlevjc.supabase.co';
+const SUPABASE_URL = sanitizeServerUrl(rawSupabaseUrl) || 'https://zuzzoqdytblgswwlevjc.supabase.co';
 process.env.SUPABASE_URL = SUPABASE_URL;
+process.env.VITE_SUPABASE_URL = SUPABASE_URL;
 
-const rawSupabaseKey = process.env.SUPABASE_KEY || '';
-const SUPABASE_KEY = (rawSupabaseKey && !rawSupabaseKey.startsWith('sb_'))
-  ? rawSupabaseKey
-  : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1enpvcWR5dGJsZ3N3d2xldmpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4MzY4ODUsImV4cCI6MjEwNzQxMjg4NX0.OJ_oDBnF7mIA16DE_5MxyJQRkfGaEMEueAwiIuXKnWQ';
+const rawSupabaseKey = 
+  process.env.VITE_SUPABASE_KEY ||
+  process.env.SUPABASE_KEY || 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1enpvcWR5dGJsZ3N3d2xldmpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4MzY4ODUsImV4cCI6MjEwNzQxMjg4NX0.OJ_oDBnF7mIA16DE_5MxyJQRkfGaEMEueAwiIuXKnWQ';
+const SUPABASE_KEY = rawSupabaseKey.trim().replace(/^["']|["']$/g, '');
+process.env.SUPABASE_KEY = SUPABASE_KEY;
+process.env.VITE_SUPABASE_KEY = SUPABASE_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+  global: {
+    headers: {
+      apikey: SUPABASE_KEY,
+    },
+  },
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

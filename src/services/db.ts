@@ -34,7 +34,9 @@ import {
   Conquista,
   MarcoEstudo,
   EstatisticasProgressoReal,
-  StudyMethod
+  StudyMethod,
+  Deck,
+  Flashcard
 } from '../types';
 import { 
   INITIAL_USER, 
@@ -52,12 +54,13 @@ import {
   INITIAL_PROVAS, 
   INITIAL_SESSOES, 
   INITIAL_STUDY_PLAN, 
-  INITIAL_STUDY_CYCLE,
-  INITIAL_BLOCOS_QUESTOES,
+  INITIAL_STUDY_CYCLE, 
+  INITIAL_BLOCOS_QUESTOES, 
   INITIAL_CADERNO_ERROS 
 } from './seedData';
 import { PlannerService } from './plannerService';
 import { CycleService } from './cycleService';
+import { supabase } from './supabaseClient';
 
 const STORAGE_KEYS = {
   USER: 'gabarita_user',
@@ -79,6 +82,8 @@ const STORAGE_KEYS = {
   PROVAS: 'gabarita_provas',
   STUDY_PLAN: 'gabarita_study_plan',
   STUDY_CYCLE: 'gabarita_study_cycle',
+  DECKS: '@gabarita:decks',
+  FLASHCARDS: '@gabarita:flashcards',
 };
 
 // Limpeza automática de dados fictícios legados, disciplinas órfãs ou sem concursoId válido
@@ -151,11 +156,336 @@ function checkLegacyCleanup() {
         localStorage.removeItem('@gabarita:decks');
       }
     }
+    // Limpeza de provas de demonstração antigas
+    const rawProvas = localStorage.getItem(STORAGE_KEYS.PROVAS);
+    if (rawProvas && (rawProvas.includes('prova_tcego_2026') || rawProvas.includes('prova_pf_2026') || rawProvas.includes('prova_inss_2025'))) {
+      localStorage.removeItem(STORAGE_KEYS.PROVAS);
+      localStorage.removeItem('@gabarita:provas_seeded_v2');
+    }
+    // Remove qualquer resquício de sessão mock legada
+    localStorage.removeItem('gabarita_auth_session_v2');
   } catch (err) {
     console.warn('Gabarita: Falha na limpeza de dados legados:', err);
   }
 }
 checkLegacyCleanup();
+
+async function getCurrentUserId(): Promise<string> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.user?.id) {
+      return data.session.user.id;
+    }
+  } catch {}
+  try {
+    const stored = localStorage.getItem('gabarita_user');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.id) return parsed.id;
+    }
+  } catch {}
+  return '';
+}
+
+function mapConcursoFromDb(row: any): Concurso {
+  const organ = (row.organ || row.orgao || row.nome || '').trim();
+  const title = (row.title && row.title.length === 1 && organ.length > 1)
+    ? (row.role ? `${organ} - ${row.role}` : organ)
+    : (row.title || row.titulo || organ);
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: title || row.title,
+    titulo: title || row.titulo,
+    organ: organ || row.organ,
+    orgao: organ || row.orgao,
+    nome: organ || row.nome,
+    role: row.role || '',
+    banca: row.banca || 'FGV',
+    sphere: row.sphere || 'federal',
+    remuneration: Number(row.remuneration || 0),
+    vacantPositions: Number(row.vacant_positions || 0),
+    status: row.status || 'autorizado',
+    examDate: row.exam_date || undefined,
+    registrationStartDate: row.registration_start_date || undefined,
+    registrationEndDate: row.registration_end_date || undefined,
+    editalUrl: row.edital_url || undefined,
+    active: Boolean(row.active),
+    notes: row.notes || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
+
+function mapDisciplinaFromDb(row: any): Disciplina {
+  return {
+    id: row.id,
+    concursoId: row.concurso_id || undefined,
+    name: row.name,
+    code: row.code || undefined,
+    color: row.color || '#10b981',
+    icon: row.icon || 'BookOpen',
+    weight: Number(row.weight || 2.0),
+    order: Number(row.order || 1),
+    topicsCount: Number(row.topics_count || 0),
+    completedTopicsCount: Number(row.completed_topics_count || 0),
+    totalStudyMinutes: Number(row.total_study_minutes || 0),
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapAssuntoFromDb(row: any): Assunto {
+  return {
+    id: row.id,
+    disciplinaId: row.disciplina_id,
+    name: row.name,
+    order: Number(row.order || 1),
+    importance: row.importance || 'alta',
+    difficulty: row.difficulty || 'media',
+    status: row.status || 'nao_iniciado',
+    masteryLevel: Number(row.mastery_level || 0),
+    totalQuestionsSolved: Number(row.total_questions_solved || 0),
+    correctQuestionsSolved: Number(row.correct_questions_solved || 0),
+    accuracyRate: Number(row.accuracy_rate || 0),
+    completed: Boolean(row.completed),
+    link: row.link || undefined,
+    notes: row.notes || undefined,
+    lastStudiedAt: row.last_studied_at || undefined,
+    subtopicos: Array.isArray(row.subtopicos) ? row.subtopicos : [],
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapProvaFromDb(row: any): Prova {
+  return {
+    id: row.id,
+    concursoId: row.concurso_id || undefined,
+    organ: row.organ,
+    banca: row.banca,
+    year: Number(row.year),
+    role: row.role,
+    questionsCount: Number(row.questions_count || 0),
+    durationMinutes: Number(row.duration_minutes || 0),
+    examDate: row.exam_date || undefined,
+    category: row.category || 'GERAL',
+    status: row.status || 'agendada',
+    notes: row.notes || undefined,
+    fileUrl: row.file_url || undefined,
+    templateFileUrl: row.template_file_url || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapSessaoFromDb(row: any): SessaoEstudo {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    disciplinaId: row.disciplina_id,
+    assuntoId: row.assunto_id || undefined,
+    disciplinaName: row.disciplina_name,
+    assuntoName: row.assunto_name,
+    durationMinutes: Number(row.duration_minutes),
+    plannedMinutes: row.planned_minutes ? Number(row.planned_minutes) : undefined,
+    type: row.type || 'teoria',
+    questionsAttempted: row.questions_attempted !== null ? Number(row.questions_attempted) : undefined,
+    questionsCorrect: row.questions_correct !== null ? Number(row.questions_correct) : undefined,
+    accuracyRate: row.accuracy_rate !== null ? Number(row.accuracy_rate) : undefined,
+    notes: row.notes || undefined,
+    teoriaFinalizada: Boolean(row.teoria_finalizada),
+    pageIntervals: Array.isArray(row.page_intervals) ? row.page_intervals : undefined,
+    videoaulas: Array.isArray(row.videoaulas) ? row.videoaulas : undefined,
+    completedAt: row.completed_at || new Date().toISOString(),
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapRevisaoFromDb(row: any): Revisao {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    disciplinaId: row.disciplina_id,
+    assuntoId: row.assunto_id || undefined,
+    disciplinaName: row.disciplina_name,
+    assuntoName: row.assunto_name,
+    method: row.method || 'intervalada',
+    stage: row.stage ? Number(row.stage) : 1,
+    totalStages: row.total_stages ? Number(row.total_stages) : 5,
+    intervalDays: row.interval_days ? Number(row.interval_days) : 1,
+    scheduledFor: row.scheduled_for,
+    completedAt: row.completed_at || undefined,
+    status: row.status || 'pendente',
+    rating: row.rating || undefined,
+    accuracyRate: row.accuracy_rate !== null ? Number(row.accuracy_rate) : undefined,
+    questionsAttempted: row.questions_attempted !== null ? Number(row.questions_attempted) : undefined,
+    questionsCorrect: row.questions_correct !== null ? Number(row.questions_correct) : undefined,
+    notes: row.notes || undefined,
+    isAutomatic: Boolean(row.is_automatic),
+    nextRevisionId: row.next_revision_id || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || undefined,
+  };
+}
+
+function mapBlocoFromDb(row: any): RegistroBlocoQuestoes {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    disciplinaId: row.disciplina_id,
+    disciplinaName: row.disciplina_name,
+    assuntoId: row.assunto_id || undefined,
+    assuntoName: row.assunto_name || undefined,
+    banca: row.banca || 'FGV',
+    difficulty: row.difficulty || 'media',
+    totalQuestions: Number(row.total_questions),
+    correctAnswers: Number(row.correct_answers),
+    wrongAnswers: Number(row.wrong_answers),
+    doubtCount: row.doubt_count ? Number(row.doubt_count) : 0,
+    accuracyRate: Number(row.accuracy_rate),
+    date: row.date,
+    durationMinutes: row.duration_minutes ? Number(row.duration_minutes) : undefined,
+    notes: row.notes || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapCadernoFromDb(row: any): ItemCadernoErros {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    blocoQuestoesId: row.bloco_questoes_id || undefined,
+    statementOrExcerpt: row.statement_or_excerpt,
+    disciplinaId: row.disciplina_id,
+    disciplinaName: row.disciplina_name,
+    assuntoId: row.assunto_id || undefined,
+    assuntoName: row.assunto_name,
+    banca: row.banca || undefined,
+    difficulty: row.difficulty || 'media',
+    motivo: row.motivo || 'falta_atencao',
+    observation: row.observation || '',
+    correctAnswer: row.correct_answer || undefined,
+    questionUrl: row.question_url || undefined,
+    statusRevisao: row.status_revisao || 'pendente',
+    reincidenciaCount: Number(row.reincidencia_count || 1),
+    lastReviewedAt: row.last_reviewed_at || undefined,
+    nextReviewAt: row.next_review_at || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
+
+function mapMetaFromDb(row: any): Meta {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: row.title,
+    targetType: row.target_type,
+    targetValue: Number(row.target_value),
+    currentValue: Number(row.current_value || 0),
+    unit: row.unit,
+    deadline: row.deadline,
+    period: row.period || 'semanal',
+    status: row.status || 'em_progresso',
+    autoCalculate: Boolean(row.auto_calculate),
+    completedAt: row.completed_at || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapSimuladoFromDb(row: any): Simulado {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    concursoId: row.concurso_id || undefined,
+    concursoName: row.concurso_name || undefined,
+    title: row.title,
+    description: row.description || undefined,
+    banca: row.banca || 'FGV',
+    modalidade: row.modalidade || 'multipla_escolha',
+    cebraspePenalty: Boolean(row.cebraspe_penalty),
+    questionsCount: Number(row.questions_count),
+    durationMinutes: Number(row.duration_minutes),
+    timeRemainingSeconds: row.time_remaining_seconds ? Number(row.time_remaining_seconds) : undefined,
+    elapsedSeconds: row.elapsed_seconds ? Number(row.elapsed_seconds) : undefined,
+    disciplinasConfig: Array.isArray(row.disciplinas_config) ? row.disciplinas_config : [],
+    questoes: Array.isArray(row.questoes) ? row.questoes : [],
+    score: row.score !== null ? Number(row.score) : undefined,
+    maxScore: Number(row.max_score),
+    accuracyRate: row.accuracy_rate !== null ? Number(row.accuracy_rate) : undefined,
+    totalCorrect: row.total_correct !== null ? Number(row.total_correct) : undefined,
+    totalWrong: row.total_wrong !== null ? Number(row.total_wrong) : undefined,
+    totalBlank: row.total_blank !== null ? Number(row.total_blank) : undefined,
+    status: row.status || 'agendado',
+    startedAt: row.started_at || undefined,
+    finishedAt: row.finished_at || undefined,
+    desempenhoPorDisciplina: Array.isArray(row.desempenho_por_disciplina) ? row.desempenho_por_disciplina : [],
+    feedback: row.feedback || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || undefined,
+  };
+}
+
+function mapDeckFromDb(row: any): Deck {
+  return {
+    id: row.id,
+    disciplina: row.disciplina,
+    nome: row.nome,
+    totalCards: Number(row.total_cards || 0),
+    pendentesHoje: Number(row.pendentes_hoje || 0),
+    icone: row.icone || 'Layers',
+  };
+}
+
+function mapFlashcardFromDb(row: any): Flashcard {
+  return {
+    id: row.id,
+    deckId: row.deck_id,
+    disciplina: row.disciplina,
+    topico: row.topico || undefined,
+    frente: row.frente,
+    verso: row.verso,
+    dificuldade: row.dificuldade || undefined,
+    intervaloDias: Number(row.intervalo_dias || 1),
+    proximaRevisao: row.proxima_revisao,
+    revisoesTotal: Number(row.revisoes_total || 0),
+    criadoEm: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapStudyPlanFromDb(row: any): StudyPlan {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    concursoId: row.concurso_id,
+    concursoTitle: row.concurso_title,
+    startDate: row.start_date || (row.created_at ? row.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
+    targetExamDate: row.target_exam_date,
+    dailyAverageMinutes: Number(row.daily_average_minutes || 240),
+    totalWeeks: Number(row.total_weeks || 12),
+    totalPlannedHours: Number(row.total_planned_hours || 288),
+    weeklyAvailability: row.weekly_availability || { seg: 240, ter: 240, qua: 240, qui: 240, sex: 240, sab: 180, dom: 120 },
+    disciplinasDistribution: Array.isArray(row.disciplinas_distribution) ? row.disciplinas_distribution : [],
+    sessions: Array.isArray(row.sessions) ? row.sessions : [],
+    conflicts: Array.isArray(row.conflicts) ? row.conflicts : [],
+    historyLogs: Array.isArray(row.history_logs) ? row.history_logs : [],
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
+
+function mapStudyCycleFromDb(row: any): StudyCycle {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    concursoId: row.concurso_id,
+    concursoTitle: row.concurso_title,
+    currentBlockIndex: Number(row.current_block_index || 0),
+    completedCyclesCount: Number(row.completed_cycles_count || 0),
+    totalCycleMinutes: Number(row.total_cycle_minutes || 0),
+    blocks: Array.isArray(row.blocks) ? row.blocks : [],
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
 
 function loadStored<T>(key: string, defaultValue: T): T {
   try {
@@ -180,10 +510,46 @@ function saveStored<T>(key: string, data: T): void {
 
 export class DatabaseService {
   // --- USER PROFILE & DATA ISOLATION ---
-  static async getUserProfile(userId: string): Promise<UserProfile> {
+  static async getUserProfile(userId?: string): Promise<UserProfile> {
     const current = loadStored<UserProfile>(STORAGE_KEYS.USER, INITIAL_USER);
-    if (current && current.id !== userId && userId) {
-      return { ...current, id: userId };
+    const targetId = userId || await getCurrentUserId();
+    if (targetId) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', targetId)
+          .maybeSingle();
+
+        if (!error && data) {
+          const profile: UserProfile = {
+            id: data.id,
+            email: data.email || current.email,
+            name: data.name || current.name,
+            role: data.role || 'aluno',
+            photoURL: data.photo_url || '',
+            bio: data.bio || '',
+            targetConcursoId: data.target_concurso_id || '',
+            targetConcursoTitle: data.target_concurso_title || '',
+            studyHoursPerDay: Number(data.study_hours_per_day || 4.0),
+            streakDays: Number(data.streak_days || 0),
+            lastStudyDate: data.last_study_date || '',
+            xp: Number(data.xp || 0),
+            level: Number(data.level || 1),
+            preferences: data.preferences || current.preferences,
+            subscription: data.subscription || current.subscription,
+            createdAt: data.created_at || current.createdAt,
+            updatedAt: data.updated_at || current.updatedAt,
+          };
+          saveStored(STORAGE_KEYS.USER, profile);
+          return profile;
+        }
+      } catch (err) {
+        console.warn('Gabarita: Falha ao carregar perfil do Supabase:', err);
+      }
+    }
+    if (current && current.id !== targetId && targetId) {
+      return { ...current, id: targetId };
     }
     return current;
   }
@@ -196,6 +562,33 @@ export class DatabaseService {
       updatedAt: new Date().toISOString(),
     };
     saveStored(STORAGE_KEYS.USER, updated);
+
+    getCurrentUserId().then(uid => {
+      const targetId = updated.id || uid;
+      if (targetId) {
+        supabase.from('profiles').upsert({
+          id: targetId,
+          email: updated.email,
+          name: updated.name,
+          role: updated.role,
+          photo_url: updated.photoURL || '',
+          bio: updated.bio || '',
+          target_concurso_id: updated.targetConcursoId || '',
+          target_concurso_title: updated.targetConcursoTitle || '',
+          study_hours_per_day: updated.studyHoursPerDay,
+          streak_days: updated.streakDays,
+          last_study_date: updated.lastStudyDate || null,
+          xp: updated.xp,
+          level: updated.level,
+          preferences: updated.preferences,
+          subscription: updated.subscription,
+          updated_at: updated.updatedAt,
+        }).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao sincronizar perfil com Supabase:', error.message);
+        });
+      }
+    });
+
     return updated;
   }
 
@@ -247,6 +640,21 @@ export class DatabaseService {
 
   // --- CONCURSOS ---
   static async getConcursos(): Promise<Concurso[]> {
+    try {
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapConcursoFromDb);
+        saveStored(STORAGE_KEYS.CONCURSOS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar concursos do Supabase:', e);
+    }
+
     const rawList = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
     return rawList.map(c => {
       const organ = (c.organ || c.orgao || c.nome || '').trim();
@@ -284,6 +692,35 @@ export class DatabaseService {
     };
     const updated = [newConcurso, ...list];
     saveStored(STORAGE_KEYS.CONCURSOS, updated);
+
+    getCurrentUserId().then(uid => {
+      if (uid) {
+        supabase.from('concursos').insert([{
+          id: newConcurso.id,
+          user_id: uid,
+          title: newConcurso.title,
+          organ: newConcurso.organ,
+          orgao: newConcurso.orgao,
+          role: newConcurso.role,
+          banca: newConcurso.banca,
+          sphere: newConcurso.sphere,
+          remuneration: newConcurso.remuneration,
+          vacant_positions: newConcurso.vacantPositions,
+          status: newConcurso.status,
+          exam_date: newConcurso.examDate || null,
+          registration_start_date: newConcurso.registrationStartDate || null,
+          registration_end_date: newConcurso.registrationEndDate || null,
+          edital_url: newConcurso.editalUrl,
+          active: newConcurso.active,
+          notes: newConcurso.notes,
+          created_at: newConcurso.createdAt,
+          updated_at: newConcurso.updatedAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir concurso no Supabase:', error.message);
+        });
+      }
+    });
+
     return newConcurso;
   }
 
@@ -303,6 +740,28 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Concurso não encontrado para atualização.');
     saveStored(STORAGE_KEYS.CONCURSOS, updatedList);
+
+    const snakeObj: any = { updated_at: new Date().toISOString() };
+    if (partial.title !== undefined) snakeObj.title = partial.title;
+    if (partial.organ !== undefined) snakeObj.organ = partial.organ;
+    if (partial.orgao !== undefined) snakeObj.orgao = partial.orgao;
+    if (partial.role !== undefined) snakeObj.role = partial.role;
+    if (partial.banca !== undefined) snakeObj.banca = partial.banca;
+    if (partial.sphere !== undefined) snakeObj.sphere = partial.sphere;
+    if (partial.remuneration !== undefined) snakeObj.remuneration = partial.remuneration;
+    if (partial.vacantPositions !== undefined) snakeObj.vacant_positions = partial.vacantPositions;
+    if (partial.status !== undefined) snakeObj.status = partial.status;
+    if (partial.examDate !== undefined) snakeObj.exam_date = partial.examDate || null;
+    if (partial.registrationStartDate !== undefined) snakeObj.registration_start_date = partial.registrationStartDate || null;
+    if (partial.registrationEndDate !== undefined) snakeObj.registration_end_date = partial.registrationEndDate || null;
+    if (partial.editalUrl !== undefined) snakeObj.edital_url = partial.editalUrl;
+    if (partial.active !== undefined) snakeObj.active = partial.active;
+    if (partial.notes !== undefined) snakeObj.notes = partial.notes;
+
+    supabase.from('concursos').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar concurso no Supabase:', error.message);
+    });
+
     if ((partial.title || partial.role) && (updatedItem as Concurso).active) {
       await this.updateUserProfile({
         targetConcursoTitle: `${(updatedItem as Concurso).organ} - ${(updatedItem as Concurso).role}`,
@@ -315,6 +774,11 @@ export class DatabaseService {
     const list = await this.getConcursos();
     const updatedList = list.filter(c => c.id !== id);
     saveStored(STORAGE_KEYS.CONCURSOS, updatedList);
+
+    supabase.from('concursos').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover concurso no Supabase:', error.message);
+    });
+
     const provas = await this.getProvas();
     const updatedProvas = provas.filter(p => p.concursoId !== id);
     saveStored(STORAGE_KEYS.PROVAS, updatedProvas);
@@ -338,7 +802,7 @@ export class DatabaseService {
     if (list.length === 0) return null;
     const active = list.find(c => c.active);
     if (active) return active;
-    const user = await this.getUserProfile('user_demo_01');
+    const user = await this.getUserProfile();
     if (user?.targetConcursoId) {
       const match = list.find(c => c.id === user.targetConcursoId);
       if (match) return match;
@@ -506,13 +970,22 @@ export class DatabaseService {
 
   // --- PROVAS ANTERIORES CRUD ---
   static async getProvas(concursoId?: string): Promise<Prova[]> {
-    const list = loadStored<Prova[]>(STORAGE_KEYS.PROVAS, INITIAL_PROVAS);
-    const hasSeeded = localStorage.getItem('@gabarita:provas_seeded_v2');
-    if (!hasSeeded && list.length === 0 && INITIAL_PROVAS.length > 0) {
-      localStorage.setItem('@gabarita:provas_seeded_v2', 'true');
-      saveStored(STORAGE_KEYS.PROVAS, INITIAL_PROVAS);
-      return INITIAL_PROVAS;
+    try {
+      let query = supabase.from('provas').select('*').order('created_at', { ascending: false });
+      if (concursoId) {
+        query = query.eq('concurso_id', concursoId);
+      }
+      const { data, error } = await query;
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapProvaFromDb);
+        saveStored(STORAGE_KEYS.PROVAS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar provas do Supabase:', e);
     }
+
+    const list = loadStored<Prova[]>(STORAGE_KEYS.PROVAS, INITIAL_PROVAS);
     if (concursoId) {
       return list.filter(p => p.concursoId === concursoId);
     }
@@ -528,6 +1001,32 @@ export class DatabaseService {
     };
     const updated = [newProva, ...list];
     saveStored(STORAGE_KEYS.PROVAS, updated);
+
+    getCurrentUserId().then(uid => {
+      if (uid) {
+        supabase.from('provas').insert([{
+          id: newProva.id,
+          user_id: uid,
+          concurso_id: newProva.concursoId || null,
+          organ: newProva.organ,
+          banca: newProva.banca,
+          year: newProva.year,
+          role: newProva.role,
+          questions_count: newProva.questionsCount,
+          duration_minutes: newProva.durationMinutes,
+          exam_date: newProva.examDate || null,
+          category: newProva.category || 'GERAL',
+          status: newProva.status || 'agendada',
+          notes: newProva.notes,
+          file_url: newProva.fileUrl,
+          template_file_url: newProva.templateFileUrl,
+          created_at: newProva.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir prova no Supabase:', error.message);
+        });
+      }
+    });
+
     return newProva;
   }
 
@@ -543,6 +1042,25 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Prova não encontrada.');
     saveStored(STORAGE_KEYS.PROVAS, updated);
+
+    const snakeObj: any = {};
+    if (partial.organ !== undefined) snakeObj.organ = partial.organ;
+    if (partial.banca !== undefined) snakeObj.banca = partial.banca;
+    if (partial.year !== undefined) snakeObj.year = partial.year;
+    if (partial.role !== undefined) snakeObj.role = partial.role;
+    if (partial.questionsCount !== undefined) snakeObj.questions_count = partial.questionsCount;
+    if (partial.durationMinutes !== undefined) snakeObj.duration_minutes = partial.durationMinutes;
+    if (partial.examDate !== undefined) snakeObj.exam_date = partial.examDate || null;
+    if (partial.category !== undefined) snakeObj.category = partial.category;
+    if (partial.status !== undefined) snakeObj.status = partial.status;
+    if (partial.notes !== undefined) snakeObj.notes = partial.notes;
+    if (partial.fileUrl !== undefined) snakeObj.file_url = partial.fileUrl;
+    if (partial.templateFileUrl !== undefined) snakeObj.template_file_url = partial.templateFileUrl;
+
+    supabase.from('provas').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar prova no Supabase:', error.message);
+    });
+
     return updatedItem;
   }
 
@@ -550,11 +1068,31 @@ export class DatabaseService {
     const list = await this.getProvas();
     const updated = list.filter(p => p.id !== id);
     saveStored(STORAGE_KEYS.PROVAS, updated);
+
+    supabase.from('provas').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao excluir prova no Supabase:', error.message);
+    });
+
     return updated;
   }
 
   // --- DISCIPLINAS & ASSUNTOS ---
   static async getDisciplinas(concursoId?: string): Promise<Disciplina[]> {
+    try {
+      let query = supabase.from('disciplinas').select('*').order('order', { ascending: true });
+      if (concursoId) {
+        query = query.eq('concurso_id', concursoId);
+      }
+      const { data, error } = await query;
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapDisciplinaFromDb);
+        saveStored(STORAGE_KEYS.DISCIPLINAS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar disciplinas do Supabase:', e);
+    }
+
     const list = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS);
     if (concursoId) {
       return list.filter(d => d.concursoId === concursoId);
@@ -581,6 +1119,29 @@ export class DatabaseService {
     const updated = [...list, newDisc];
     saveStored(STORAGE_KEYS.DISCIPLINAS, updated);
     await this.syncActiveContestStorage();
+
+    getCurrentUserId().then(uid => {
+      if (uid) {
+        supabase.from('disciplinas').insert([{
+          id: newDisc.id,
+          user_id: uid,
+          concurso_id: newDisc.concursoId || null,
+          name: newDisc.name,
+          code: newDisc.code,
+          color: newDisc.color,
+          icon: newDisc.icon,
+          weight: newDisc.weight,
+          order: newDisc.order,
+          topics_count: newDisc.topicsCount,
+          completed_topics_count: newDisc.completedTopicsCount,
+          total_study_minutes: newDisc.totalStudyMinutes,
+          created_at: newDisc.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir disciplina no Supabase:', error.message);
+        });
+      }
+    });
+
     return newDisc;
   }
 
@@ -631,6 +1192,51 @@ export class DatabaseService {
     saveStored(STORAGE_KEYS.ASSUNTOS, [...assList, ...createdAssuntos]);
     await this.syncActiveContestStorage();
 
+    getCurrentUserId().then(uid => {
+      if (uid) {
+        supabase.from('disciplinas').insert([{
+          id: newDisc.id,
+          user_id: uid,
+          concurso_id: newDisc.concursoId || null,
+          name: newDisc.name,
+          code: newDisc.code,
+          color: newDisc.color,
+          icon: newDisc.icon,
+          weight: newDisc.weight,
+          order: newDisc.order,
+          topics_count: newDisc.topicsCount,
+          completed_topics_count: newDisc.completedTopicsCount,
+          total_study_minutes: newDisc.totalStudyMinutes,
+          created_at: newDisc.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir disciplina no Supabase:', error.message);
+        });
+
+        if (createdAssuntos.length > 0) {
+          const assRows = createdAssuntos.map(a => ({
+            id: a.id,
+            user_id: uid,
+            disciplina_id: a.disciplinaId,
+            name: a.name,
+            order: a.order,
+            importance: a.importance,
+            difficulty: a.difficulty,
+            status: a.status,
+            mastery_level: a.masteryLevel,
+            total_questions_solved: a.totalQuestionsSolved,
+            correct_questions_solved: a.correctQuestionsSolved,
+            accuracy_rate: a.accuracyRate,
+            completed: a.completed,
+            subtopicos: a.subtopicos || [],
+            created_at: a.createdAt,
+          }));
+          supabase.from('assuntos').insert(assRows).then(({ error }) => {
+            if (error) console.warn('Gabarita: Erro ao inserir tópicos no Supabase:', error.message);
+          });
+        }
+      }
+    });
+
     return { disciplina: newDisc, assuntos: createdAssuntos };
   }
 
@@ -647,6 +1253,22 @@ export class DatabaseService {
     if (!updatedItem) throw new Error('Disciplina não encontrada.');
     saveStored(STORAGE_KEYS.DISCIPLINAS, updated);
     await this.syncActiveContestStorage();
+
+    const snakeObj: any = {};
+    if (partial.name !== undefined) snakeObj.name = partial.name;
+    if (partial.code !== undefined) snakeObj.code = partial.code;
+    if (partial.color !== undefined) snakeObj.color = partial.color;
+    if (partial.icon !== undefined) snakeObj.icon = partial.icon;
+    if (partial.weight !== undefined) snakeObj.weight = partial.weight;
+    if (partial.order !== undefined) snakeObj.order = partial.order;
+    if (partial.topicsCount !== undefined) snakeObj.topics_count = partial.topicsCount;
+    if (partial.completedTopicsCount !== undefined) snakeObj.completed_topics_count = partial.completedTopicsCount;
+    if (partial.totalStudyMinutes !== undefined) snakeObj.total_study_minutes = partial.totalStudyMinutes;
+
+    supabase.from('disciplinas').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar disciplina no Supabase:', error.message);
+    });
+
     return updatedItem;
   }
 
@@ -654,6 +1276,11 @@ export class DatabaseService {
     const list = await this.getDisciplinas();
     const updated = list.filter(d => d.id !== id);
     saveStored(STORAGE_KEYS.DISCIPLINAS, updated);
+
+    supabase.from('disciplinas').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover disciplina no Supabase:', error.message);
+    });
+
     const assuntos = await this.getAssuntos();
     const updatedAssuntos = assuntos.filter(a => a.disciplinaId !== id);
     saveStored(STORAGE_KEYS.ASSUNTOS, updatedAssuntos);
@@ -692,6 +1319,21 @@ export class DatabaseService {
   }
 
   static async getAssuntos(disciplinaId?: string): Promise<Assunto[]> {
+    try {
+      let query = supabase.from('assuntos').select('*').order('order', { ascending: true });
+      if (disciplinaId) {
+        query = query.eq('disciplina_id', disciplinaId);
+      }
+      const { data, error } = await query;
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapAssuntoFromDb);
+        saveStored(STORAGE_KEYS.ASSUNTOS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar assuntos do Supabase:', e);
+    }
+
     const list = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, INITIAL_ASSUNTOS);
     const seedMap = new Map(INITIAL_ASSUNTOS.filter(a => a.link).map(a => [a.id, a.link]));
     const hydrated = list.map(a => {
@@ -725,6 +1367,34 @@ export class DatabaseService {
     const updated = [...list, newAssunto];
     saveStored(STORAGE_KEYS.ASSUNTOS, updated);
     await this.syncActiveContestStorage();
+
+    getCurrentUserId().then(uid => {
+      if (uid) {
+        supabase.from('assuntos').insert([{
+          id: newAssunto.id,
+          user_id: uid,
+          disciplina_id: newAssunto.disciplinaId,
+          name: newAssunto.name,
+          order: newAssunto.order,
+          importance: newAssunto.importance,
+          difficulty: newAssunto.difficulty,
+          status: newAssunto.status,
+          mastery_level: newAssunto.masteryLevel,
+          total_questions_solved: newAssunto.totalQuestionsSolved,
+          correct_questions_solved: newAssunto.correctQuestionsSolved,
+          accuracy_rate: newAssunto.accuracyRate,
+          completed: newAssunto.completed,
+          link: newAssunto.link,
+          notes: newAssunto.notes,
+          last_studied_at: newAssunto.lastStudiedAt || null,
+          subtopicos: newAssunto.subtopicos || [],
+          created_at: newAssunto.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir assunto no Supabase:', error.message);
+        });
+      }
+    });
+
     return newAssunto;
   }
 
@@ -744,6 +1414,27 @@ export class DatabaseService {
     if (!updatedItem) throw new Error('Assunto não encontrado.');
     saveStored(STORAGE_KEYS.ASSUNTOS, updated);
     await this.syncActiveContestStorage();
+
+    const snakeObj: any = {};
+    if (partial.name !== undefined) snakeObj.name = partial.name;
+    if (partial.order !== undefined) snakeObj.order = partial.order;
+    if (partial.importance !== undefined) snakeObj.importance = partial.importance;
+    if (partial.difficulty !== undefined) snakeObj.difficulty = partial.difficulty;
+    if (partial.status !== undefined) snakeObj.status = partial.status;
+    if (partial.masteryLevel !== undefined) snakeObj.mastery_level = partial.masteryLevel;
+    if (partial.totalQuestionsSolved !== undefined) snakeObj.total_questions_solved = partial.totalQuestionsSolved;
+    if (partial.correctQuestionsSolved !== undefined) snakeObj.correct_questions_solved = partial.correctQuestionsSolved;
+    if (partial.accuracyRate !== undefined) snakeObj.accuracy_rate = partial.accuracyRate;
+    if (partial.completed !== undefined) snakeObj.completed = partial.completed;
+    if (partial.link !== undefined) snakeObj.link = partial.link;
+    if (partial.notes !== undefined) snakeObj.notes = partial.notes;
+    if (partial.lastStudiedAt !== undefined) snakeObj.last_studied_at = partial.lastStudiedAt || null;
+    if (partial.subtopicos !== undefined) snakeObj.subtopicos = partial.subtopicos;
+
+    supabase.from('assuntos').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar assunto no Supabase:', error.message);
+    });
+
     return updatedItem;
   }
 
@@ -752,6 +1443,10 @@ export class DatabaseService {
     const target = list.find(a => a.id === id);
     const updated = list.filter(a => a.id !== id);
     saveStored(STORAGE_KEYS.ASSUNTOS, updated);
+
+    supabase.from('assuntos').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover assunto no Supabase:', error.message);
+    });
     if (target) {
       const discList = await this.getDisciplinas();
       const discAssuntos = updated.filter(a => a.disciplinaId === target.disciplinaId);
@@ -998,6 +1693,20 @@ export class DatabaseService {
 
   // --- SESSÕES DE ESTUDO ---
   static async getSessoes(): Promise<SessaoEstudo[]> {
+    try {
+      const { data, error } = await supabase
+        .from('sessoes_estudo')
+        .select('*')
+        .order('completed_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapSessaoFromDb);
+        saveStored(STORAGE_KEYS.SESSOES, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar sessoes do Supabase:', e);
+    }
     return loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, INITIAL_SESSOES);
   }
 
@@ -1025,13 +1734,43 @@ export class DatabaseService {
     const updated = [newSession, ...list];
     saveStored(STORAGE_KEYS.SESSOES, updated);
 
+    getCurrentUserId().then(uid => {
+      const targetUserId = session.userId || uid;
+      if (targetUserId) {
+        supabase.from('sessoes_estudo').insert([{
+          id: newSession.id,
+          user_id: targetUserId,
+          disciplina_id: newSession.disciplinaId,
+          assunto_id: newSession.assuntoId || null,
+          disciplina_name: newSession.disciplinaName,
+          assunto_name: newSession.assuntoName,
+          duration_minutes: newSession.durationMinutes,
+          planned_minutes: newSession.plannedMinutes || null,
+          type: newSession.type,
+          questions_attempted: newSession.questionsAttempted ?? null,
+          questions_correct: newSession.questionsCorrect ?? null,
+          accuracy_rate: newSession.accuracyRate ?? null,
+          notes: newSession.notes,
+          teoria_finalizada: newSession.teoriaFinalizada,
+          page_intervals: newSession.pageIntervals || [],
+          videoaulas: newSession.videoaulas || [],
+          completed_at: newSession.completedAt,
+          created_at: newSession.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir sessão de estudo no Supabase:', error.message);
+        });
+      }
+    });
+
     if (disc) {
       const updatedDisciplinas = disciplinas.map(d => {
         if (d.id === session.disciplinaId) {
-          return {
+          const upd = {
             ...d,
             totalStudyMinutes: (d.totalStudyMinutes || 0) + session.durationMinutes,
           };
+          this.updateDisciplina(d.id, { totalStudyMinutes: upd.totalStudyMinutes });
+          return upd;
         }
         return d;
       });
@@ -1044,7 +1783,7 @@ export class DatabaseService {
           const newTotalQ = (a.totalQuestionsSolved || 0) + (session.questionsAttempted || 0);
           const newCorrectQ = (a.correctQuestionsSolved || 0) + (session.questionsCorrect || 0);
           const newAcc = newTotalQ > 0 ? Math.round((newCorrectQ / newTotalQ) * 100) : a.accuracyRate || 0;
-          return {
+          const upd = {
             ...a,
             lastStudiedAt: new Date().toISOString(),
             status: a.status === 'nao_iniciado' ? ('em_estudo' as const) : a.status,
@@ -1052,6 +1791,14 @@ export class DatabaseService {
             correctQuestionsSolved: newCorrectQ,
             accuracyRate: newAcc,
           };
+          this.updateAssunto(a.id, {
+            lastStudiedAt: upd.lastStudiedAt,
+            status: upd.status,
+            totalQuestionsSolved: newTotalQ,
+            correctQuestionsSolved: newCorrectQ,
+            accuracyRate: newAcc,
+          });
+          return upd;
         }
         return a;
       });
@@ -1073,6 +1820,11 @@ export class DatabaseService {
     const list = await this.getSessoes();
     const updated = list.filter(s => s.id !== sessionId);
     saveStored(STORAGE_KEYS.SESSOES, updated);
+
+    supabase.from('sessoes_estudo').delete().eq('id', sessionId).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover sessão de estudo no Supabase:', error.message);
+    });
+
     return updated;
   }
 
@@ -1088,6 +1840,20 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Sessão não encontrada.');
     saveStored(STORAGE_KEYS.SESSOES, updated);
+
+    const snakeObj: any = {};
+    if (partial.durationMinutes !== undefined) snakeObj.duration_minutes = partial.durationMinutes;
+    if (partial.type !== undefined) snakeObj.type = partial.type;
+    if (partial.questionsAttempted !== undefined) snakeObj.questions_attempted = partial.questionsAttempted;
+    if (partial.questionsCorrect !== undefined) snakeObj.questions_correct = partial.questionsCorrect;
+    if (partial.accuracyRate !== undefined) snakeObj.accuracy_rate = partial.accuracyRate;
+    if (partial.notes !== undefined) snakeObj.notes = partial.notes;
+    if (partial.completedAt !== undefined) snakeObj.completed_at = partial.completedAt;
+
+    supabase.from('sessoes_estudo').update(snakeObj).eq('id', sessionId).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar sessão de estudo no Supabase:', error.message);
+    });
+
     return updatedItem;
   }
 
@@ -1100,10 +1866,43 @@ export class DatabaseService {
     const current = await this.getRevisionSettings();
     const updated: RevisionSettings = { ...current, ...partial };
     saveStored(STORAGE_KEYS.REVISION_SETTINGS, updated);
+
+    getCurrentUserId().then(uid => {
+      if (uid) {
+        supabase.from('revision_settings').upsert({
+          user_id: uid,
+          auto_schedule_on_study: updated.autoScheduleOnStudy,
+          auto_schedule_on_questions: updated.autoScheduleOnQuestions,
+          interval_days: updated.intervalDays,
+          performance_adaptive: updated.performanceAdaptive,
+          ease_multiplier: updated.easeMultiplier,
+          hard_penalty_days: updated.hardPenaltyDays,
+          updated_at: new Date().toISOString(),
+        }).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao salvar configurações SRS no Supabase:', error.message);
+        });
+      }
+    });
+
     return updated;
   }
 
   static async getRevisoes(): Promise<Revisao[]> {
+    try {
+      const { data, error } = await supabase
+        .from('revisoes')
+        .select('*')
+        .order('scheduled_for', { ascending: true });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapRevisaoFromDb);
+        saveStored(STORAGE_KEYS.REVISOES, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar revisões do Supabase:', e);
+    }
+
     const list = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, INITIAL_REVISOES);
     const todayStr = PlannerService.formatLocalDate(new Date());
     let changed = false;
@@ -1133,6 +1932,39 @@ export class DatabaseService {
     };
     const updated = [newRev, ...list];
     saveStored(STORAGE_KEYS.REVISOES, updated);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = rev.userId || uid;
+      if (targetUid) {
+        supabase.from('revisoes').insert([{
+          id: newRev.id,
+          user_id: targetUid,
+          disciplina_id: newRev.disciplinaId,
+          assunto_id: newRev.assuntoId || null,
+          disciplina_name: newRev.disciplinaName,
+          assunto_name: newRev.assuntoName,
+          method: newRev.method,
+          stage: newRev.stage,
+          total_stages: newRev.totalStages,
+          interval_days: newRev.intervalDays,
+          scheduled_for: newRev.scheduledFor.includes('T') ? newRev.scheduledFor.split('T')[0] : newRev.scheduledFor,
+          completed_at: newRev.completedAt || null,
+          status: newRev.status,
+          rating: newRev.rating || null,
+          accuracy_rate: newRev.accuracyRate ?? null,
+          questions_attempted: newRev.questionsAttempted ?? null,
+          questions_correct: newRev.questionsCorrect ?? null,
+          notes: newRev.notes,
+          is_automatic: newRev.isAutomatic,
+          next_revision_id: newRev.nextRevisionId,
+          created_at: newRev.createdAt,
+          updated_at: newRev.updatedAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir revisão no Supabase:', error.message);
+        });
+      }
+    });
+
     return newRev;
   }
 
@@ -1148,6 +1980,23 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Revisão não encontrada.');
     saveStored(STORAGE_KEYS.REVISOES, updated);
+
+    const snakeObj: any = { updated_at: new Date().toISOString() };
+    if (partial.status !== undefined) snakeObj.status = partial.status;
+    if (partial.rating !== undefined) snakeObj.rating = partial.rating;
+    if (partial.completedAt !== undefined) snakeObj.completed_at = partial.completedAt;
+    if (partial.scheduledFor !== undefined) snakeObj.scheduled_for = partial.scheduledFor.includes('T') ? partial.scheduledFor.split('T')[0] : partial.scheduledFor;
+    if (partial.accuracyRate !== undefined) snakeObj.accuracy_rate = partial.accuracyRate;
+    if (partial.questionsAttempted !== undefined) snakeObj.questions_attempted = partial.questionsAttempted;
+    if (partial.questionsCorrect !== undefined) snakeObj.questions_correct = partial.questionsCorrect;
+    if (partial.notes !== undefined) snakeObj.notes = partial.notes;
+    if (partial.stage !== undefined) snakeObj.stage = partial.stage;
+    if (partial.nextRevisionId !== undefined) snakeObj.next_revision_id = partial.nextRevisionId;
+
+    supabase.from('revisoes').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar revisão no Supabase:', error.message);
+    });
+
     return updatedItem;
   }
 
@@ -1155,6 +2004,11 @@ export class DatabaseService {
     const list = await this.getRevisoes();
     const updated = list.filter(r => r.id !== id);
     saveStored(STORAGE_KEYS.REVISOES, updated);
+
+    supabase.from('revisoes').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover revisão no Supabase:', error.message);
+    });
+
     return updated;
   }
 
@@ -1400,6 +2254,20 @@ export class DatabaseService {
   }
 
   static async getBlocosQuestoes(): Promise<RegistroBlocoQuestoes[]> {
+    try {
+      const { data, error } = await supabase
+        .from('blocos_questoes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapBlocoFromDb);
+        saveStored(STORAGE_KEYS.BLOCOS_QUESTOES, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar blocos de questoes do Supabase:', e);
+    }
     return loadStored<RegistroBlocoQuestoes[]>(STORAGE_KEYS.BLOCOS_QUESTOES, INITIAL_BLOCOS_QUESTOES);
   }
 
@@ -1427,6 +2295,33 @@ export class DatabaseService {
     };
     const updated = [newBloco, ...list];
     saveStored(STORAGE_KEYS.BLOCOS_QUESTOES, updated);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = bloco.userId || uid;
+      if (targetUid) {
+        supabase.from('blocos_questoes').insert([{
+          id: newBloco.id,
+          user_id: targetUid,
+          disciplina_id: newBloco.disciplinaId,
+          disciplina_name: newBloco.disciplinaName,
+          assunto_id: newBloco.assuntoId || null,
+          assunto_name: newBloco.assuntoName || null,
+          banca: newBloco.banca,
+          difficulty: newBloco.difficulty,
+          total_questions: newBloco.totalQuestions,
+          correct_answers: newBloco.correctAnswers,
+          wrong_answers: newBloco.wrongAnswers,
+          doubt_count: newBloco.doubtCount || 0,
+          accuracy_rate: newBloco.accuracyRate,
+          date: newBloco.date,
+          duration_minutes: newBloco.durationMinutes || null,
+          notes: newBloco.notes,
+          created_at: newBloco.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir bloco no Supabase:', error.message);
+        });
+      }
+    });
 
     if (assunto) {
       const updatedAssuntos = assuntos.map(a => {
@@ -1476,6 +2371,11 @@ export class DatabaseService {
     const list = await this.getBlocosQuestoes();
     const updated = list.filter(b => b.id !== blocoId);
     saveStored(STORAGE_KEYS.BLOCOS_QUESTOES, updated);
+
+    supabase.from('blocos_questoes').delete().eq('id', blocoId).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover bloco de questoes no Supabase:', error.message);
+    });
+
     return updated;
   }
 
@@ -1506,6 +2406,20 @@ export class DatabaseService {
 
   // --- CADERNO DE ERROS ---
   static async getCadernoErros(): Promise<ItemCadernoErros[]> {
+    try {
+      const { data, error } = await supabase
+        .from('caderno_erros')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapCadernoFromDb);
+        saveStored(STORAGE_KEYS.CADERNO_ERROS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar caderno de erros do Supabase:', e);
+    }
     return loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, INITIAL_CADERNO_ERROS);
   }
 
@@ -1530,6 +2444,37 @@ export class DatabaseService {
     };
     const updated = [newErro, ...list];
     saveStored(STORAGE_KEYS.CADERNO_ERROS, updated);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = item.userId || uid;
+      if (targetUid) {
+        supabase.from('caderno_erros').insert([{
+          id: newErro.id,
+          user_id: targetUid,
+          bloco_questoes_id: newErro.blocoQuestoesId || null,
+          statement_or_excerpt: newErro.statementOrExcerpt,
+          disciplina_id: newErro.disciplinaId,
+          disciplina_name: newErro.disciplinaName,
+          assunto_id: newErro.assuntoId || null,
+          assunto_name: newErro.assuntoName,
+          banca: newErro.banca,
+          difficulty: newErro.difficulty,
+          motivo: newErro.motivo,
+          observation: newErro.observation,
+          correct_answer: newErro.correctAnswer,
+          question_url: newErro.questionUrl,
+          status_revisao: newErro.statusRevisao,
+          reincidencia_count: newErro.reincidenciaCount,
+          last_reviewed_at: newErro.lastReviewedAt || null,
+          next_review_at: newErro.nextReviewAt || null,
+          created_at: newErro.createdAt,
+          updated_at: newErro.updatedAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir caderno de erro no Supabase:', error.message);
+        });
+      }
+    });
+
     return newErro;
   }
 
@@ -1549,6 +2494,26 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Item do Caderno de Erros não encontrado.');
     saveStored(STORAGE_KEYS.CADERNO_ERROS, updated);
+
+    const snakeObj: any = { updated_at: new Date().toISOString() };
+    if (partial.statementOrExcerpt !== undefined) snakeObj.statement_or_excerpt = partial.statementOrExcerpt;
+    if (partial.disciplinaName !== undefined) snakeObj.disciplina_name = partial.disciplinaName;
+    if (partial.assuntoName !== undefined) snakeObj.assunto_name = partial.assuntoName;
+    if (partial.banca !== undefined) snakeObj.banca = partial.banca;
+    if (partial.difficulty !== undefined) snakeObj.difficulty = partial.difficulty;
+    if (partial.motivo !== undefined) snakeObj.motivo = partial.motivo;
+    if (partial.observation !== undefined) snakeObj.observation = partial.observation;
+    if (partial.correctAnswer !== undefined) snakeObj.correct_answer = partial.correctAnswer;
+    if (partial.questionUrl !== undefined) snakeObj.question_url = partial.questionUrl;
+    if (partial.statusRevisao !== undefined) snakeObj.status_revisao = partial.statusRevisao;
+    if (partial.reincidenciaCount !== undefined) snakeObj.reincidencia_count = partial.reincidenciaCount;
+    if (partial.lastReviewedAt !== undefined) snakeObj.last_reviewed_at = partial.lastReviewedAt || null;
+    if (partial.nextReviewAt !== undefined) snakeObj.next_review_at = partial.nextReviewAt || null;
+
+    supabase.from('caderno_erros').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar item do caderno de erros no Supabase:', error.message);
+    });
+
     return updatedItem;
   }
 
@@ -1556,6 +2521,11 @@ export class DatabaseService {
     const list = await this.getCadernoErros();
     const updated = list.filter(e => e.id !== id);
     saveStored(STORAGE_KEYS.CADERNO_ERROS, updated);
+
+    supabase.from('caderno_erros').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover erro no Supabase:', error.message);
+    });
+
     return updated;
   }
 
@@ -1576,6 +2546,18 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Item do Caderno de Erros não encontrado.');
     saveStored(STORAGE_KEYS.CADERNO_ERROS, updated);
+
+    if (updatedItem) {
+      const target = updatedItem as ItemCadernoErros;
+      supabase.from('caderno_erros').update({
+        reincidencia_count: target.reincidenciaCount,
+        status_revisao: 'pendente',
+        updated_at: target.updatedAt,
+      }).eq('id', id).then(({ error }) => {
+        if (error) console.warn('Gabarita: Erro ao atualizar reincidência no Supabase:', error.message);
+      });
+    }
+
     return updatedItem;
   }
 
@@ -1596,6 +2578,18 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Item do Caderno de Erros não encontrado.');
     saveStored(STORAGE_KEYS.CADERNO_ERROS, updated);
+
+    if (updatedItem) {
+      const target = updatedItem as ItemCadernoErros;
+      supabase.from('caderno_erros').update({
+        status_revisao: target.statusRevisao,
+        last_reviewed_at: target.lastReviewedAt || null,
+        updated_at: target.updatedAt,
+      }).eq('id', id).then(({ error }) => {
+        if (error) console.warn('Gabarita: Erro ao atualizar status de erro no Supabase:', error.message);
+      });
+    }
+
     return updatedItem;
   }
 
@@ -1628,8 +2622,24 @@ export class DatabaseService {
 
   // --- METAS, CONQUISTAS, MARCOS & ESTATÍSTICAS REAIS ---
   static async getMetas(): Promise<Meta[]> {
+    try {
+      const { data, error } = await supabase
+        .from('metas')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapMetaFromDb);
+        saveStored(STORAGE_KEYS.METAS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar metas do Supabase:', e);
+    }
+
     const list = loadStored<Meta[]>(STORAGE_KEYS.METAS, INITIAL_METAS);
-    const stats = await this.getEstatisticasProgressoReal('user_demo_01');
+    const currentUid = await getCurrentUserId();
+    const stats = await this.getEstatisticasProgressoReal(currentUid);
     const nowIso = new Date().toISOString();
     const updated = list.map(m => {
       let calcValue = m.currentValue;
@@ -1671,6 +2681,30 @@ export class DatabaseService {
     };
     const updated = [newMeta, ...list];
     saveStored(STORAGE_KEYS.METAS, updated);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = meta.userId || uid;
+      if (targetUid) {
+        supabase.from('metas').insert([{
+          id: newMeta.id,
+          user_id: targetUid,
+          title: newMeta.title,
+          target_type: newMeta.targetType,
+          target_value: newMeta.targetValue,
+          current_value: newMeta.currentValue,
+          unit: newMeta.unit,
+          deadline: newMeta.deadline,
+          period: newMeta.period,
+          status: newMeta.status,
+          auto_calculate: newMeta.autoCalculate,
+          completed_at: newMeta.completedAt || null,
+          created_at: newMeta.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir meta no Supabase:', error.message);
+        });
+      }
+    });
+
     return newMeta;
   }
 
@@ -1684,8 +2718,25 @@ export class DatabaseService {
       }
       return m;
     });
-    if (!updatedMeta) throw new Error('Meta não encontrada');
+    if (!updatedMeta) throw new Error('Meta não encontrada.');
     saveStored(STORAGE_KEYS.METAS, updated);
+
+    const snakeObj: any = {};
+    if (partial.title !== undefined) snakeObj.title = partial.title;
+    if (partial.targetType !== undefined) snakeObj.target_type = partial.targetType;
+    if (partial.targetValue !== undefined) snakeObj.target_value = partial.targetValue;
+    if (partial.currentValue !== undefined) snakeObj.current_value = partial.currentValue;
+    if (partial.unit !== undefined) snakeObj.unit = partial.unit;
+    if (partial.deadline !== undefined) snakeObj.deadline = partial.deadline;
+    if (partial.period !== undefined) snakeObj.period = partial.period;
+    if (partial.status !== undefined) snakeObj.status = partial.status;
+    if (partial.autoCalculate !== undefined) snakeObj.auto_calculate = partial.autoCalculate;
+    if (partial.completedAt !== undefined) snakeObj.completed_at = partial.completedAt || null;
+
+    supabase.from('metas').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar meta no Supabase:', error.message);
+    });
+
     return updatedMeta;
   }
 
@@ -1693,6 +2744,11 @@ export class DatabaseService {
     const list = await this.getMetas();
     const updated = list.filter(m => m.id !== id);
     saveStored(STORAGE_KEYS.METAS, updated);
+
+    supabase.from('metas').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao remover meta no Supabase:', error.message);
+    });
+
     return updated;
   }
 
@@ -1965,11 +3021,22 @@ export class DatabaseService {
 
   // --- SIMULADOS ---
   static async getSimulados(): Promise<Simulado[]> {
-    const list = loadStored<Simulado[]>(STORAGE_KEYS.SIMULADOS, INITIAL_SIMULADOS);
-    if (!list || list.length === 0 || (list.length < 3 && !list.some(s => s.id === 'sim_05'))) {
-      saveStored(STORAGE_KEYS.SIMULADOS, INITIAL_SIMULADOS);
-      return INITIAL_SIMULADOS;
+    try {
+      const { data, error } = await supabase
+        .from('simulados')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapSimuladoFromDb);
+        saveStored(STORAGE_KEYS.SIMULADOS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar simulados do Supabase:', e);
     }
+
+    const list = loadStored<Simulado[]>(STORAGE_KEYS.SIMULADOS, INITIAL_SIMULADOS);
     return list;
   }
 
@@ -2046,6 +3113,45 @@ export class DatabaseService {
 
       const updated = [newSimulado, ...list];
       saveStored(STORAGE_KEYS.SIMULADOS, updated);
+
+      getCurrentUserId().then(uid => {
+        const targetUid = data.userId || uid;
+        if (targetUid) {
+          supabase.from('simulados').insert([{
+            id: newSimulado.id,
+            user_id: targetUid,
+            concurso_id: newSimulado.concursoId || null,
+            concurso_name: newSimulado.concursoName || null,
+            title: newSimulado.title,
+            description: newSimulado.description || null,
+            banca: newSimulado.banca || 'FGV',
+            modalidade: newSimulado.modalidade,
+            cebraspe_penalty: newSimulado.cebraspePenalty,
+            questions_count: newSimulado.questionsCount,
+            duration_minutes: newSimulado.durationMinutes,
+            time_remaining_seconds: newSimulado.timeRemainingSeconds ?? null,
+            elapsed_seconds: newSimulado.elapsedSeconds ?? null,
+            disciplinas_config: newSimulado.disciplinasConfig || [],
+            questoes: newSimulado.questoes || [],
+            score: newSimulado.score ?? null,
+            max_score: newSimulado.maxScore,
+            accuracy_rate: newSimulado.accuracyRate ?? null,
+            total_correct: newSimulado.totalCorrect ?? null,
+            total_wrong: newSimulado.totalWrong ?? null,
+            total_blank: newSimulado.totalBlank ?? null,
+            status: newSimulado.status,
+            started_at: newSimulado.startedAt || null,
+            finished_at: newSimulado.finishedAt || null,
+            desempenho_por_disciplina: newSimulado.desempenhoPorDisciplina || [],
+            feedback: newSimulado.feedback || null,
+            created_at: newSimulado.createdAt,
+            updated_at: newSimulado.updatedAt || newSimulado.createdAt,
+          }]).then(({ error }) => {
+            if (error) console.warn('Gabarita: Erro ao inserir simulado no Supabase:', error.message);
+          });
+        }
+      });
+
       return newSimulado;
     }
 
@@ -2167,6 +3273,45 @@ export class DatabaseService {
 
     const updated = [newSimulado, ...list];
     saveStored(STORAGE_KEYS.SIMULADOS, updated);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = data.userId || uid;
+      if (targetUid) {
+        supabase.from('simulados').insert([{
+          id: newSimulado.id,
+          user_id: targetUid,
+          concurso_id: newSimulado.concursoId || null,
+          concurso_name: newSimulado.concursoName || null,
+          title: newSimulado.title,
+          description: newSimulado.description || null,
+          banca: newSimulado.banca || 'FGV',
+          modalidade: newSimulado.modalidade,
+          cebraspe_penalty: newSimulado.cebraspePenalty,
+          questions_count: newSimulado.questionsCount,
+          duration_minutes: newSimulado.durationMinutes,
+          time_remaining_seconds: newSimulado.timeRemainingSeconds ?? null,
+          elapsed_seconds: newSimulado.elapsedSeconds ?? null,
+          disciplinas_config: newSimulado.disciplinasConfig || [],
+          questoes: newSimulado.questoes || [],
+          score: newSimulado.score ?? null,
+          max_score: newSimulado.maxScore,
+          accuracy_rate: newSimulado.accuracyRate ?? null,
+          total_correct: newSimulado.totalCorrect ?? null,
+          total_wrong: newSimulado.totalWrong ?? null,
+          total_blank: newSimulado.totalBlank ?? null,
+          status: newSimulado.status,
+          started_at: newSimulado.startedAt || null,
+          finished_at: newSimulado.finishedAt || null,
+          desempenho_por_disciplina: newSimulado.desempenhoPorDisciplina || [],
+          feedback: newSimulado.feedback || null,
+          created_at: newSimulado.createdAt,
+          updated_at: newSimulado.updatedAt || newSimulado.createdAt,
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir simulado no Supabase:', error.message);
+        });
+      }
+    });
+
     return newSimulado;
   }
 
@@ -2186,6 +3331,27 @@ export class DatabaseService {
     });
     if (!updatedItem) throw new Error('Simulado não encontrado.');
     saveStored(STORAGE_KEYS.SIMULADOS, updated);
+
+    const snakeObj: any = { updated_at: (updatedItem as Simulado).updatedAt };
+    if (partial.title !== undefined) snakeObj.title = partial.title;
+    if (partial.description !== undefined) snakeObj.description = partial.description;
+    if (partial.status !== undefined) snakeObj.status = partial.status;
+    if (partial.score !== undefined) snakeObj.score = partial.score;
+    if (partial.accuracyRate !== undefined) snakeObj.accuracy_rate = partial.accuracyRate;
+    if (partial.totalCorrect !== undefined) snakeObj.total_correct = partial.totalCorrect;
+    if (partial.totalWrong !== undefined) snakeObj.total_wrong = partial.totalWrong;
+    if (partial.totalBlank !== undefined) snakeObj.total_blank = partial.totalBlank;
+    if (partial.timeRemainingSeconds !== undefined) snakeObj.time_remaining_seconds = partial.timeRemainingSeconds;
+    if (partial.elapsedSeconds !== undefined) snakeObj.elapsed_seconds = partial.elapsedSeconds;
+    if (partial.finishedAt !== undefined) snakeObj.finished_at = partial.finishedAt;
+    if (partial.startedAt !== undefined) snakeObj.started_at = partial.startedAt;
+    if (partial.questoes !== undefined) snakeObj.questoes = partial.questoes;
+    if (partial.desempenhoPorDisciplina !== undefined) snakeObj.desempenho_por_disciplina = partial.desempenhoPorDisciplina;
+
+    supabase.from('simulados').update(snakeObj).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao atualizar simulado no Supabase:', error.message);
+    });
+
     return updatedItem;
   }
 
@@ -2193,6 +3359,11 @@ export class DatabaseService {
     const list = await this.getSimulados();
     const updated = list.filter(s => s.id !== id);
     saveStored(STORAGE_KEYS.SIMULADOS, updated);
+
+    supabase.from('simulados').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao excluir simulado no Supabase:', error.message);
+    });
+
     return updated;
   }
 
@@ -2403,6 +3574,26 @@ export class DatabaseService {
     const list = await this.getSimulados();
     const updatedSimulados = list.map(s => s.id === id ? finishedSimulado : s);
     saveStored(STORAGE_KEYS.SIMULADOS, updatedSimulados);
+
+    supabase.from('simulados').update({
+      questoes: evaluatedQuestoes,
+      score: finalScore,
+      max_score: totalQuestions,
+      accuracy_rate: accuracyRate,
+      total_correct: totalCorrect,
+      total_wrong: totalWrong,
+      total_blank: totalBlank,
+      elapsed_seconds: payload.elapsedSeconds,
+      time_remaining_seconds: 0,
+      desempenho_por_disciplina: desempenhoPorDisciplina,
+      status: 'finalizado',
+      finished_at: nowIso,
+      started_at: finishedSimulado.startedAt || null,
+      updated_at: nowIso,
+    }).eq('id', id).then(({ error }) => {
+      if (error) console.warn('Gabarita: Erro ao finalizar simulado no Supabase:', error.message);
+    });
+
     return finishedSimulado;
   }
 
@@ -2470,6 +3661,22 @@ export class DatabaseService {
 
   // --- STUDY PLAN & CRONOGRAMA ---
   static async getStudyPlan(concursoId?: string): Promise<StudyPlan> {
+    try {
+      let query = supabase.from('study_plans').select('*');
+      if (concursoId) {
+        query = query.eq('concurso_id', concursoId);
+      }
+      const { data, error } = await query.order('updated_at', { ascending: false }).limit(1);
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const plan = mapStudyPlanFromDb(data[0]);
+        saveStored(STORAGE_KEYS.STUDY_PLAN, plan);
+        return plan;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar study plan do Supabase:', e);
+    }
+
     const current = loadStored<StudyPlan>(STORAGE_KEYS.STUDY_PLAN, INITIAL_STUDY_PLAN);
     if (concursoId && current.concursoId !== concursoId) {
       const concursos = await this.getConcursos();
@@ -2483,6 +3690,28 @@ export class DatabaseService {
 
   static async saveStudyPlan(plan: StudyPlan): Promise<StudyPlan> {
     saveStored(STORAGE_KEYS.STUDY_PLAN, plan);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = plan.userId || uid;
+      if (targetUid) {
+        supabase.from('study_plans').upsert([{
+          id: plan.id,
+          user_id: targetUid,
+          concurso_id: plan.concursoId,
+          concurso_title: plan.concursoTitle,
+          target_exam_date: plan.targetExamDate,
+          weekly_availability: plan.weeklyAvailability,
+          sessions: plan.sessions,
+          conflicts: plan.conflicts || [],
+          history_logs: plan.historyLogs || [],
+          created_at: plan.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }]).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao persistir study plan no Supabase:', error.message);
+        });
+      }
+    });
+
     return plan;
   }
 
@@ -2698,6 +3927,27 @@ export class DatabaseService {
   static async getStudyCycle(concursoId?: string): Promise<StudyCycle> {
     const targetId = concursoId || (await this.getActiveConcurso())?.id;
     if (targetId) {
+      try {
+        const { data, error } = await supabase
+          .from('study_cycles')
+          .select('*')
+          .eq('concurso_id', targetId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          const mapped = mapStudyCycleFromDb(data[0]);
+          saveStored(STORAGE_KEYS.STUDY_CYCLE, mapped);
+          try {
+            localStorage.setItem(`gabarita_ciclo_estudos_${targetId}`, JSON.stringify(mapped));
+            localStorage.setItem(`gabarita_study_cycle_${targetId}`, JSON.stringify(mapped));
+          } catch {}
+          return mapped;
+        }
+      } catch (e) {
+        console.warn('Gabarita: Falha ao buscar ciclo do Supabase:', e);
+      }
+
       // 1. Tentar ler da chave oficial gabarita_ciclo_estudos_${targetId}
       try {
         const raw = localStorage.getItem(`gabarita_ciclo_estudos_${targetId}`);
@@ -2728,9 +3978,10 @@ export class DatabaseService {
       return current;
     }
 
+    const currentUid = await getCurrentUserId();
     return {
       id: `cycle_${targetId || 'empty'}`,
-      userId: 'user_demo_01',
+      userId: currentUid || 'user_demo_01',
       concursoId: targetId || '',
       concursoTitle: 'Ciclo de Estudos',
       currentBlockIndex: 0,
@@ -2752,6 +4003,26 @@ export class DatabaseService {
         console.warn('Erro ao salvar ciclo no localStorage:', err);
       }
       saveStored(`gabarita_study_cycle_${cycle.concursoId}`, cycle);
+
+      getCurrentUserId().then(uid => {
+        const targetUid = cycle.userId || uid;
+        if (targetUid) {
+          supabase.from('study_cycles').upsert([{
+            id: cycle.id,
+            user_id: targetUid,
+            concurso_id: cycle.concursoId,
+            concurso_title: cycle.concursoTitle,
+            current_block_index: cycle.currentBlockIndex,
+            completed_cycles_count: cycle.completedCyclesCount,
+            total_cycle_minutes: cycle.totalCycleMinutes,
+            blocks: cycle.blocks,
+            created_at: cycle.createdAt || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }]).then(({ error }) => {
+            if (error) console.warn('Gabarita: Erro ao sincronizar ciclo no Supabase:', error.message);
+          });
+        }
+      });
     }
     return cycle;
   }
@@ -2919,4 +4190,93 @@ export class DatabaseService {
     };
     return this.saveStudyCycle(clearedCycle);
   }
+
+  // --- FLASHCARDS & DECKS ---
+  static async getDecks(): Promise<Deck[]> {
+    try {
+      const { data, error } = await supabase
+        .from('decks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapDeckFromDb);
+        saveStored('@gabarita:decks', list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar baralhos do Supabase:', e);
+    }
+    return loadStored<Deck[]>('@gabarita:decks', []);
+  }
+
+  static async saveDecks(decks: Deck[]): Promise<Deck[]> {
+    saveStored('@gabarita:decks', decks);
+
+    getCurrentUserId().then(uid => {
+      if (uid && decks.length > 0) {
+        const rows = decks.map(d => ({
+          id: d.id,
+          user_id: uid,
+          disciplina: d.disciplina,
+          nome: d.nome,
+          total_cards: d.totalCards,
+          pendentes_hoje: d.pendentesHoje,
+          icone: d.icone || 'Layers',
+          updated_at: new Date().toISOString(),
+        }));
+        supabase.from('decks').upsert(rows).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao persistir baralhos no Supabase:', error.message);
+        });
+      }
+    });
+    return decks;
+  }
+
+  static async getFlashcards(): Promise<Flashcard[]> {
+    try {
+      const { data, error } = await supabase
+        .from('flashcards')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const list = data.map(mapFlashcardFromDb);
+        saveStored('@gabarita:flashcards', list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Gabarita: Falha ao buscar flashcards do Supabase:', e);
+    }
+    return loadStored<Flashcard[]>('@gabarita:flashcards', []);
+  }
+
+  static async saveFlashcards(cards: Flashcard[]): Promise<Flashcard[]> {
+    saveStored('@gabarita:flashcards', cards);
+
+    getCurrentUserId().then(uid => {
+      if (uid && cards.length > 0) {
+        const rows = cards.map(c => ({
+          id: c.id,
+          user_id: uid,
+          deck_id: c.deckId,
+          disciplina: c.disciplina,
+          topico: c.topico || null,
+          frente: c.frente,
+          verso: c.verso,
+          dificuldade: c.dificuldade || null,
+          intervalo_dias: c.intervaloDias,
+          proxima_revisao: c.proximaRevisao,
+          revisoes_total: c.revisoesTotal,
+          created_at: c.criadoEm || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }));
+        supabase.from('flashcards').upsert(rows).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao persistir flashcards no Supabase:', error.message);
+        });
+      }
+    });
+    return cards;
+  }
 }
+

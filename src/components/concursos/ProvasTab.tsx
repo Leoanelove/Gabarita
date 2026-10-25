@@ -26,14 +26,46 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { NovaProvaModal } from './NovaProvaModal';
 import { DetalhesProvaModal } from './DetalhesProvaModal';
 
-// Banners da aba "Provas" (mantidos separados para substituição futura)
+// Banners da aba "Provas" por tema
 export const PROVAS_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc192ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjMwMTA2LCJleHAiOjQ5NDYyMzAxMDZ9.nMfAxpFABLSoTDilKmCS3CFAhQdmTztPeefM0cPjUNaiLiFZmp_LYHg5Ay6m2s7ArH236qjS4SzEoBf82bsC3A',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MzAyNjgsImV4cCI6NDk0NjIzMDI2OH0.JdSC4HjEmt65EFNk3Ik1zje4a05KslYMNwS2Jq7ilyEn67Qij7MiegF5pymNZAPKAEGpCRKmVGsAUPTznrPQqg',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MzAyOTIsImV4cCI6NDk0NjIzMDI5Mn0.VbmliPF2RvgipiAJQz9YTmYoKvZ51lcR7yiYFENRrld9woBjbNOuCiWYbvYA7tL7cVdXZGQ-6PhrTVdkT62EFw',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MzAzMDUsImV4cCI6NDk0NjIzMDMwNX0.Ie07YWa8burkSUhulRug5znwdg3nXT_ofsDLrYXCABXT_qHKuwbVOPzduqBDXZtzun8aZFQgc-dLnae7Nlkayw',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MzAzMjEsImV4cCI6NDk0NjIzMDMyMX0.cBxUKMjT-sAUKEOcv3PIS3EQdc2kOVvGI9Zpaa97qwN5lrV6AUTxvqPkzeF4kQoJP9HhFzAgQzxIA1cSO9BP9A',
+  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc192ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyOTUyODIyLCJleHAiOjQ5NDY1NTI4MjJ9.L8UMJCbDT1gJqmnQREm8SfK0Jvswu_LCEbQd5Rc1uieZA79NfInDu22L42zBMESAT_QlmIkh2NMHTCrYyAyGFA',
+  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4NDQsImV4cCI6NDk0NjU1Mjg0NH0.4xbPBW95dU8TFdE12zB3HtiZbqDFSuI1Zxrzvx_9EnsBk8saeP3w2JwTtqpHshpU0wqJ588rhdSqN5dMFlmgSg',
+  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4NTUsImV4cCI6MTgwMTU5Mjg1NX0.p93CYtnRYPEsl92qJ1k3QxBOUwm3oOz-SvIEAj-lymsPKfnBz2F9YcEa4nVoqHYDOYwySR7rsP1d1nIE4_RaFA',
+  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4NjcsImV4cCI6NDk0NjU1Mjg2N30.c_T0CjrGd_mdB2CP6LMUM-BL2T8lzQQPnpuHtDCnAh5xjF_tvO2LGozDotDguWt-dlikXHQinsIC5Q0MKxNYxg',
+  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4ODEsImV4cCI6NDk0NjU1Mjg4MX0.VSm8s0do8a_KCR2TnR5SozTJXBuAnn-sMeBSUn9qp3I1QE6OkuOo9vUY1xkqMky6z1RSjMQDyRjHQBup-NxLZg',
 };
+
+// Aliases tolerantes a variações em inglês/português
+PROVAS_BANNER_THEMES.green = PROVAS_BANNER_THEMES.verde;
+PROVAS_BANNER_THEMES.emerald = PROVAS_BANNER_THEMES.verde;
+PROVAS_BANNER_THEMES.blue = PROVAS_BANNER_THEMES.azul;
+PROVAS_BANNER_THEMES.sky = PROVAS_BANNER_THEMES.azul;
+PROVAS_BANNER_THEMES.cyan = PROVAS_BANNER_THEMES.azul;
+PROVAS_BANNER_THEMES.purple = PROVAS_BANNER_THEMES.roxo;
+PROVAS_BANNER_THEMES.violet = PROVAS_BANNER_THEMES.roxo;
+PROVAS_BANNER_THEMES.pink = PROVAS_BANNER_THEMES.rosa;
+PROVAS_BANNER_THEMES.rose = PROVAS_BANNER_THEMES.rosa;
+PROVAS_BANNER_THEMES.orange = PROVAS_BANNER_THEMES.laranja;
+PROVAS_BANNER_THEMES.amber = PROVAS_BANNER_THEMES.laranja;
+PROVAS_BANNER_THEMES.dbz = PROVAS_BANNER_THEMES.laranja;
+
+const normalizeProvasThemeSkin = (themeContext: any): 'verde' | 'azul' | 'roxo' | 'rosa' | 'laranja' => {
+  const activeKey =
+    (typeof themeContext?.colorSkin === 'string' ? themeContext.colorSkin : '') ||
+    (typeof themeContext?.palette?.id === 'string' ? themeContext.palette.id : '') ||
+    (typeof themeContext?.palette?.name === 'string' ? themeContext.palette.name : '') ||
+    (typeof themeContext?.activeTheme === 'string' ? themeContext.activeTheme : '') ||
+    (typeof themeContext?.theme === 'string' ? themeContext.theme : '') ||
+    'verde';
+
+  const str = String(activeKey).toLowerCase().trim();
+  if (str.includes('roxo') || str.includes('purple') || str.includes('violet')) return 'roxo';
+  if (str.includes('laranja') || str.includes('orange') || str.includes('amber') || str.includes('dbz')) return 'laranja';
+  if (str.includes('rosa') || str.includes('pink') || str.includes('rose')) return 'rosa';
+  if (str.includes('azul') || str.includes('blue') || str.includes('sky') || str.includes('cyan')) return 'azul';
+  return 'verde';
+};
+
 export interface ProvasTabProps {
   provas: Prova[];
   onAddProva: (prova: Omit<Prova, 'id' | 'createdAt'>) => Promise<void>;
@@ -49,10 +81,10 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
   onDeleteProva,
   showFeedback
 }) => {
-  const { colorSkin } = useTheme();
+  const themeContext = useTheme();
 
   // Banner Dinâmico baseado no Tema Ativo
-  const normalizedSkin = (colorSkin === 'purple' ? 'roxo' : colorSkin === 'orange' ? 'laranja' : colorSkin || 'verde').toLowerCase();
+  const normalizedSkin = normalizeProvasThemeSkin(themeContext);
   const currentBannerSrc = PROVAS_BANNER_THEMES[normalizedSkin] || PROVAS_BANNER_THEMES.verde;
 
   // Efeito Neon Dinâmico conforme o Tema Ativo (destaque para Roxo e Laranja)
@@ -210,17 +242,15 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
           1. BANNER PRINCIPAL DE DESTAQUE (TOPO DA ABA PROVAS)
           ========================================================================= */}
       <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[220px] flex items-center bg-slate-950">
-        {/* Imagem correspondente cobrindo o container e perfeitamente enquadrada sem bordas brancas */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+        {/* Camada da imagem PNG oficial do Supabase preenchendo 100% do banner de ponta a ponta sem bordas internas */}
+        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
           <img 
+            key={currentBannerSrc}
             src={currentBannerSrc} 
-            alt="Banner Provas" 
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-300" 
+            alt="Banner Próximas Provas" 
+            className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300" 
           />
         </div>
-
-        {/* Gradiente sutil para garantir legibilidade de alto contraste sobre o fundo */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/45 to-transparent pointer-events-none" />
 
         {/* Na área esquerda (relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-lg h-full) */}
         <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-lg h-full gap-4">
