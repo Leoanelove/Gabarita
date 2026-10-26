@@ -6,15 +6,11 @@ import { Button } from '../../design-system/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const ASSISTENTE_IA_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2ODYxNDUsImV4cCI6NDk0NjI4NjE0NX0.LIOM1AJ1rlIN0fQF8jzxYlWlyuI00zSNgpZ_K65EN8JiSgPhfWfVrNZitZ-6v4F7d7GcMNM_HOPVVrs51H4N2w",
-
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY4NjE1OCwiZXhwIjo0OTQ2Mjg2MTU4fQ.owYXS05jI3MZys8bicacPhrKJY0CCMEt4P_uF4w2mbIsQ017wxmXoNHuKDDLTnd1Sd00H-vWCF-e-9gu4v5rlw",
-
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLVJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY4NjE2OSwiZXhwIjo0OTQ2Mjg2MTY5fQ.6V8Dq3Cor6WwQeawI1izALGcJYxyqwwoN4trgw9_Lg7JEsMAt3RWNafgedrljY6yIip5FYLYGwb06OJFHWJM-g",
-
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLVJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY4NjE3OSwiZXhwIjo0OTQ2Mjg2MTc5fQ.AlyCUg3M71iGIKjoFdbDOSr0X36f4NdkQsQ3JoGjQtDHbHiv0M5ixHxBd3snyBeyzt7ROgOlYcyYOR1YZgbm2A",
-
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLUxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY4NjE5MCwiZXhwIjo0OTQ2Mjg2MTkwfQ.8in9PuPhmT6zD_mYYlf4HD1vTBzc2gHULYJkTryvzulACh__XSc_igHnVDWHtDhxKorBDTf5RvQZ5z-of8nimg"
+  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzE2OTcsImV4cCI6NDk0NjU3MTY5N30.ttyglhw4yJRd8HQekm2xioI9wUTMmsVbExSYuimHBP4Jq3nhT_Bz8oSO-C8B-VwX9sA3HBKq824njk4kbkteBQ",
+  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTcxMCwiZXhwIjo0OTQ2NTcxNzEwfQ.Zc0CcMi_Mq_CF94Zh2hIhQW3P0lm3g50jODMQJgOejjT09jZn2DTa_QQdfomOXJnL74bNdA1nw7JQ3Equ3U1kg",
+  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLVJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTcxOSwiZXhwIjo0OTQ2NTcxNzE5fQ.lIkrPBdKUxA_-dHrm42Pd2-N1t-Su-cwgapfZjFkRqeCIdkeD0DJJhwRBome87mcqsxyGb2hp6tf7cuY48xR1A",
+  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLVJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTcyOSwiZXhwIjo0OTQ2NTcxNzI5fQ.koNmpPw3iMFhITuBZvZ4TgfYPtuNgRuCgKMGVp8TRUfYSLzU1KRWw_EPD2usToXE-Y_wcP9EfFPtHB-QBh9phg",
+  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLUxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTc0MiwiZXhwIjo0OTQ2NTcxNzQyfQ.5i7zPq-9wX-6X8jNahv0P9gJLHBpNGgRtPWQCU9ETq-7sVn9uvKmC0f6w8ohd-euqu5x5mTJ9zeYr4Z0uP9jlA"
 };
 
 interface Message {
@@ -136,34 +132,16 @@ export const AIAssistantView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto min-h-[calc(100vh-110px)] flex flex-col pb-10">
       <div
-        ref={(el) => {
-          if (el) {
-            el.style.setProperty('background-image', `url('${bannerUrl}')`, 'important');
-            el.style.setProperty('background-size', '135% 135%', 'important');
-            el.style.setProperty('background-position', '72% center', 'important');
-            el.style.setProperty('background-repeat', 'no-repeat', 'important');
-          }
-        }}
         className="assistente-ia-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[180px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8 shrink-0 card-banner metas-xp-banner"
-        style={{
-          backgroundImage: `url('${bannerUrl}')`,
-          backgroundSize: '135% 135%',
-          backgroundPosition: '72% center',
-          backgroundRepeat: 'no-repeat',
-        }}
       >
-        {/* Imagem correspondente cobrindo 100% do container */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
+        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
           <img
             key={bannerUrl}
             src={bannerUrl}
             alt="Banner Assistente Inteligente (Gemini)"
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
+            className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
           />
         </div>
-
-        {/* Overlay suave para garantir legibilidade e contraste em modo claro e escuro */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-950/25 pointer-events-none z-[1]" />
 
         <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2 max-w-2xl">

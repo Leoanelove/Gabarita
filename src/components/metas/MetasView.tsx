@@ -32,17 +32,43 @@ export const METAS_DESEMPENHO_BANNER_THEMES: Record<string, string> = {
   verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NjAwMzgsImV4cCI6NDk0NjU2MDAzOH0.AE1he8ptW7TudarqrW5JaU0zvHqXSMMV3Qulkp8JJYtMsp6BqhOapL7uMHXy0j86rigY3uKhZZXL7JNepiWSxg",
   azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2MDA1MSwiZXhwIjo0OTQ2NTYwMDUxfQ.F9MGX-bUWjQxyT3CJbBbz_fHWSzLNBOkzwGm6jBnIbnKkqDxB2kT9AqpzLRsjy-EkelM5YN5xoRPcnZkTYi5zw",
   rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2MDA2MywiZXhwIjo0OTQ2NTYwMDYzfQ.3RqcuzADGEziq6DFpUT3oqOC9KWfB7PXF1ELOKRgu0IM_umFQmVvzqWgfvSZN6MSl9SCmAJqm8WR4TzDJE-qhA",
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2MDA3NiwiZXhwIjo0OTQ2NTYwMDc2fQ.KslC9jNqiPJh5JH1ErgRUGUghPsOucLIrEs-aWBj-TDBR6UcaMSlUZqxRuekNI8AiLrLyZHMPU-WWAIqcO8-LA",
+  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-roxo1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXJveG8xLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NjA4MTQsImV4cCI6NDk0NjU2MDgxNH0.-tslxk6OZ5vBgRIF4IwjCFBLecH-kDQNraoE3CIJQGupBh-9q-_iMbGDHC2P8YI4CUyXWZZMvV2zNQwRixn-ww",
   laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2MDA4NywiZXhwIjo0OTQ2NTYwMDg3fQ.pAkwxxlUJsvo-Ax8yZlDhxqQQEDNg_3-3rc9JDXPUKRynFn5bPGGIl-0xk3iM4jWgp0HpzQoaLKBKXR8efvDlw"
 };
 
+METAS_DESEMPENHO_BANNER_THEMES.green = METAS_DESEMPENHO_BANNER_THEMES.verde;
+METAS_DESEMPENHO_BANNER_THEMES.emerald = METAS_DESEMPENHO_BANNER_THEMES.verde;
+METAS_DESEMPENHO_BANNER_THEMES.blue = METAS_DESEMPENHO_BANNER_THEMES.azul;
+METAS_DESEMPENHO_BANNER_THEMES.sky = METAS_DESEMPENHO_BANNER_THEMES.azul;
+METAS_DESEMPENHO_BANNER_THEMES.cyan = METAS_DESEMPENHO_BANNER_THEMES.azul;
+METAS_DESEMPENHO_BANNER_THEMES.purple = METAS_DESEMPENHO_BANNER_THEMES.roxo;
+METAS_DESEMPENHO_BANNER_THEMES.violet = METAS_DESEMPENHO_BANNER_THEMES.roxo;
+METAS_DESEMPENHO_BANNER_THEMES.pink = METAS_DESEMPENHO_BANNER_THEMES.rosa;
+METAS_DESEMPENHO_BANNER_THEMES.rose = METAS_DESEMPENHO_BANNER_THEMES.rosa;
+METAS_DESEMPENHO_BANNER_THEMES.orange = METAS_DESEMPENHO_BANNER_THEMES.laranja;
+METAS_DESEMPENHO_BANNER_THEMES.amber = METAS_DESEMPENHO_BANNER_THEMES.laranja;
+METAS_DESEMPENHO_BANNER_THEMES.dbz = METAS_DESEMPENHO_BANNER_THEMES.laranja;
+
 export const METAS_MENOR_BANNER_THEMES: Record<string, string> = {
-  verde: "",
-  azul: "",
-  rosa: "",
-  roxo: "",
-  laranja: ""
+  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NjYwMjMsImV4cCI6NDk0NjU2NjAyM30.QIh5JpbibB3tW6Vjx_dxklqrFRBeY8sScRoB9GqhoYEimzqY1_PiGaslKv4zlPgGHCLNgnoao2-OCLWD7pOdng",
+  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjAzNSwiZXhwIjo0OTQ2NTY2MDM1fQ.t4755035OiPcaH1cryIWbflCq2BvQI8_RAhwqPH1HoF2netj7OHtkml2PHExyBMYYVjaSxO5c7FmKJEPO_JYpA",
+  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjA0NCwiZXhwIjoxODAxNjA2MDQ0fQ.-WdmzDrVcxp0hqIlFJ4jRmmhzzZf9FEE2L5WRZdqNXgM70dFL9m_Xzw0vnLW7Z0EHMzdrldJDCTOOF-IbyuOtw",
+  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjA1NSwiZXhwIjo0OTQ2NTY2MDU1fQ.CJukRueRwnXgsO7xEPQVrvFfvL_cAYOGHxlR58EjSz4jOU5bgT8Io__mc3Kda_tg5sbkcnDt-LN1DL04Mtr80w",
+  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjA2NywiZXhwIjo0OTQ2NTY2MDY3fQ.4mUn0kgflDT1AyAfXu5mVE4YSDg4ak0T3zTaLpyGUgrLiB4rki2D-uMO8wBuIqWNcG7HfyZMrh3P9sVB1fsj_A"
 };
+
+METAS_MENOR_BANNER_THEMES.green = METAS_MENOR_BANNER_THEMES.verde;
+METAS_MENOR_BANNER_THEMES.emerald = METAS_MENOR_BANNER_THEMES.verde;
+METAS_MENOR_BANNER_THEMES.blue = METAS_MENOR_BANNER_THEMES.azul;
+METAS_MENOR_BANNER_THEMES.sky = METAS_MENOR_BANNER_THEMES.azul;
+METAS_MENOR_BANNER_THEMES.cyan = METAS_MENOR_BANNER_THEMES.azul;
+METAS_MENOR_BANNER_THEMES.purple = METAS_MENOR_BANNER_THEMES.roxo;
+METAS_MENOR_BANNER_THEMES.violet = METAS_MENOR_BANNER_THEMES.roxo;
+METAS_MENOR_BANNER_THEMES.pink = METAS_MENOR_BANNER_THEMES.rosa;
+METAS_MENOR_BANNER_THEMES.rose = METAS_MENOR_BANNER_THEMES.rosa;
+METAS_MENOR_BANNER_THEMES.orange = METAS_MENOR_BANNER_THEMES.laranja;
+METAS_MENOR_BANNER_THEMES.amber = METAS_MENOR_BANNER_THEMES.laranja;
+METAS_MENOR_BANNER_THEMES.dbz = METAS_MENOR_BANNER_THEMES.laranja;
 
 interface MetasViewProps {
   metas: Meta[];
@@ -70,6 +96,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
   ).toLowerCase();
   const themeKey = (currentTheme || 'verde').toLowerCase();
   const bannerMetasUrl = METAS_DESEMPENHO_BANNER_THEMES[themeKey] || METAS_DESEMPENHO_BANNER_THEMES.verde;
+  const bannerMetasMenorUrl = METAS_MENOR_BANNER_THEMES[themeKey] || METAS_MENOR_BANNER_THEMES.verde;
 
   const [activeTab, setActiveTab] = useState<'metas' | 'streak' | 'conquistas' | 'marcos'>('metas');
   const [filterPeriod, setFilterPeriod] = useState<'all' | 'diaria' | 'semanal' | 'mensal'>('all');
@@ -147,28 +174,16 @@ export const MetasView: React.FC<MetasViewProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div
-          ref={(el) => {
-            if (el) {
-              el.style.setProperty('background-image', `url("${bannerMetasUrl}")`, 'important');
-              el.style.setProperty('background-size', 'cover', 'important');
-              el.style.setProperty('background-position', 'center', 'important');
-              el.style.setProperty('background-repeat', 'no-repeat', 'important');
-            }
-          }}
           className="md:col-span-2 relative overflow-hidden rounded-2xl bg-slate-950 text-white border border-slate-800/60 shadow-md card-banner metas-xp-banner"
-          style={{
-            backgroundImage: `url("${bannerMetasUrl}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
         >
-          <img
-            src={bannerMetasUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-slate-950/25 to-transparent pointer-events-none z-[1]" />
+          <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
+            <img
+              key={bannerMetasUrl}
+              src={bannerMetasUrl}
+              alt="Banner Nível e XP"
+              className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
+            />
+          </div>
           <CardBody className="relative z-10 p-5 sm:p-6 flex flex-col justify-between space-y-4 h-full">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5">
@@ -199,6 +214,14 @@ export const MetasView: React.FC<MetasViewProps> = ({
         <div
           className="relative overflow-hidden rounded-2xl bg-slate-950 text-white border border-slate-800/60 shadow-md card-banner metas-xp-banner"
         >
+          <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
+            <img
+              key={bannerMetasMenorUrl}
+              src={bannerMetasMenorUrl}
+              alt="Banner Sequência de Estudos"
+              className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
+            />
+          </div>
           <CardBody className="relative z-10 p-5 flex flex-col justify-between space-y-3 h-full">
             <div className="flex items-center justify-between">
               <span className="text-xs uppercase font-extrabold tracking-wider text-amber-400 drop-shadow-xs">Sequência de Estudos</span>

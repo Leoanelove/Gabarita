@@ -27,15 +27,11 @@ import { Badge } from '../../design-system/Badge';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const ESTATISTICAS_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2Nzc0MjgsImV4cCI6NDk0NjI3NzQyOH0.9bzk9aEk-xo7sevzJ9wmQG5jcZnHG0uutyvUL2_1SO0SsOIFbf01oWVYCkgA-OPZn6XiyMY_baZ1W2bUtaYRHA",
-
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY3NzQ0MywiZXhwIjo0OTQ2Mjc3NDQzfQ.DXjHiIK7SuTx2e05vN6x70m7T_ljzUQwpETYFMrJo3V7PSBvmh_hA7RwMAQftMnHQUpuvYNBUQw0gOcxrShGOA",
-
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY3NzQ1NiwiZXhwIjo0OTQ2Mjc3NDU2fQ.HC5Bgjuz863EDAcp98n2du_eVWbNnhMJi9Nj6Dc9RIHFzeOf6vQKsB7xrLpnz1kACk1OQlnFbX3SKVKP_F9S4Q",
-
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY3NzQ2OCwiZXhwIjo0OTQ2Mjc3NDY4fQ.56AQykLnV0kv9_RBE2_mSCylc-Doa4KdHLgh68UmuNrsX4D6t3SoXuDfTjKuleVop4w-PkHcdv6qAC6b9aHbLw",
-
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY3NzQ4MywiZXhwIjo0OTQ2Mjc3NDgzfQ.3SSyU-PnUX6q1fKcheuJvP5bAekfsZUpK27w0U-MA2B3kZTQu5ZiO-ZVpRy6kUA-vXSH_vT6oHa4UnUfYufkvw"
+  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzEzNDcsImV4cCI6NDk0NjU3MTM0N30.rFoGrGMktMmw4s-k7CZnZdTSutCEfzpePxkkhoWOu65yIweXzmoWEbXRT-TlTk61XDmnnLV1L7gtp5riUnDwNw",
+  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTM2NCwiZXhwIjo0OTQ2NTcxMzY0fQ.aV5m8u6wJO4hyhKY2qRKxfd75G_VJpIqZg5s9452J9hnWw1HQMtF9LO-0vZrsyyvbvNw2GXkFDumjWfNvpHlrg",
+  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTM3NywiZXhwIjo0OTQ2NTcxMzc3fQ.S1XB9peeeMvhA13xwturIoBYcSUyp-ThM-fnBNXaHuQtmK6cxika5U7QRiFIWkOqn4K2rgZPe-4sBR_1hoS0LA",
+  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTM5MCwiZXhwIjo0OTQ2NTcxMzkwfQ.QZY3f5K9dXlTZBV-L5FeuynMDmwxTaF6IIfeNef9NGWco4jrw17NpDK8mRu_SxdworXS5ISC-MFlFGf31g0eoA",
+  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTQwNiwiZXhwIjo0OTQ2NTcxNDA2fQ.BVRQ-GLvvNjpLeY-Gq4r0oPqpFxRFZypZCBKdxVg1nquRmX9JS2k_Ar45jQEcM8ZUqosMPP-CCfKjoRz7fJyAg"
 };
 
 interface AnalyticsViewProps {
@@ -174,36 +170,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Banner Superior Dinâmico - Estatísticas & Relatórios */}
-      <div
-        ref={(el) => {
-          if (el) {
-            el.style.setProperty('background-image', `url('${bannerUrl}')`, 'important');
-            el.style.setProperty('background-size', 'cover', 'important');
-            el.style.setProperty('background-position', 'center', 'important');
-            el.style.setProperty('background-repeat', 'no-repeat', 'important');
-          }
-        }}
-        className="estatisticas-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8 card-banner metas-xp-banner"
-        style={{
-          backgroundImage: `url('${bannerUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        {/* Imagem correspondente cobrindo 100% do container em PC, Tablet e Mobile */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
+      <div className="estatisticas-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8 card-banner metas-xp-banner">
+        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
           <img
             key={bannerUrl}
             src={bannerUrl}
-            alt="Banner Estatísticas & Relatórios"
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
+            alt="Estatísticas & Relatórios"
+            className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
           />
         </div>
-
-        {/* Overlay suave para garantir legibilidade e contraste em modo claro e escuro */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-950/20 pointer-events-none z-[1]" />
-
         <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-3 flex-wrap">

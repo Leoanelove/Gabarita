@@ -25,15 +25,15 @@ import { EmptyContestState } from '../common/EmptyContestState';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const SIMULADOS_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjc3NjkyLCJleHAiOjQ5NDYyNzc2OTJ9.hsp89zrtDludSdam6c-t-kVTzxmsZf1oeYDbdzfCLxb55yKo4-DNSYMl43BL9G7WE31EjHXaqLRRIBZCr8xZUQ",
+  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyOTcyNzMyLCJleHAiOjQ5NDY1NzI3MzJ9.Yay6JxY8kb3DEEFgd-dcU2mkoctLb1du6azx4UsR-4qH8qF3RBWEOWr0olVBAJxbSZzcbsASlklI1Dw2gqECDw",
 
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2Nzc3MDksImV4cCI6NDk0NjI3NzcwOX0.3lVCEeCvpjUm-Afe_LUPrHK5kMpL-eVlI87B3PAi5_A2bbvz5BWd-aEZayn-DYhDKneBIjJgqU-VEUYYkaB7NQ",
+  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI3ODQsImV4cCI6NDk0NjU3Mjc4NH0.S6RrlUR2ygq7i5uTZUuURdggDOI8o7nmsugpw_Iwqk-K_cG9h16btCfIHp37oqZvBMZv88Ur-mxyz26jiLQWBA",
 
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2Nzc3MjQsImV4cCI6NDk0NjI3NzcyNH0.c93XKbT8oSsrldqOCtaDKfMXcGnPN6Hy-ECfiMO03GCz73wCIKhS8JOCn9sABplTugJfB_eLli4Srs_uixUEDA",
+  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI3OTYsImV4cCI6NDk0NjU3Mjc5Nn0.oz4NE8HtUOY5O5e7i4IbnNUmmnKePv0P-2aF1YBydLYKlkxh_AUjbwuDCJO9Ont5jT4OTS4m0DJQni5XRUcl9g",
 
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2Nzc3MzYsImV4cCI6NDk0NjI3NzczNn0._tw4AqAh8f8agYJGt9EJvKzUG8qbcPYq5VmiYjuSyz4EzjH_Gy5mA_B-UcCngpi1sL9nQhx_-kE5VjEGqPsTLw",
+  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI4MTAsImV4cCI6NDk0NjU3MjgxMH0.UENX5yNnr2vu-WPhGoHSrrmHQOPWPrXQ4bND73Ys2Fo3eQe7JTkfJKwWBsMZRKU_bbHmO3Y1THm_zzcSXEu2nQ",
 
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2Nzc3NDksImV4cCI6NDk0NjI3Nzc0OX0.YxgGv6clNlwm_K3lrqnmQ-blNZqYW8hWcZXy9DEIuQSS_Vuyq2vevIU8G6m55u4Z7NkhX_fjMEuoRJx-pgUypA"
+  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI4MjQsImV4cCI6NDk0NjU3MjgyNH0.QLXrHZtaDsYK8n5ZqvHv7RwvJvUNoFeW4zmSz4eqRBk0bP2aUUWMaWqArQ-9rBdJtxgykNasfuW0DKOXDa-5zQ"
 };
 
 interface SimuladosViewProps {
@@ -180,34 +180,17 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Topo: Banner Principal Dinâmico por Tema - Registrador de Simulados */}
       <div
-        ref={(el) => {
-          if (el) {
-            el.style.setProperty('background-image', `url('${bannerUrl}')`, 'important');
-            el.style.setProperty('background-size', 'cover', 'important');
-            el.style.setProperty('background-position', 'center', 'important');
-            el.style.setProperty('background-repeat', 'no-repeat', 'important');
-          }
-        }}
         className="simulados-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8 card-banner metas-xp-banner"
-        style={{
-          backgroundImage: `url('${bannerUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
       >
         {/* Imagem correspondente cobrindo 100% do container em PC, Tablet e Mobile */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
+        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
           <img
             key={bannerUrl}
             src={bannerUrl}
             alt="Banner Registrador de Simulados"
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
+            className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
           />
         </div>
-
-        {/* Overlay suave para garantir legibilidade e contraste em modo claro e escuro */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-950/20 pointer-events-none z-[1]" />
 
         <div className="relative z-10 w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4">
           <div className="space-y-2">
