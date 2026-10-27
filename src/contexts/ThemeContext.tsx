@@ -22,22 +22,92 @@ export interface SkinPalette {
   activeBadge: string;
 }
 
+export const THEME_STORAGE_KEY = 'gabarita_theme';
+export const SKIN_STORAGE_KEY = 'gabarita_color_skin';
+export const THEME_PREFERENCE_KEY = 'theme_preference';
+export const LAST_ACTIVE_TIMESTAMP_KEY = 'last_active_timestamp';
+export const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
+
+const VALID_SKINS: ColorSkin[] = ['verde', 'azul', 'rosa', 'roxo', 'purple', 'laranja', 'orange', 'dbz'];
+
+export function isValidSkin(value: string | null): value is ColorSkin {
+  return Boolean(value && VALID_SKINS.includes(value as ColorSkin));
+}
+
+export function normalizeSkin(skin: string | null | undefined): ColorSkin {
+  if (!skin || !isValidSkin(skin)) return 'verde';
+  if (skin === 'purple') return 'roxo';
+  if (skin === 'orange' || skin === 'dbz') return 'laranja';
+  return skin;
+}
+
+/**
+ * Resolve o tema inicial aplicando a regra de fallback:
+ * - Se não houver `theme_preference` salvo OU se `(Date.now() - last_active_timestamp) > 7 dias`,
+ *   retorna obrigatoriamente o tema 'verde' (#00A86B).
+ */
+export function resolveInitialSkinWithFallback(): ColorSkin {
+  try {
+    const savedPref = localStorage.getItem(THEME_PREFERENCE_KEY) || localStorage.getItem(SKIN_STORAGE_KEY);
+    const lastActiveStr = localStorage.getItem(LAST_ACTIVE_TIMESTAMP_KEY);
+
+    if (!savedPref || !isValidSkin(savedPref)) {
+      localStorage.setItem(THEME_PREFERENCE_KEY, 'verde');
+      localStorage.setItem(SKIN_STORAGE_KEY, 'verde');
+      return 'verde';
+    }
+
+    if (!lastActiveStr) {
+      // Sem registro de último acesso ativo -> inicia no verde padrão e registra timestamp inicial
+      localStorage.setItem(THEME_PREFERENCE_KEY, 'verde');
+      localStorage.setItem(SKIN_STORAGE_KEY, 'verde');
+      return 'verde';
+    }
+
+    const lastActive = Number(lastActiveStr);
+    const now = Date.now();
+
+    if (Number.isNaN(lastActive) || now - lastActive > INACTIVITY_LIMIT_MS) {
+      // Inatividade > 7 dias -> fallback obrigatório para verde padrão
+      localStorage.setItem(THEME_PREFERENCE_KEY, 'verde');
+      localStorage.setItem(SKIN_STORAGE_KEY, 'verde');
+      return 'verde';
+    }
+
+    return normalizeSkin(savedPref);
+  } catch (e) {
+    console.warn('Erro ao resolver tema com fallback:', e);
+    return 'verde';
+  }
+}
+
+/**
+ * Atualiza o timestamp de atividade recente do usuário
+ */
+export function touchLastActiveTimestamp(): void {
+  try {
+    localStorage.setItem(LAST_ACTIVE_TIMESTAMP_KEY, String(Date.now()));
+  } catch (e) {
+    console.warn('Erro ao atualizar last_active_timestamp:', e);
+  }
+}
+
 export const SKINS_CONFIG: Record<ColorSkin, SkinPalette> = {
   verde: {
     id: 'verde',
     name: 'Verde (Original)',
     shortLabel: 'Verde',
     description: 'Paleta padrão com foco e equilíbrio',
-    primary: '#059669',
-    primaryHover: '#10b981',
+    primary: '#00A86B',
+    primaryHover: '#059669',
     secondary: '#0d9488',
-    accent: '#06b6d4',
+    accent: '#10b981',
     gradient: 'from-emerald-600 to-teal-400',
-    chartColors: ['#10b981', '#14b8a6', '#06b6d4', '#f59e0b', '#8b5cf6', '#6366f1'],
+    chartColors: ['#00A86B', '#10b981', '#14b8a6', '#06b6d4', '#f59e0b', '#8b5cf6'],
     ringColor: 'ring-emerald-500',
-    glowColor: 'rgba(16, 185, 129, 0.25)',
+    glowColor: 'rgba(0, 168, 107, 0.25)',
     chipBg: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
-    chipDot: 'bg-emerald-500',
+    chipDot: 'bg-[#00A86B]',
     activeBadge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300',
   },
   azul: {
@@ -121,10 +191,8 @@ interface ThemeContextType {
   colorSkin: ColorSkin;
   setColorSkin: (skin: ColorSkin) => Promise<void>;
   palette: SkinPalette;
+  reapplyTheme: () => void;
 }
-
-const THEME_STORAGE_KEY = 'gabarita_theme';
-const SKIN_STORAGE_KEY = 'gabarita_color_skin';
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -144,18 +212,40 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('dark');
 
   const [colorSkin, setColorSkinState] = useState<ColorSkin>(() => {
-    try {
-      const savedSkin = localStorage.getItem(SKIN_STORAGE_KEY);
-      if (savedSkin === 'verde' || savedSkin === 'azul' || savedSkin === 'rosa' || savedSkin === 'roxo' || savedSkin === 'purple' || savedSkin === 'laranja' || savedSkin === 'orange' || savedSkin === 'dbz') {
-        return (savedSkin === 'purple' ? 'roxo' : savedSkin) as ColorSkin;
-      }
-    } catch (e) {
-      console.warn('Erro ao ler skin inicial', e);
-    }
-    return 'verde';
+    return resolveInitialSkinWithFallback();
   });
 
-  // Aplica classes de tema (light/dark) e skin (verde/azul/rosa) no elemento raiz
+  // Reavalia e reaplica as classes de tema salvas pelo usuário
+  const reapplyTheme = useCallback(() => {
+    const root = document.documentElement;
+    let targetTheme: Theme = theme;
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved === 'light' || saved === 'dark' || saved === 'system') {
+        targetTheme = saved;
+      }
+    } catch (e) {
+      console.warn('Erro ao ler preferência de tema:', e);
+    }
+
+    let resolved: 'light' | 'dark';
+    if (targetTheme === 'system') {
+      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else {
+      resolved = targetTheme;
+    }
+    setEffectiveTheme(resolved);
+
+    if (resolved === 'dark') {
+      root.classList.add('dark', 'dark-mode');
+      document.body?.classList.add('dark', 'dark-mode');
+    } else {
+      root.classList.remove('dark', 'dark-mode');
+      document.body?.classList.remove('dark', 'dark-mode');
+    }
+  }, [theme]);
+
+  // Aplica classes de tema (light/dark) no elemento raiz
   useEffect(() => {
     const root = document.documentElement;
     const applyTheme = () => {
@@ -166,7 +256,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         resolved = theme;
       }
       setEffectiveTheme(resolved);
-      if (resolved === 'dark') {
+
+      // A tela de login (sem sessão ativa) força isolamento de modo claro.
+      // Classes 'dark' só são aplicadas no elemento raiz quando há sessão autenticada ativa.
+      const hasActiveSession = Boolean(
+        localStorage.getItem('gabarita_auth_session_v2') || localStorage.getItem('gabarita_user')
+      );
+
+      if (hasActiveSession && resolved === 'dark') {
         root.classList.add('dark', 'dark-mode');
         document.body?.classList.add('dark', 'dark-mode');
       } else {
@@ -186,15 +283,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [theme]);
 
-  // Aplica o atributo data-skin e classes de tema no elemento raiz e no body
+  // Aplica o atributo data-skin, variáveis CSS e classes de tema no elemento raiz e no body
   useEffect(() => {
     const root = document.documentElement;
+    const activePalette = SKINS_CONFIG[colorSkin] || SKINS_CONFIG.verde;
+
     root.setAttribute('data-skin', colorSkin);
     document.body?.setAttribute('data-skin', colorSkin);
-    root.classList.remove('skin-verde', 'skin-azul', 'skin-rosa', 'skin-roxo', 'skin-purple', 'skin-dbz', 'skin-laranja', 'skin-orange', 'theme-purple', 'theme-green', 'theme-blue', 'theme-pink', 'theme-dbz', 'theme-orange', 'theme-laranja');
-    document.body?.classList.remove('skin-verde', 'skin-azul', 'skin-rosa', 'skin-roxo', 'skin-purple', 'skin-dbz', 'skin-laranja', 'skin-orange', 'theme-purple', 'theme-green', 'theme-blue', 'theme-pink', 'theme-dbz', 'theme-orange', 'theme-laranja');
+
+    // Injeta variáveis CSS dinâmicas para uso global e na tela de login
+    root.style.setProperty('--primary-color', activePalette.primary);
+    root.style.setProperty('--primary-hover', activePalette.primaryHover);
+    root.style.setProperty('--secondary-color', activePalette.secondary);
+    root.style.setProperty('--accent-color', activePalette.accent);
+    root.style.setProperty('--glow-color', activePalette.glowColor);
+
+    root.classList.remove(
+      'skin-verde', 'skin-azul', 'skin-rosa', 'skin-roxo', 'skin-purple', 'skin-dbz', 'skin-laranja', 'skin-orange',
+      'theme-purple', 'theme-green', 'theme-blue', 'theme-pink', 'theme-dbz', 'theme-orange', 'theme-laranja'
+    );
+    document.body?.classList.remove(
+      'skin-verde', 'skin-azul', 'skin-rosa', 'skin-roxo', 'skin-purple', 'skin-dbz', 'skin-laranja', 'skin-orange',
+      'theme-purple', 'theme-green', 'theme-blue', 'theme-pink', 'theme-dbz', 'theme-orange', 'theme-laranja'
+    );
+
     root.classList.add(`skin-${colorSkin}`);
     document.body?.classList.add(`skin-${colorSkin}`);
+
     if (colorSkin === 'verde') {
       root.classList.add('theme-green');
       document.body?.classList.add('theme-green');
@@ -211,16 +326,38 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.classList.add('theme-orange', 'theme-laranja', 'skin-laranja', 'skin-orange');
       document.body?.classList.add('theme-orange', 'theme-laranja', 'skin-laranja', 'skin-orange');
     }
-    localStorage.setItem(SKIN_STORAGE_KEY, colorSkin);
+
+    try {
+      localStorage.setItem(SKIN_STORAGE_KEY, colorSkin);
+      localStorage.setItem(THEME_PREFERENCE_KEY, colorSkin);
+    } catch (e) {
+      console.warn('Erro ao persistir preferência de tema:', e);
+    }
   }, [colorSkin]);
 
-  // Sincroniza com o perfil do usuário caso esteja no banco de dados
+  // Sincroniza com o perfil apenas se houver sessão ativa válida e dentro da janela de 7 dias
   useEffect(() => {
     const syncFromProfile = async () => {
       try {
+        const lastActiveStr = localStorage.getItem(LAST_ACTIVE_TIMESTAMP_KEY);
+        const lastActive = lastActiveStr ? Number(lastActiveStr) : 0;
+        const isExpired = !lastActive || Number.isNaN(lastActive) || Date.now() - lastActive > INACTIVITY_LIMIT_MS;
+
+        if (isExpired) {
+          setColorSkinState('verde');
+          return;
+        }
+
+        const hasActiveSession = Boolean(
+          localStorage.getItem('gabarita_auth_session_v2') || localStorage.getItem('gabarita_user')
+        );
+        if (!hasActiveSession) return;
+
         const user = await DatabaseService.getUserProfile('user_demo_01');
-        if (user?.preferences?.colorSkin && user.preferences.colorSkin !== colorSkin) {
-          setColorSkinState(user.preferences.colorSkin);
+        if (user?.preferences?.colorSkin && isValidSkin(user.preferences.colorSkin)) {
+          const normalized = normalizeSkin(user.preferences.colorSkin);
+          setColorSkinState(normalized);
+          touchLastActiveTimestamp();
         }
       } catch (err) {
         console.warn('Falha ao sincronizar tema do perfil', err);
@@ -231,15 +368,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
+    touchLastActiveTimestamp();
   };
 
   const toggleTheme = () => {
     setThemeState(prev => (prev === 'dark' ? 'light' : 'dark'));
+    touchLastActiveTimestamp();
   };
 
   const setColorSkin = useCallback(async (skin: ColorSkin) => {
-    setColorSkinState(skin);
+    const normalized = normalizeSkin(skin);
+    setColorSkinState(normalized);
+    touchLastActiveTimestamp();
     try {
+      localStorage.setItem(SKIN_STORAGE_KEY, normalized);
+      localStorage.setItem(THEME_PREFERENCE_KEY, normalized);
+
       const user = await DatabaseService.getUserProfile('user_demo_01');
       const updatedPrefs = {
         ...(user.preferences || {
@@ -250,7 +394,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           pomodoroBreakMin: 10,
           soundEnabled: true,
         }),
-        colorSkin: skin,
+        colorSkin: normalized,
       };
       await DatabaseService.updateUserProfile({
         preferences: updatedPrefs,
@@ -263,15 +407,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const palette = SKINS_CONFIG[colorSkin] || SKINS_CONFIG.verde;
 
   return (
-    <ThemeContext.Provider 
-      value={{ 
-        theme, 
-        effectiveTheme, 
-        setTheme, 
-        toggleTheme, 
-        colorSkin, 
-        setColorSkin, 
-        palette 
+    <ThemeContext.Provider
+      value={{
+        theme,
+        effectiveTheme,
+        setTheme,
+        toggleTheme,
+        colorSkin,
+        setColorSkin,
+        palette,
+        reapplyTheme,
       }}
     >
       {children}

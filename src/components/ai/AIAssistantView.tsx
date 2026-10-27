@@ -3,6 +3,7 @@ import { Sparkles, Send, Bot, User, Loader2 } from 'lucide-react';
 import { AIService } from '../../services/aiService';
 import { Card, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const ASSISTENTE_IA_BANNER_THEMES: Record<string, string> = {
@@ -131,19 +132,15 @@ export const AIAssistantView: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto min-h-[calc(100vh-110px)] flex flex-col pb-10">
-      <div
-        className="assistente-ia-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[180px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8 shrink-0 card-banner metas-xp-banner"
+      <MenuBannerFrame
+        bannerThemes={ASSISTENTE_IA_BANNER_THEMES}
+        minHeight="min-h-[180px] md:min-h-[210px]"
+        className="assistente-ia-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8 shrink-0 card-banner metas-xp-banner"
+        contentClassName="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+        imgClassName="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
+        alt="Banner Assistente Inteligente (Gemini)"
+        fallbackSkin="azul"
       >
-        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-          <img
-            key={bannerUrl}
-            src={bannerUrl}
-            alt="Banner Assistente Inteligente (Gemini)"
-            className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
-          />
-        </div>
-
-        <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-3 flex-wrap">
               <div
@@ -169,8 +166,7 @@ export const AIAssistantView: React.FC = () => {
               Diagnóstico baseado em seus dados reais de estudo.
             </p>
           </div>
-        </div>
-      </div>
+      </MenuBannerFrame>
 
       <div className="flex items-center gap-2.5 overflow-x-auto pb-1 shrink-0">
         <span className="text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">Sugestões:</span>

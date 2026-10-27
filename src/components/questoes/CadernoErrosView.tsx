@@ -48,6 +48,7 @@ import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { Modal } from '../../design-system/Modal';
 import { EmptyContestState } from '../common/EmptyContestState';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 import { normalizeThemeSkin } from '../dashboard/DashboardView';
 
@@ -539,16 +540,13 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       )}
 
       {/* Banner Principal Dinâmico por Tema - Caderno de Erros */}
-      <div className="caderno-erros-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8">
-        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-          <img
-            key={bannerUrl}
-            src={bannerUrl}
-            alt="Banner Caderno de Erros & Reincidências"
-            className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300"
-          />
-        </div>
-        <div className="relative z-10 w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4">
+      <MenuBannerFrame
+        bannerThemes={CADERNO_ERROS_BANNER_THEMES}
+        minHeight="min-h-[190px] md:min-h-[210px]"
+        className="caderno-erros-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8"
+        contentClassName="w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4"
+        alt="Banner Caderno de Erros & Reincidências"
+      >
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div
@@ -659,8 +657,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
               Novo Erro
             </Button>
           </div>
-        </div>
-      </div>
+      </MenuBannerFrame>
 
       {/* Grid de 5 KPIs / Métricas Analíticas Avançadas */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">

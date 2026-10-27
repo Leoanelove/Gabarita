@@ -27,6 +27,7 @@ import { Badge } from '../../design-system/Badge';
 import { Input } from '../../design-system/Input';
 import { Modal } from '../../design-system/Modal';
 import { useTheme } from '../../contexts/ThemeContext';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 export const METAS_DESEMPENHO_BANNER_THEMES: Record<string, string> = {
   verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NjAwMzgsImV4cCI6NDk0NjU2MDAzOH0.AE1he8ptW7TudarqrW5JaU0zvHqXSMMV3Qulkp8JJYtMsp6BqhOapL7uMHXy0j86rigY3uKhZZXL7JNepiWSxg",
@@ -173,18 +174,15 @@ export const MetasView: React.FC<MetasViewProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div
-          className="md:col-span-2 relative overflow-hidden rounded-2xl bg-slate-950 text-white border border-slate-800/60 shadow-md card-banner metas-xp-banner"
+        <MenuBannerFrame
+          bannerThemes={METAS_DESEMPENHO_BANNER_THEMES}
+          alt="Banner Nível e XP"
+          minHeight=""
+          className="md:col-span-2 rounded-2xl bg-slate-950 text-white border border-slate-800/60 shadow-md card-banner metas-xp-banner"
+          imgClassName="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
+          contentClassName="h-full"
         >
-          <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-            <img
-              key={bannerMetasUrl}
-              src={bannerMetasUrl}
-              alt="Banner Nível e XP"
-              className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
-            />
-          </div>
-          <CardBody className="relative z-10 p-5 sm:p-6 flex flex-col justify-between space-y-4 h-full">
+          <CardBody className="p-5 sm:p-6 flex flex-col justify-between space-y-4 h-full">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div className="w-14 h-14 rounded-2xl bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center text-amber-400 shadow-inner">
@@ -209,20 +207,17 @@ export const MetasView: React.FC<MetasViewProps> = ({
               </div>
             </div>
           </CardBody>
-        </div>
+        </MenuBannerFrame>
 
-        <div
-          className="relative overflow-hidden rounded-2xl bg-slate-950 text-white border border-slate-800/60 shadow-md card-banner metas-xp-banner"
+        <MenuBannerFrame
+          bannerThemes={METAS_MENOR_BANNER_THEMES}
+          alt="Banner Sequência de Estudos"
+          minHeight=""
+          className="rounded-2xl bg-slate-950 text-white border border-slate-800/60 shadow-md card-banner metas-xp-banner"
+          imgClassName="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
+          contentClassName="h-full"
         >
-          <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-            <img
-              key={bannerMetasMenorUrl}
-              src={bannerMetasMenorUrl}
-              alt="Banner Sequência de Estudos"
-              className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
-            />
-          </div>
-          <CardBody className="relative z-10 p-5 flex flex-col justify-between space-y-3 h-full">
+          <CardBody className="p-5 flex flex-col justify-between space-y-3 h-full">
             <div className="flex items-center justify-between">
               <span className="text-xs uppercase font-extrabold tracking-wider text-amber-400 drop-shadow-xs">Sequência de Estudos</span>
               <span className="p-1.5 rounded-lg bg-amber-500 text-white shadow-xs"><Flame className="w-4 h-4 fill-current" /></span>
@@ -235,7 +230,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
               <span className="!text-slate-200 text-slate-200">Melhor recorde: <strong className="!text-white text-white">{stats.melhorStreakDias} dias</strong></span>
             </div>
           </CardBody>
-        </div>
+        </MenuBannerFrame>
       </div>
 
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto text-xs">

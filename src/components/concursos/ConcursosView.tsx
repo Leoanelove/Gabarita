@@ -50,6 +50,7 @@ import { SubjectIcon } from '../common/SubjectIcon';
 import { NovaMateriaModal } from '../disciplinas/NovaMateriaModal';
 import { ProvasTab } from './ProvasTab';
 import { useTheme } from '../../contexts/ThemeContext';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 const MAX_CONCURSOS = 3;
 
@@ -554,7 +555,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   // VIEW: DRILL-DOWN / PAINEL DO CONCURSO (ESTILO ESTUDEI)
   // =========================================================================
   if (selectedConcurso) {
-    const isSelectedActive = selectedConcurso.active || user.targetConcursoId === selectedConcurso.id;
+    const isSelectedActive = Boolean(selectedConcurso.active || selectedConcurso.isAtivo || user.targetConcursoId === selectedConcurso.id);
     const diffDays = selectedConcurso.examDate 
       ? Math.ceil((new Date(selectedConcurso.examDate).getTime() - new Date().getTime()) / 86400000)
       : null;
@@ -591,7 +592,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                 onClick={() => handleActivate(selectedConcurso.id, fullTitle)}
                 leftIcon={<Star className="w-3.5 h-3.5 text-amber-400" />}
               >
-                Definir como Ativo
+                Ativar Foco
               </Button>
             ) : (
               <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
@@ -1216,76 +1217,54 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
           {/* =========================================================================
               1. BANNER PRINCIPAL DE DESTAQUE (TOPO DA ABA CONCURSOS)
               ========================================================================= */}
-          <div
-            ref={(el) => {
-              if (el) {
-                el.style.setProperty('background-image', `url('${activeBanner}')`, 'important');
-                el.style.setProperty('background-size', 'cover', 'important');
-                el.style.setProperty('background-position', 'center', 'important');
-                el.style.setProperty('background-repeat', 'no-repeat', 'important');
-              }
-            }}
-            className="w-full relative overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[220px] flex items-center bg-slate-950"
-            style={{
-              backgroundImage: `url('${activeBanner}')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-            }}
+          <MenuBannerFrame
+            bannerThemes={CONCURSOS_BANNER_THEMES}
+            alt="Banner Concursos"
+            minHeight="min-h-[190px] md:min-h-[220px]"
+            className="w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
+            bgWrapperClassName="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
+            imgClassName="w-full h-full object-cover object-center scale-110 pointer-events-none select-none"
+            overlayClassName="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent pointer-events-none"
+            contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4"
           >
-            {/* Imagem de plano de fundo cobrindo integralmente todo o quadro do banner */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
-              <img
-                key={activeBanner}
-                src={activeBanner}
-                alt="Banner Concursos"
-                className="w-full h-full object-cover object-center scale-110 pointer-events-none select-none"
-              />
-            </div>
-
-            {/* Gradiente sutil para garantir legibilidade de alto contraste sobre o fundo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent pointer-events-none" />
-            {/* Conteúdo à esquerda reposicionado e alinhado */}
-            <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h1
-                    className="provas-banner-title text-2xl md:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md"
-                    style={{
-                      color: '#FFFFFF',
-                      textShadow: themeGlowStyles.textShadow,
-                    }}
-                  >
-                    Central de Concursos e Editais
-                  </h1>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs shrink-0">
-                    {concursos.length}/{MAX_CONCURSOS} Cadastrados
-                  </span>
-                </div>
-
-                <p className="text-white/90 text-xs md:text-sm leading-relaxed max-w-lg">
-                  Gerencie até 3 concursos simultâneos, estruture matérias verticalizadas e acompanhe seu foco principal.
-                </p>
-              </div>
-
-              <div className="pt-1 flex items-center gap-3 flex-wrap">
-                <Button
-                  variant={isLimitReached ? 'outline' : 'primary'}
-                  size="md"
-                  disabled={isLimitReached}
-                  onClick={() => {
-                    if (!isLimitReached) setIsNovoConcursoWizardOpen(true);
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1
+                  className="provas-banner-title text-2xl md:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md"
+                  style={{
+                    color: '#FFFFFF',
+                    textShadow: themeGlowStyles.textShadow,
                   }}
-                  leftIcon={isLimitReached ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  className={`font-bold shadow-lg shadow-black/25 text-xs md:text-sm px-5 py-2.5 ${
-                    !isLimitReached ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed !text-white border-white/30'
-                  }`}
                 >
-                  {isLimitReached ? 'Limite de 3 Concursos Atingido' : 'Novo Concurso'}
-                </Button>
+                  Central de Concursos e Editais
+                </h1>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs shrink-0">
+                  {concursos.length}/{MAX_CONCURSOS} Cadastrados
+                </span>
               </div>
+
+              <p className="text-white/90 text-xs md:text-sm leading-relaxed max-w-lg">
+                Gerencie até 3 concursos simultâneos, estruture matérias verticalizadas e acompanhe seu foco principal.
+              </p>
             </div>
-          </div>
+
+            <div className="pt-1 flex items-center gap-3 flex-wrap">
+              <Button
+                variant={isLimitReached ? 'outline' : 'primary'}
+                size="md"
+                disabled={isLimitReached}
+                onClick={() => {
+                  if (!isLimitReached) setIsNovoConcursoWizardOpen(true);
+                }}
+                leftIcon={isLimitReached ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                className={`font-bold shadow-lg shadow-black/25 text-xs md:text-sm px-5 py-2.5 ${
+                  !isLimitReached ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed !text-white border-white/30'
+                }`}
+              >
+                {isLimitReached ? 'Limite de 3 Concursos Atingido' : 'Novo Concurso'}
+              </Button>
+            </div>
+          </MenuBannerFrame>
 
           {/* =========================================================================
               2. BARRA DE PESQUISA E AÇÕES RÁPIDAS
@@ -1323,7 +1302,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Cards dos Concursos Cadastrados */}
             {filteredConcursos.map(concurso => {
-              const isActive = concurso.active || user.targetConcursoId === concurso.id;
+              const isActive = Boolean(concurso.active || concurso.isAtivo || user.targetConcursoId === concurso.id);
               const diffDays = concurso.examDate 
                 ? Math.ceil((new Date(concurso.examDate).getTime() - new Date().getTime()) / 86400000)
                 : null;
@@ -1347,7 +1326,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                 >
                   {isActive && (
                     <div className="absolute top-0 right-0 bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-bl-lg flex items-center gap-1 shadow-xs">
-                      <Star className="w-3 h-3 fill-current" /> Ativo
+                      <Star className="w-3 h-3 fill-current" /> Foco Ativo
                     </div>
                   )}
 
@@ -1405,15 +1384,20 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                     <div className="flex items-center justify-between w-full pt-1">
                       {!isActive ? (
                         <button
+                          type="button"
                           onClick={() => handleActivate(concurso.id, fullTitle)}
                           className="text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer flex items-center gap-1"
                         >
-                          <Star className="w-3.5 h-3.5" /> Definir Ativo
+                          <Star className="w-3.5 h-3.5" /> Ativar Foco
                         </button>
                       ) : (
-                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled
+                          className="text-xs font-bold text-emerald-400 flex items-center gap-1 cursor-default opacity-100"
+                        >
                           <CheckCircle className="w-3.5 h-3.5" /> Foco Ativo
-                        </span>
+                        </button>
                       )}
 
                       <div className="flex items-center gap-1">

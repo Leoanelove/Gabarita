@@ -71,10 +71,16 @@ const THEME_LIGHT_BACKGROUNDS: Record<string, string> = {
 };
 
 const MainApp: React.FC = () => {
-  const { user, isAuthenticated, isLoading, refreshProfile } = useAuth();
-  const { colorSkin, effectiveTheme } = useTheme();
+  const { user, isAuthenticated, isLoading, isLoginTransitioning, refreshProfile } = useAuth();
+  const { colorSkin, effectiveTheme, reapplyTheme } = useTheme();
   const currentThemeKey = colorSkin || 'verde';
 const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[currentThemeKey] : null;
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoginTransitioning) {
+      reapplyTheme();
+    }
+  }, [isAuthenticated, isLoginTransitioning, reapplyTheme]);
   const [currentTab, setCurrentTab] = useState<NavigationTab>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -184,11 +190,11 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !user || isLoginTransitioning) {
     return <AuthPage />;
   }
 
-  const activeConcurso = concursos.find(c => c.active) || 
+  const activeConcurso = concursos.find(c => c.active || c.isAtivo) || 
     concursos.find(c => c.id === user.targetConcursoId) || 
     concursos[0] || null;
   const activeConcursoId = activeConcurso?.id || '';
@@ -222,7 +228,18 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
 
   const handleAddConcurso = async (newConcurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>) => {
     const created = await DatabaseService.addConcurso(newConcurso);
-    setConcursos(prev => [created, ...prev]);
+    const isNewActive = Boolean(created.active || created.isAtivo);
+    if (isNewActive) {
+      setConcursos(prev => [created, ...prev.map(c => ({ ...c, active: false, isAtivo: false }))]);
+      refreshProfile({
+        targetConcursoId: created.id,
+        targetConcursoTitle: `${created.organ} - ${created.role}`,
+      });
+    } else {
+      setConcursos(prev => [created, ...prev]);
+    }
+    const updatedProvas = await DatabaseService.getProvas();
+    setProvas(updatedProvas);
   };
 
   const handleAddConcursoWithDisciplinas = async (
@@ -230,19 +247,32 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     disciplinasData: any[]
   ) => {
     const result = await DatabaseService.addConcursoWithDisciplinas(concursoData, disciplinasData);
-    setConcursos(prev => [result.concurso, ...prev.map(c => ({ ...c, active: false }))]);
+    setConcursos(prev => [result.concurso, ...prev.filter(c => String(c.id) !== String(result.concurso.id)).map(c => ({ ...c, active: false, isAtivo: false, is_ativo: false }))]);
     setDisciplinas(prev => [...prev, ...result.disciplinas]);
     setAssuntos(prev => [...prev, ...result.assuntos]);
     refreshProfile({
       targetConcursoId: result.concurso.id,
       targetConcursoTitle: `${result.concurso.organ} - ${result.concurso.role}`,
     });
+    const updatedProvas = await DatabaseService.getProvas();
+    setProvas(updatedProvas);
     loadData();
   };
 
   const handleUpdateConcurso = async (id: string, partial: Partial<Concurso>) => {
     const updated = await DatabaseService.updateConcurso(id, partial);
-    setConcursos(prev => prev.map(c => c.id === id ? updated : c));
+    const isActivating = partial.active === true || partial.isAtivo === true || partial.is_ativo === true;
+    if (isActivating) {
+      setConcursos(prev => prev.map(c => String(c.id) === String(id) ? updated : { ...c, active: false, isAtivo: false, is_ativo: false }));
+      refreshProfile({
+        targetConcursoId: updated.id,
+        targetConcursoTitle: `${updated.organ} - ${updated.role}`,
+      });
+    } else {
+      setConcursos(prev => prev.map(c => String(c.id) === String(id) ? updated : c));
+    }
+    const updatedProvas = await DatabaseService.getProvas();
+    setProvas(updatedProvas);
   };
 
   const handleDeleteConcurso = async (id: string) => {
@@ -788,6 +818,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               metas={metas}
               plan={plan}
               cycle={cycle}
+              provas={provas}
               isLoading={isDataLoading}
               errorMessage={dataError}
               onNavigateTab={setCurrentTab}

@@ -788,10 +788,11 @@ export const CicloView: React.FC<CicloViewProps> = ({
           {displayBlocks.map((block, idx) => {
             const isDone = block.status === 'concluido';
             const isCurrent = idx === currentBlockIndex;
+            const elapsed = block.elapsedMinutes || 0;
             const percent = isDone 
               ? 100 
-              : isCurrent 
-              ? Math.max(25, Math.min(85, Math.round(((block.elapsedMinutes || 0) / block.durationMinutes) * 100) || 40))
+              : block.durationMinutes > 0 && elapsed > 0
+              ? Math.min(100, Math.round((elapsed / block.durationMinutes) * 100))
               : 0;
 
             return (

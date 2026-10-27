@@ -62,6 +62,18 @@ export class AuthService {
       console.warn('Gabarita: Falha ao verificar sessão do Supabase:', err);
     }
 
+    // Se não houver sessão ativa válida no Supabase, verifica se há sessão demo/guest salva
+    try {
+      const saved = localStorage.getItem('gabarita_user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.id === 'user_demo_01') {
+          this.persistSession(parsed);
+          return;
+        }
+      }
+    } catch {}
+
     // Se não houver sessão ativa válida no Supabase, limpa qualquer resquício
     this.clearSession();
   }
@@ -149,6 +161,11 @@ export class AuthService {
   private static persistSession(user: UserProfile): void {
     try {
       localStorage.setItem('gabarita_user', JSON.stringify(user));
+      localStorage.setItem('last_active_timestamp', String(Date.now()));
+      if (user?.preferences?.colorSkin) {
+        localStorage.setItem('theme_preference', user.preferences.colorSkin);
+        localStorage.setItem('gabarita_color_skin', user.preferences.colorSkin);
+      }
     } catch (e) {
       console.warn('Erro ao salvar sessão local:', e);
     }
@@ -229,7 +246,7 @@ export class AuthService {
       throw new Error(msg);
     }
 
-    this.updateState({ isLoading: true, error: null });
+    this.updateState({ error: null });
 
     // Chamada obrigatória e real ao Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -238,7 +255,7 @@ export class AuthService {
     });
 
     if (error) {
-      console.error("Erro Supabase Auth:", error);
+      console.warn("[Gabarita Auth] Falha na autenticação:", error.message);
       const translated = this.translateAuthError(error.message);
       this.updateState({ isLoading: false, error: translated });
       throw new Error(translated);
@@ -246,7 +263,7 @@ export class AuthService {
 
     if (!data?.user) {
       const msg = 'Não foi possível autenticar o usuário no Supabase.';
-      console.error("Erro Supabase Auth:", msg);
+      console.warn("[Gabarita Auth]:", msg);
       this.updateState({ isLoading: false, error: msg });
       throw new Error(msg);
     }
@@ -301,7 +318,7 @@ export class AuthService {
       throw new Error(msg);
     }
 
-    this.updateState({ isLoading: true, error: null });
+    this.updateState({ error: null });
 
     // Chamada obrigatória e real ao Supabase Auth
     const { data, error } = await supabase.auth.signUp({
@@ -315,7 +332,7 @@ export class AuthService {
     });
 
     if (error) {
-      console.error("Erro Supabase Auth:", error);
+      console.warn("[Gabarita Auth] Falha no cadastro:", error.message);
       const translated = this.translateAuthError(error.message);
       this.updateState({ isLoading: false, error: translated });
       throw new Error(translated);
@@ -323,7 +340,7 @@ export class AuthService {
 
     if (!data?.user) {
       const msg = 'Não foi possível registrar o usuário no Supabase.';
-      console.error("Erro Supabase Auth:", msg);
+      console.warn("[Gabarita Auth]:", msg);
       this.updateState({ isLoading: false, error: msg });
       throw new Error(msg);
     }
@@ -370,7 +387,7 @@ export class AuthService {
       this.updateState({ isLoading: false, error: msg });
       throw new Error(msg);
     }
-    this.updateState({ isLoading: true, error: null });
+    this.updateState({ error: null });
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -378,7 +395,7 @@ export class AuthService {
       },
     });
     if (error) {
-      console.error("Erro Supabase Auth:", error);
+      console.warn("[Gabarita Auth] Falha Google OAuth:", error.message);
       const translated = this.translateAuthError(error.message);
       this.updateState({ isLoading: false, error: translated });
       throw new Error(translated);
@@ -399,7 +416,7 @@ export class AuthService {
       redirectTo: `${window.location.origin}`,
     });
     if (error) {
-      console.error("Erro Supabase Auth:", error);
+      console.warn("[Gabarita Auth] Falha reset senha:", error.message);
       throw new Error(this.translateAuthError(error.message));
     }
   }
@@ -416,7 +433,21 @@ export class AuthService {
     await this.logout();
   }
 
+  static async loginAsGuest(): Promise<UserProfile> {
+    const guestProfile: UserProfile = {
+      ...INITIAL_USER,
+      id: 'user_demo_01',
+      email: 'visitante@gabarita.com',
+      name: 'Concurseiro(a) Visitante',
+    };
+    this.persistSession(guestProfile);
+    return guestProfile;
+  }
+
   static async logout(): Promise<void> {
+    try {
+      localStorage.setItem('last_active_timestamp', String(Date.now()));
+    } catch {}
     try {
       await supabase.auth.signOut();
     } catch (err) {

@@ -257,25 +257,40 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
     return supabaseEditais.find(e => String(e.id) === String(selectedEditalId)) || null;
   }, [supabaseEditais, selectedEditalId]);
 
-  const handleSelectSupabaseEdital = (edital: SupabaseEdital) => {
+  const handleSelectSupabaseEdital = async (edital: SupabaseEdital) => {
     setSelectedEditalId(String(edital.id));
+    setErrorMessage(null);
     
+    // Regra: usar o id (int8) para puxar os dados atualizados e preencher o formulário e as disciplinas
+    let targetEdital: SupabaseEdital = edital;
+    const editalIdInt8 = typeof edital.id === 'number' ? edital.id : parseInt(String(edital.id), 10);
+    if (!isNaN(editalIdInt8)) {
+      try {
+        const fetched = await SupabaseEditaisService.getEditalById(editalIdInt8);
+        if (fetched) {
+          targetEdital = fetched;
+        }
+      } catch (err) {
+        console.warn('Gabarita: Falha ao buscar edital por id (int8), mantendo dados em memória:', err);
+      }
+    }
+
     // Diagnóstico transparente no Console conforme solicitado
-    console.log('Edital selecionado:', edital);
-    console.log('Tipo de edital.materias:', typeof edital.materias);
-    console.log('Conteúdo bruto de materias:', edital.materias);
+    console.log('Edital selecionado por id (int8):', editalIdInt8, targetEdital);
+    console.log('Tipo de edital.materias:', typeof targetEdital.materias);
+    console.log('Conteúdo bruto de materias:', targetEdital.materias);
 
-    const organName = String(edital.orgao || edital.organ || edital.instituicao || '').trim();
-    const roleName = String(edital.cargo || edital.role || '').trim();
-    const editalTitle = String(edital.titulo || edital.title || edital.nome || (roleName ? `${organName} - ${roleName}` : organName)).trim();
+    const organName = String(targetEdital.orgao || targetEdital.organ || targetEdital.instituicao || '').trim();
+    const roleName = String(targetEdital.cargo || targetEdital.role || '').trim();
+    const editalTitle = String(targetEdital.titulo || targetEdital.title || targetEdital.nome || (roleName ? `${organName} - ${roleName}` : organName)).trim();
 
-    const rawStatus = String(edital.status || edital.situacao || edital.status_edital || edital.situacao_edital || '').trim();
+    const rawStatus = String(targetEdital.status || targetEdital.situacao || targetEdital.status_edital || targetEdital.situacao_edital || '').trim();
     const normalizedStatus = normalizeConcursoStatus(rawStatus);
 
-    const rawSphere = String(edital.esfera || edital.sphere || '').trim();
+    const rawSphere = String(targetEdital.esfera || targetEdital.sphere || '').trim();
     const normalizedSphere = normalizeConcursoSphere(rawSphere, `${organName} ${editalTitle}`);
 
-    const extractedRemuneration = extractRemunerationValue(edital);
+    const extractedRemuneration = extractRemunerationValue(targetEdital);
 
     console.log('Status bruto do Supabase:', rawStatus, '-> Normalizado:', normalizedStatus);
     console.log('Esfera bruta do Supabase:', rawSphere, '-> Normalizada:', normalizedSphere);
@@ -284,17 +299,17 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
     setOrgan(organName);
     setRole(roleName);
     setTitle(editalTitle);
-    setBanca(String(edital.banca || edital.banca_examinadora || 'A Definir').trim());
+    setBanca(String(targetEdital.banca || targetEdital.banca_examinadora || 'A Definir').trim());
     setSphere(normalizedSphere);
     setStatus(normalizedStatus);
-    setExamDate(edital.data_prova || edital.exam_date || edital.examDate || '');
+    setExamDate(targetEdital.data_prova || targetEdital.exam_date || targetEdital.examDate || '');
     setRemuneration(extractedRemuneration);
-    setVacantPositions(edital.vagas != null ? String(edital.vagas) : (edital.vacant_positions != null ? String(edital.vacant_positions) : (edital.vacantPositions != null ? String(edital.vacantPositions) : '1')));
-    setEditalUrl(edital.edital_url || edital.editalUrl || edital.link_edital || edital.url || '');
-    setNotes(edital.notes || edital.observacoes || '');
+    setVacantPositions(targetEdital.vagas != null ? String(targetEdital.vagas) : (targetEdital.vacant_positions != null ? String(targetEdital.vacant_positions) : (targetEdital.vacantPositions != null ? String(targetEdital.vacantPositions) : '1')));
+    setEditalUrl(targetEdital.edital_url || targetEdital.editalUrl || targetEdital.link_edital || targetEdital.url || '');
+    setNotes(targetEdital.notes || targetEdital.observacoes || '');
 
     // Processamento com o Agrupador Dinâmico Universal
-    const grade = processarGradeEdital(edital.materias || edital.disciplinas);
+    const grade = processarGradeEdital(targetEdital.materias || targetEdital.disciplinas);
     console.log('Grade processada para o modal:', grade);
 
     setDisciplinas(grade);
@@ -775,6 +790,8 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
           editalUrl: editalUrl.trim() || undefined,
           notes: notes.trim(),
           active: true,
+          isAtivo: true,
+          is_ativo: true,
         },
         disciplinas
       );

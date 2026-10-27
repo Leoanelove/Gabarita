@@ -33,7 +33,8 @@ import {
   NavigationTab, 
   SessaoEstudo, 
   StudyPlan,
-  StudyCycle 
+  StudyCycle,
+  Prova 
 } from '../../types';
 import { Card, CardHeader, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
@@ -45,6 +46,7 @@ import { StudyCharts } from './StudyCharts';
 import { StreakCalendarModal } from './StreakCalendarModal';
 import { EmptyContestState } from '../common/EmptyContestState';
 import { resolveSubjectIcon } from '../common/SubjectIcon';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 interface DashboardViewProps {
   user: UserProfile;
@@ -56,6 +58,7 @@ interface DashboardViewProps {
   metas: Meta[];
   plan?: StudyPlan | null;
   cycle?: StudyCycle | null;
+  provas?: Prova[];
   isLoading?: boolean;
   errorMessage?: string | null;
   onNavigateTab: (tab: NavigationTab) => void;
@@ -160,6 +163,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   metas,
   plan,
   cycle,
+  provas = [],
   isLoading = false,
   errorMessage = null,
   onNavigateTab,
@@ -180,7 +184,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Identificação do concurso ativo para persistência de metas
   const activeConcursoId = useMemo(() => {
-    return concursos.find(c => c.active)?.id || 
+    return concursos.find(c => c.active || c.isAtivo)?.id || 
       concursos.find(c => c.id === user.targetConcursoId)?.id || 
       concursos[0]?.id || 'default';
   }, [concursos, user.targetConcursoId]);
@@ -188,7 +192,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Metas semanais persistidas no localStorage por concurso (padrão: 12h e 500 questões)
   const [weeklyGoals, setWeeklyGoals] = useState<{ hours: number; questions: number }>(() => {
     try {
-      const activeId = concursos.find(c => c.active)?.id || 
+      const activeId = concursos.find(c => c.active || c.isAtivo)?.id || 
         concursos.find(c => c.id === user.targetConcursoId)?.id || 
         concursos[0]?.id || 'default';
       const saved = localStorage.getItem(`gabarita_metas_semanais_${activeId}`);
@@ -475,6 +479,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   }, [activeConcurso]);
 
+  const todaysExams = useMemo(() => {
+    const list: Array<{ id: string; organ: string; role: string; banca?: string; notes?: string }> = [];
+    const seen = new Set<string>();
+
+    const checkIsToday = (dateStr?: string) => {
+      if (!dateStr) return false;
+      const cleanDate = String(dateStr).trim().split('T')[0];
+      return cleanDate === todayStr;
+    };
+
+    if (provas && Array.isArray(provas)) {
+      provas.forEach(p => {
+        if (p.examDate && checkIsToday(p.examDate)) {
+          const key = `${p.organ}_${p.role}`.toLowerCase().trim();
+          if (!seen.has(key)) {
+            seen.add(key);
+            list.push({
+              id: p.id,
+              organ: p.organ,
+              role: p.role,
+              banca: p.banca,
+              notes: p.notes,
+            });
+          }
+        }
+      });
+    }
+
+    if (activeConcurso) {
+      const cDate = activeConcurso.examDate || (activeConcurso as any).dataProva || (activeConcurso as any).data_prova;
+      if (cDate && checkIsToday(cDate)) {
+        const key = `${activeConcurso.organ}_${activeConcurso.role}`.toLowerCase().trim();
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({
+            id: activeConcurso.id,
+            organ: activeConcurso.organ,
+            role: activeConcurso.role,
+            banca: activeConcurso.banca,
+            notes: activeConcurso.notes,
+          });
+        }
+      }
+    }
+
+    return list;
+  }, [provas, activeConcurso, todayStr]);
+
   if (isLoading) {
     return (
       <div className="space-y-6 max-w-7xl mx-auto animate-pulse">
@@ -698,20 +750,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {activeConcurso ? (
-        <div
-          className="card-banner banner-principal relative overflow-hidden rounded-2xl md:rounded-3xl p-6 sm:p-8 text-white shadow-xl min-h-[220px] md:min-h-[240px] border border-slate-700/50 bg-slate-900 dark:bg-slate-950"
+        <MenuBannerFrame
+          bannerThemes={BANNER_THEMES}
+          minHeight="min-h-[220px] md:min-h-[240px]"
+          className="card-banner banner-principal p-6 sm:p-8 text-white shadow-xl border border-slate-700/50 bg-slate-900 dark:bg-slate-950"
+          contentClassName="flex flex-col md:flex-row md:items-center justify-between gap-6"
+          alt="Banner Painel Geral"
         >
-          {/* Camada da imagem PNG oficial do Supabase preenchendo 100% do banner de ponta a ponta sem bordas internas */}
-          <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-            <img 
-              key={bannerUrl}
-              src={bannerUrl} 
-              alt="Banner Painel Geral" 
-              className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300" 
-            />
-          </div>
-
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="badge-ativo px-2.5 py-0.5 rounded-full text-xs font-bold">
@@ -833,8 +878,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </MenuBannerFrame>
       ) : (
         <div className="p-8 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center space-y-3 bg-white/50 dark:bg-slate-900/40">
           <Target className="w-12 h-12 text-slate-400 mx-auto" />
@@ -849,6 +893,43 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             Cadastrar Concurso Foco
           </Button>
+        </div>
+      )}
+
+      {/* =========================================================================
+          AVISO ESPECIAL: "BOA PROVA" NO PAINEL GERAL NA DATA DA PROVA
+          ========================================================================= */}
+      {todaysExams.length > 0 && (
+        <div className="relative overflow-hidden rounded-3xl border-2 border-emerald-500 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 sm:p-7 shadow-2xl shadow-emerald-500/20 animate-fade-in">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-lg border border-white/30 text-amber-300">
+                <Award className="w-8 h-8 sm:w-9 sm:h-9 animate-bounce" />
+              </div>
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-400/30 border border-amber-300/40 text-amber-200 text-xs font-black tracking-wider uppercase">
+                  <Sparkles className="w-3.5 h-3.5" /> Hoje é o Grande Dia!
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-md">
+                  Boa Prova! Gabarite com Confiança! 🎯
+                </h2>
+                <p className="text-white/95 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                  {todaysExams.map(ex => `${ex.organ} (${ex.role})`).join(' • ')} — Chegou o momento de mostrar todo o seu empenho e preparação. Mantenha o foco, respire fundo e confie em você. Excelente prova!
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => onNavigateTab('concursos')}
+                className="font-bold text-xs sm:text-sm bg-white text-emerald-900 hover:bg-emerald-50 border-white shadow-xl cursor-pointer"
+              >
+                Ver Detalhes da Prova
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1552,6 +1633,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         onClose={() => setIsStreakModalOpen(false)}
         streakDays={user.streakDays}
         sessoes={sessoes}
+        activeConcurso={activeConcurso}
+        disciplinas={activeDisciplinasList}
       />
 
       {/* Modal de Configuração de Metas Semanais (Sem sair da página) */}

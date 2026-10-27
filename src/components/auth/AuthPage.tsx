@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Lock,
   Mail,
@@ -12,25 +12,199 @@ import {
   ShieldCheck,
   Sparkles,
   FileText,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Calendar,
+  Target,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import { Button } from '../../design-system/Button';
-import { Card, CardBody } from '../../design-system/Card';
+import {
+  useTheme,
+  resolveInitialSkinWithFallback,
+  touchLastActiveTimestamp,
+} from '../../contexts/ThemeContext';
+import { ColorSkin } from '../../types';
 import { PrivacyPolicyModal } from '../privacy/PrivacyPolicyModal';
 import { GezinhoLogo } from '../common/GezinhoLogo';
 
 type AuthTab = 'login' | 'register';
-const LOGIN_BG_URL = 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_Tela_Login_verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfVGVsYV9Mb2dpbl92ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNzY4MzYzLCJleHAiOjQ5NDYzNjgzNjN9.tGSJVlCp1EecgtHwh9cLPgmWf4z93LT-VHGUtf7uOaKeaINSO1h4SIUoh_2U3eQlddVHyht6MTiRogysfvXSNw';
+
+const REMEMBERED_EMAIL_KEY = 'gabarita_remembered_email';
+
+interface LoginThemeStyles {
+  primary: string;
+  primaryHover: string;
+  accentLight: string;
+  badgeBg: string;
+  badgeBorder: string;
+  badgeText: string;
+  bannerGradient: string;
+  expandedGradient: string;
+  glowColor: string;
+  heatmapActive: string;
+  heatmapMid: string;
+  heatmapSoft: string;
+}
+
+const LOGIN_THEMES: Record<string, LoginThemeStyles> = {
+  verde: {
+    primary: '#00A86B',
+    primaryHover: '#059669',
+    accentLight: '#10b981',
+    badgeBg: 'rgba(0, 168, 107, 0.12)',
+    badgeBorder: 'rgba(0, 168, 107, 0.35)',
+    badgeText: '#008756',
+    bannerGradient: 'linear-gradient(145deg, #062c21 0%, #05583f 48%, #00A86B 100%)',
+    expandedGradient: 'linear-gradient(135deg, #054936 0%, #047857 48%, #00c47c 100%)',
+    glowColor: 'rgba(0, 168, 107, 0.28)',
+    heatmapActive: '#10b981',
+    heatmapMid: 'rgba(16, 185, 129, 0.65)',
+    heatmapSoft: 'rgba(16, 185, 129, 0.3)',
+  },
+  azul: {
+    primary: '#2563eb',
+    primaryHover: '#1d4ed8',
+    accentLight: '#38bdf8',
+    badgeBg: 'rgba(37, 99, 235, 0.12)',
+    badgeBorder: 'rgba(37, 99, 235, 0.35)',
+    badgeText: '#1d4ed8',
+    bannerGradient: 'linear-gradient(145deg, #0c1938 0%, #1e3a8a 48%, #2563eb 100%)',
+    expandedGradient: 'linear-gradient(135deg, #172554 0%, #1d4ed8 48%, #0ea5e9 100%)',
+    glowColor: 'rgba(37, 99, 235, 0.28)',
+    heatmapActive: '#38bdf8',
+    heatmapMid: 'rgba(56, 189, 248, 0.65)',
+    heatmapSoft: 'rgba(56, 189, 248, 0.3)',
+  },
+  rosa: {
+    primary: '#db2777',
+    primaryHover: '#be185d',
+    accentLight: '#f472b6',
+    badgeBg: 'rgba(219, 39, 119, 0.12)',
+    badgeBorder: 'rgba(219, 39, 119, 0.35)',
+    badgeText: '#be185d',
+    bannerGradient: 'linear-gradient(145deg, #320820 0%, #831843 48%, #db2777 100%)',
+    expandedGradient: 'linear-gradient(135deg, #500724 0%, #be185d 48%, #ec4899 100%)',
+    glowColor: 'rgba(219, 39, 119, 0.28)',
+    heatmapActive: '#f472b6',
+    heatmapMid: 'rgba(244, 114, 182, 0.65)',
+    heatmapSoft: 'rgba(244, 114, 182, 0.3)',
+  },
+  roxo: {
+    primary: '#7C3AED',
+    primaryHover: '#6D28D9',
+    accentLight: '#A78BFA',
+    badgeBg: 'rgba(124, 58, 237, 0.12)',
+    badgeBorder: 'rgba(124, 58, 237, 0.35)',
+    badgeText: '#6D28D9',
+    bannerGradient: 'linear-gradient(145deg, #1b0d33 0%, #4c1d95 48%, #7C3AED 100%)',
+    expandedGradient: 'linear-gradient(135deg, #2e1065 0%, #6d28d9 48%, #8b5cf6 100%)',
+    glowColor: 'rgba(124, 58, 237, 0.3)',
+    heatmapActive: '#A78BFA',
+    heatmapMid: 'rgba(167, 139, 250, 0.65)',
+    heatmapSoft: 'rgba(167, 139, 250, 0.3)',
+  },
+  laranja: {
+    primary: '#FF6B00',
+    primaryHover: '#e65100',
+    accentLight: '#fb923c',
+    badgeBg: 'rgba(255, 107, 0, 0.12)',
+    badgeBorder: 'rgba(255, 107, 0, 0.35)',
+    badgeText: '#c2410c',
+    bannerGradient: 'linear-gradient(145deg, #2e1002 0%, #9a3412 48%, #FF6B00 100%)',
+    expandedGradient: 'linear-gradient(135deg, #431407 0%, #c2410c 48%, #FF6B00 100%)',
+    glowColor: 'rgba(255, 107, 0, 0.3)',
+    heatmapActive: '#fb923c',
+    heatmapMid: 'rgba(251, 146, 60, 0.65)',
+    heatmapSoft: 'rgba(251, 146, 60, 0.3)',
+  },
+};
+
+const LOGIN_BG_IMAGES: Record<string, string> = {
+  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi52ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzMDU3MjU4LCJleHAiOjQ5NDY2NTcyNTh9.x8KSdz4LpnqMD4T2BxspM7vnMx22B5be_oTnBM61uU0s691yOhYM4TAtDmXc7PfbFcfSx13vsURqV5s4AUJMpw',
+  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTcyNzAsImV4cCI6NDk0NjY1NzI3MH0.ktLVIx5SZtgUka0yZ4PXZoaEx1FTSgEkIThXkgr6JbVHk3YWVz54XO_2lt6IsAB4MLbd0d3ZSa2AfgHjmjRw_w',
+  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTcyODcsImV4cCI6NDk0NjY1NzI4N30.YD3TxMIjGolffysVnSPmn9kzxCWLE5b8ryREFXeM7dhwUbmxEaOvTnQlUGTemJhhV4v62JgJnREwgbNG4xPsPw',
+  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTczMDEsImV4cCI6NDk0NjY1NzMwMX0.h4-HNjI7RQnqfsLa9OQLmdjQASlEpMWe_W1cRz_XeEcSUy_BgHlNvCp4G799QEq5v54CthVgev12JCqMShhuKw',
+  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTczMTUsImV4cCI6NDk0NjY1NzMxNX0.RiQAaIT2IdZMgutiU2asXnjwLWWj-yUQLgVcGQdMuKeUzKp4gXMTMLlWZ8V0SZh6s7CS2ADOYz1tRwOMKG9a7g',
+};
+
+// Padrão de células para o card de Constância (4x7 = 28 dias)
+const CONSTANCIA_GRID = [
+  [2, 1, 3, 2, 3, 2, 1],
+  [2, 2, 3, 1, 1, 3, 2],
+  [3, 2, 2, 3, 3, 1, 2],
+  [1, 3, 2, 3, 2, 1, 3],
+];
 
 export const AuthPage: React.FC = () => {
-  const { loginWithEmail, registerWithEmail, loginWithGoogle, resetPassword } = useAuth();
-  const { palette } = useTheme();
+  const {
+    loginWithEmail,
+    registerWithEmail,
+    loginWithGoogle,
+    loginAsGuest,
+    resetPassword,
+    setLoginTransitioning,
+  } = useAuth();
+  const { colorSkin, reapplyTheme } = useTheme();
+
+  // Resolve o tema da tela de login respeitando o fallback de 7 dias para o Verde (#00A86B)
+  const [loginSkin, setLoginSkin] = useState<ColorSkin>(() => resolveInitialSkinWithFallback());
+
+  useEffect(() => {
+    const resolved = resolveInitialSkinWithFallback();
+    setLoginSkin(resolved);
+  }, [colorSkin]);
+
+  // A tela de login NUNCA renderiza em modo escuro (dark mode), independentemente de o usuário
+  // estar no modo escuro antes de deslogar ou da preferência do SO (prefers-color-scheme).
+  // Remove as classes 'dark' e 'dark-mode' da tag <html> e <body> enquanto a tela de login estiver montada.
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    root.classList.remove('dark', 'dark-mode');
+    body?.classList.remove('dark', 'dark-mode');
+
+    // Ao desmontar (após o login ser concluído), restaura a preferência real do usuário salva
+    return () => {
+      try {
+        const savedTheme = localStorage.getItem('gabarita_theme') || 'dark';
+        let isDark = false;
+        if (savedTheme === 'dark') {
+          isDark = true;
+        } else if (savedTheme === 'system') {
+          isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        if (isDark) {
+          root.classList.add('dark', 'dark-mode');
+          body?.classList.add('dark', 'dark-mode');
+        }
+      } catch (err) {
+        console.warn('Erro ao restaurar classes de tema após login:', err);
+      }
+    };
+  }, []);
+
+  const themeStyles = LOGIN_THEMES[loginSkin] || LOGIN_THEMES.verde;
+  const activeBgImage = LOGIN_BG_IMAGES[loginSkin] || LOGIN_BG_IMAGES.verde;
 
   const [activeTab, setActiveTab] = useState<AuthTab>('login');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    try {
+      return localStorage.getItem(REMEMBERED_EMAIL_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
   const [password, setPassword] = useState('');
+  const [rememberEmail, setRememberEmail] = useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY));
+    } catch {
+      return false;
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
@@ -38,8 +212,45 @@ export const AuthPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estados da transição cinematográfica pós-login (Banner Expansion)
+  const [isExpanding, setIsExpanding] = useState(false);
+  const [transitionProgress, setTransitionProgress] = useState(15);
+  const [welcomeUserName, setWelcomeUserName] = useState<string>('Estudante');
+
+  // Carrossel do banner lateral direito
+  const [activeSlide, setActiveSlide] = useState(0);
+  const totalSlides = 4;
+
+  useEffect(() => {
+    if (isExpanding) return;
+    const timer = setInterval(() => {
+      setActiveSlide(prev => (prev + 1) % totalSlides);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, [isExpanding]);
+
+  // Dispara a animação de expansão do banner cobrindo 100% do card antes de liberar o dashboard
+  const triggerBannerExpansion = async (displayName?: string) => {
+    const firstName = (displayName || 'Concurseiro(a)').trim().split(' ')[0];
+    setWelcomeUserName(firstName);
+    touchLastActiveTimestamp();
+    setIsExpanding(true);
+    setTransitionProgress(25);
+
+    setTimeout(() => setTransitionProgress(72), 180);
+    setTimeout(() => setTransitionProgress(100), 480);
+
+    await new Promise(resolve => setTimeout(resolve, 680));
+    try {
+      reapplyTheme();
+    } catch {}
+    setLoginTransitioning(false);
+  };
+
   const handleMainAction = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isExpanding) return;
+
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -55,14 +266,26 @@ export const AuthPage: React.FC = () => {
         return;
       }
 
-      setIsSubmitting(true);
       try {
-        await loginWithEmail(cleanEmail, password);
+        if (rememberEmail) {
+          localStorage.setItem(REMEMBERED_EMAIL_KEY, cleanEmail);
+        } else {
+          localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        }
+      } catch {}
+
+      setIsSubmitting(true);
+      setLoginTransitioning(true);
+
+      try {
+        const loggedUser = await loginWithEmail(cleanEmail, password);
+        await triggerBannerExpansion(loggedUser?.name || cleanEmail.split('@')[0]);
       } catch (err: any) {
-        console.error("Erro Supabase Auth:", err);
-        setErrorMessage(err.message || 'E-mail ou senha incorretos.');
-      } finally {
+        console.warn('[AuthPage] Falha no login:', err.message);
+        setLoginTransitioning(false);
         setIsSubmitting(false);
+        setIsExpanding(false);
+        setErrorMessage(err.message || 'E-mail ou senha incorretos.');
       }
     } else {
       const cleanName = name.trim();
@@ -88,37 +311,62 @@ export const AuthPage: React.FC = () => {
       }
 
       setIsSubmitting(true);
+      setLoginTransitioning(true);
+
       try {
         const result = await registerWithEmail(cleanName, cleanEmail, password, acceptedTerms);
         if (result?.needsEmailConfirmation) {
+          setLoginTransitioning(false);
+          setIsSubmitting(false);
           setSuccessMessage('Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de entrar.');
         } else {
-          setSuccessMessage('Cadastro realizado com sucesso! Redirecionando...');
+          await triggerBannerExpansion(cleanName);
         }
       } catch (err: any) {
-        console.error("Erro Supabase Auth:", err);
-        setErrorMessage(err.message || 'Não foi possível cadastrar seu usuário no Supabase.');
-      } finally {
+        console.warn('[AuthPage] Falha no cadastro:', err.message);
+        setLoginTransitioning(false);
         setIsSubmitting(false);
+        setIsExpanding(false);
+        setErrorMessage(err.message || 'Não foi possível cadastrar seu usuário.');
       }
     }
   };
 
   const handleGoogleAction = async () => {
+    if (isSubmitting || isExpanding) return;
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsSubmitting(true);
     try {
+      touchLastActiveTimestamp();
       await loginWithGoogle();
     } catch (err: any) {
-      console.error("Erro Supabase Auth:", err);
+      console.warn('[AuthPage] Falha no Google Auth:', err.message);
       setErrorMessage(err.message || 'Erro ao conectar com Google.');
-    } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleGuestLogin = async () => {
+    if (isSubmitting || isExpanding) return;
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setIsSubmitting(true);
+    setLoginTransitioning(true);
+    try {
+      const guestUser = await loginAsGuest();
+      await triggerBannerExpansion(guestUser?.name || 'Visitante');
+    } catch (err: any) {
+      console.warn('[AuthPage] Falha no modo visitante:', err);
+      setLoginTransitioning(false);
+      setIsSubmitting(false);
+      setIsExpanding(false);
+      setErrorMessage('Não foi possível iniciar o modo demonstração.');
+    }
+  };
+
   const handleForgotPasswordClick = async () => {
+    if (isSubmitting || isExpanding) return;
     setErrorMessage(null);
     setSuccessMessage(null);
     const cleanEmail = email.trim();
@@ -131,7 +379,7 @@ export const AuthPage: React.FC = () => {
       await resetPassword(cleanEmail);
       setSuccessMessage('Link de redefinição de senha enviado para seu e-mail!');
     } catch (err: any) {
-      console.error("Erro Supabase Auth:", err);
+      console.warn('[AuthPage] Falha na recuperação de senha:', err.message);
       setErrorMessage(err.message || 'Não foi possível enviar o e-mail de recuperação.');
     } finally {
       setIsSubmitting(false);
@@ -139,92 +387,152 @@ export const AuthPage: React.FC = () => {
   };
 
   return (
-    <div 
-  className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-center items-center p-4 sm:p-6 relative overflow-hidden"
-  style={{
-    backgroundImage: `url("${LOGIN_BG_URL}")`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-  }}
->
-      {/* Efeitos de iluminação de fundo alinhados ao Design System */}
+    <div
+      className="min-h-screen bg-[#F3F5F7] text-slate-900 flex items-center justify-center p-3 sm:p-6 relative overflow-hidden select-none"
+      style={{
+        backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.70)), url("${activeBgImage}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Elementos decorativos sutis de fundo */}
       <div
-        className="absolute -top-24 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full blur-3xl pointer-events-none opacity-20 dark:opacity-25"
-        style={{ backgroundColor: palette.primary }}
+        className="absolute -top-32 left-1/4 w-[500px] h-[500px] rounded-full blur-3xl pointer-events-none opacity-20 transition-colors duration-700"
+        style={{ backgroundColor: themeStyles.primary }}
       />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div
+        className="absolute -bottom-32 right-1/4 w-[450px] h-[450px] rounded-full blur-3xl pointer-events-none opacity-15 transition-colors duration-700"
+        style={{ backgroundColor: themeStyles.accentLight }}
+      />
 
-      <div className="w-full max-w-md z-10 space-y-6">
-        {/* Identidade Visual e Cabeçalho */}
-        <div className="text-center space-y-2.5">
-          <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-lg">
-            <GezinhoLogo size={56} className="drop-shadow-md" />
+      {/* Ícones marca d'água no fundo da página */}
+      <Clock className="hidden xl:block absolute left-8 bottom-20 w-16 h-16 text-slate-300/50 pointer-events-none -rotate-12" />
+      <Calendar className="hidden xl:block absolute right-24 top-1/3 w-14 h-14 text-slate-300/45 pointer-events-none rotate-6" />
+      <Target className="hidden xl:block absolute right-14 bottom-16 w-16 h-16 text-slate-300/50 pointer-events-none" />
+
+      {/* Toast flutuante de boas-vindas durante a expansão pós-login */}
+      <div
+        className={`fixed top-5 right-5 z-50 bg-white border border-slate-200/90 rounded-2xl shadow-2xl px-4 py-3 min-w-[240px] transition-all duration-500 pointer-events-none ${
+          isExpanding
+            ? 'opacity-100 translate-y-0 scale-100'
+            : 'opacity-0 -translate-y-3 scale-95'
+        }`}
+        style={{
+          borderLeftWidth: '4px',
+          borderLeftColor: themeStyles.primary,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              backgroundColor: themeStyles.badgeBg,
+              color: themeStyles.primary,
+            }}
+          >
+            <Info className="w-4 h-4" />
           </div>
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center justify-center gap-2">
-              <span>Gabarita</span>
-              <span
-                className="text-[11px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full border"
-                style={{
-                  backgroundColor: `${palette.primary}18`,
-                  color: palette.primary,
-                  borderColor: `${palette.primary}40`,
-                }}
-              >
-                Concursos
-              </span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
-              Planejamento inteligente, edital verticalizado, revisões espaçadas e métricas de alta performance.
-            </p>
+          <div>
+            <p className="text-xs font-bold text-slate-800">Usuário</p>
+            <p className="text-xs text-slate-500">Olá, {welcomeUserName}!</p>
           </div>
         </div>
+        <div className="mt-2.5 w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${transitionProgress}%`,
+              backgroundColor: themeStyles.primary,
+            }}
+          />
+        </div>
+      </div>
 
-        {/* Card Principal de Autenticação */}
-        <Card className="bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden">
-          <CardBody className="p-6 sm:p-8 space-y-6">
-            {/* Alternância entre abas: 'Entrar' e 'Criar Conta' */}
-            <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-800/90 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
+      {/* Container Principal de Login (2 Colunas com Expansão Fluida do Banner Direito) */}
+      <div className="w-full max-w-[1060px] min-h-[650px] bg-white rounded-[28px] border border-slate-200/80 shadow-[0_24px_70px_rgba(15,23,42,0.08)] p-3 sm:p-3.5 relative overflow-hidden flex">
+        {/* ===================================================================
+            COLUNA ESQUERDA: FORMULÁRIO DE AUTENTICAÇÃO
+            =================================================================== */}
+        <div
+          className={`w-full lg:w-[48%] px-4 py-5 sm:px-9 sm:py-7 flex flex-col justify-between z-10 transition-all duration-500 ease-in-out ${
+            isExpanding
+              ? 'opacity-0 -translate-x-6 pointer-events-none'
+              : 'opacity-100 translate-x-0'
+          }`}
+        >
+          {/* Topo: Logo + Nome + Badge Concursos */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-center">
+                  <GezinhoLogo size={36} />
+                </div>
+                <span className="text-2xl font-black tracking-tight text-slate-900">
+                  Gabarita
+                </span>
+                <span
+                  className="text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full border"
+                  style={{
+                    backgroundColor: themeStyles.badgeBg,
+                    borderColor: themeStyles.badgeBorder,
+                    color: themeStyles.badgeText,
+                  }}
+                >
+                  CONCURSOS
+                </span>
+              </div>
+
+              {/* Alternador rápido Entrar / Criar Conta */}
               <button
                 type="button"
+                disabled={isSubmitting || isExpanding}
                 onClick={() => {
-                  setActiveTab('login');
+                  setActiveTab(prev => (prev === 'login' ? 'register' : 'login'));
                   setErrorMessage(null);
                   setSuccessMessage(null);
                 }}
-                className={`py-2.5 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  activeTab === 'login'
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
+                className="text-xs font-bold hover:underline cursor-pointer transition-colors"
+                style={{ color: themeStyles.primary }}
               >
-                Entrar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('register');
-                  setErrorMessage(null);
-                  setSuccessMessage(null);
-                }}
-                className={`py-2.5 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  activeTab === 'register'
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Criar Conta
+                {activeTab === 'login' ? 'Criar conta' : 'Já tenho conta'}
               </button>
             </div>
 
-            {/* Formulário Principal */}
+            {/* Saudação Principal */}
+            <div>
+              {activeTab === 'login' ? (
+                <>
+                  <h1 className="text-2xl sm:text-[30px] font-extrabold text-slate-900 leading-[1.18] tracking-tight">
+                    Olá,
+                    <br />
+                    bem-vindo de volta
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
+                    Entre para continuar seus estudos.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-2xl sm:text-[28px] font-extrabold text-slate-900 leading-[1.18] tracking-tight">
+                    Crie sua conta
+                    <br />
+                    no Gabarita
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
+                    Planeje seus estudos com inteligência e conquiste sua vaga.
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Formulário */}
             <form onSubmit={handleMainAction} className="space-y-4" noValidate>
               {activeTab === 'register' && (
                 <div className="space-y-1.5">
                   <label
                     htmlFor="auth-name"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-bold text-slate-700"
                   >
                     Nome Completo
                   </label>
@@ -235,20 +543,21 @@ export const AuthPage: React.FC = () => {
                     <input
                       id="auth-name"
                       type="text"
+                      disabled={isSubmitting || isExpanding}
                       placeholder="Ex: Ana Carolina Ribeiro"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm pl-10 pr-4 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      onChange={e => setName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 text-sm pl-10 pr-4 py-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Campo de E-mail */}
+              {/* E-mail */}
               <div className="space-y-1.5">
                 <label
                   htmlFor="auth-email"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-bold text-slate-700"
                 >
                   E-mail
                 </label>
@@ -259,28 +568,30 @@ export const AuthPage: React.FC = () => {
                   <input
                     id="auth-email"
                     type="email"
+                    disabled={isSubmitting || isExpanding}
                     placeholder="seu.email@exemplo.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm pl-10 pr-4 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 text-sm pl-10 pr-4 py-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60"
                   />
                 </div>
               </div>
 
-              {/* Campo de Senha com Ícone de Exibir/Ocultar + Link Esqueci Minha Senha */}
+              {/* Senha */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label
                     htmlFor="auth-password"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-bold text-slate-700"
                   >
                     Senha
                   </label>
                   <button
                     type="button"
+                    disabled={isSubmitting || isExpanding}
                     onClick={handleForgotPasswordClick}
                     className="text-xs font-semibold hover:underline cursor-pointer transition-colors"
-                    style={{ color: palette.primary }}
+                    style={{ color: themeStyles.primary }}
                   >
                     Esqueci minha senha
                   </button>
@@ -293,149 +604,575 @@ export const AuthPage: React.FC = () => {
                   <input
                     id="auth-password"
                     type={showPassword ? 'text' : 'password'}
+                    disabled={isSubmitting || isExpanding}
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm pl-10 pr-11 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 text-sm pl-10 pr-11 py-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                    disabled={isSubmitting || isExpanding}
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute right-3 p-1 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                     title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                     aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              {/* Termos de Uso no Cadastro */}
-              {activeTab === 'register' && (
-                <div className="flex items-start gap-2.5 pt-1 text-xs">
+              {/* Checkbox Lembrar E-mail (Login) ou Aceitar Termos (Cadastro) */}
+              {activeTab === 'login' ? (
+                <div className="flex items-center gap-2 pt-0.5">
+                  <input
+                    id="remember-email"
+                    type="checkbox"
+                    disabled={isSubmitting || isExpanding}
+                    checked={rememberEmail}
+                    onChange={e => setRememberEmail(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 cursor-pointer accent-emerald-600"
+                  />
+                  <label
+                    htmlFor="remember-email"
+                    className="text-xs text-slate-600 cursor-pointer select-none"
+                  >
+                    Lembrar meu e-mail
+                  </label>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5 pt-0.5 text-xs">
                   <input
                     id="auth-terms"
                     type="checkbox"
+                    disabled={isSubmitting || isExpanding}
                     checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    onChange={e => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-slate-300 cursor-pointer accent-emerald-600"
                   />
-                  <label htmlFor="auth-terms" className="text-slate-500 dark:text-slate-400 leading-relaxed select-none cursor-pointer">
+                  <label
+                    htmlFor="auth-terms"
+                    className="text-slate-500 leading-relaxed select-none cursor-pointer"
+                  >
                     Li e concordo com os{' '}
                     <button
                       type="button"
                       onClick={() => setIsTermsModalOpen(true)}
                       className="font-semibold underline hover:opacity-80 cursor-pointer"
-                      style={{ color: palette.primary }}
+                      style={{ color: themeStyles.primary }}
                     >
                       Termos de Uso
                     </button>{' '}
-                    e Política de Privacidade da plataforma.
+                    e Política de Privacidade.
                   </label>
                 </div>
               )}
 
-              {/* Mensagem de Erro de Validação ou Supabase (Posicionada diretamente acima do botão) */}
+              {/* Alertas de Erro */}
               {errorMessage && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2.5 animate-fade-in shadow-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
-                  <span className="font-medium leading-relaxed">{errorMessage}</span>
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs flex flex-col gap-2 animate-fade-in">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                    <span className="font-medium leading-relaxed">{errorMessage}</span>
+                  </div>
+                  {activeTab === 'login' &&
+                    (errorMessage.includes('E-mail ou senha incorretos') ||
+                      errorMessage.includes('Nenhum usuário')) && (
+                      <div className="pt-1.5 border-t border-rose-200 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('register');
+                            setErrorMessage(null);
+                          }}
+                          className="text-[11px] font-bold underline hover:opacity-80 cursor-pointer"
+                          style={{ color: themeStyles.primary }}
+                        >
+                          Criar conta agora
+                        </button>
+                        <span className="text-slate-400">•</span>
+                        <button
+                          type="button"
+                          onClick={handleForgotPasswordClick}
+                          className="text-[11px] font-bold text-sky-600 underline hover:opacity-80 cursor-pointer"
+                        >
+                          Recuperar senha
+                        </button>
+                      </div>
+                    )}
                 </div>
               )}
 
-              {/* Feedback de Sucesso (Posicionado diretamente acima do botão) */}
+              {/* Alertas de Sucesso */}
               {successMessage && (
-                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs flex items-start gap-2.5 animate-fade-in shadow-xs">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs flex items-start gap-2 animate-fade-in">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500 mt-0.5" />
                   <span className="font-medium leading-relaxed">{successMessage}</span>
                 </div>
               )}
 
-              {/* Botão Principal de Ação ('Entrar' / 'Cadastrar') */}
-              <Button
+              {/* Botão Principal de Submissão ('Entrar' / 'Cadastrar') */}
+              <button
                 type="submit"
-                variant="primary"
-                size="lg"
-                disabled={isSubmitting}
-                className="w-full font-bold text-sm tracking-wide shadow-md mt-2 py-3 rounded-xl cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                leftIcon={isSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : undefined}
-                rightIcon={!isSubmitting ? <ArrowRight className="w-4 h-4" /> : undefined}
+                disabled={isSubmitting || isExpanding}
+                style={{
+                  backgroundColor: themeStyles.primary,
+                }}
+                className="w-full py-3 px-5 rounded-xl font-bold text-sm text-white shadow-md hover:brightness-105 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {isSubmitting 
-                  ? (activeTab === 'login' ? 'Entrando...' : 'Cadastrando...') 
-                  : (activeTab === 'login' ? 'Entrar' : 'Cadastrar')}
-              </Button>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>{activeTab === 'login' ? 'Entrando...' : 'Cadastrando...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{activeTab === 'login' ? 'Entrar' : 'Cadastrar'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
             </form>
 
-            {/* Divisor Visual */}
-            <div className="relative">
+            {/* Divisor OU CONTINUE COM */}
+            <div className="relative py-0.5">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+                <div className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
-                <span className="bg-white dark:bg-slate-900 px-3 text-slate-400 dark:text-slate-500 font-bold">
+                <span className="bg-white px-3 text-slate-400 font-bold">
                   Ou continue com
                 </span>
               </div>
             </div>
 
-            {/* Botão Estilizado para 'Entrar com Google' */}
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              disabled={isSubmitting}
-              onClick={handleGoogleAction}
-              className="w-full py-2.5 rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold text-sm cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              leftIcon={
-                isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path
-                      fill="#EA4335"
-                      d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                    />
-                    <path
-                      fill="#4285F4"
-                      d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
-                    />
-                  </svg>
-                )
-              }
-            >
-              {isSubmitting ? 'Conectando...' : 'Entrar com Google'}
-            </Button>
-
-            {/* Rodapé do Card com Link para Termos de Uso */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Ambiente Seguro</span>
-              </span>
+            {/* Botões Secundários: Google + Modo Demonstração */}
+            <div className="space-y-2.5">
               <button
                 type="button"
-                onClick={() => setIsTermsModalOpen(true)}
-                className="inline-flex items-center gap-1 font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 underline cursor-pointer transition-colors"
+                disabled={isSubmitting || isExpanding}
+                onClick={handleGoogleAction}
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Termos de Uso</span>
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#EA4335"
+                    d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
+                  />
+                </svg>
+                <span>Entrar com Google</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isSubmitting || isExpanding}
+                onClick={handleGuestLogin}
+                className="w-full py-2.5 px-4 rounded-xl border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/60 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Sparkles className="w-4 h-4 shrink-0" style={{ color: themeStyles.primary }} />
+                <span>Entrar no Modo Demonstração (Sem cadastro)</span>
               </button>
             </div>
-          </CardBody>
-        </Card>
+          </div>
+
+          {/* Rodapé da Coluna Esquerda */}
+          <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <ShieldCheck className="w-3.5 h-3.5" style={{ color: themeStyles.primary }} />
+              <span>Ambiente Seguro</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsTermsModalOpen(true)}
+              className="inline-flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Termos de Uso</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ===================================================================
+            COLUNA DIREITA: BANNER VISUAL TEMÁTICO & EXPANSÃO CINEMATOGRÁFICA
+            No desktop: ocupa 51% à direita e expande para 100% da largura ao logar.
+            No mobile: surge com fade/scale cobrindo o card ao logar.
+            =================================================================== */}
+        <div
+          className={`login-showcase-banner ${
+            isExpanding
+              ? 'flex fixed lg:absolute inset-3 sm:inset-3.5 z-40 opacity-100 scale-100'
+              : 'hidden lg:flex lg:absolute lg:top-3.5 lg:bottom-3.5 lg:right-3.5 lg:w-[51%] z-20 opacity-100 scale-100'
+          } rounded-[22px] overflow-hidden flex-col justify-between p-7 sm:p-10 text-white shadow-xl`}
+          style={{
+            background: isExpanding ? themeStyles.expandedGradient : themeStyles.bannerGradient,
+            transition: 'all 650ms cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
+          {/* Textura pontilhada e círculos geométricos sutis */}
+          <div
+            className="absolute inset-0 opacity-20 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(rgba(255,255,255,0.28) 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+            }}
+          />
+          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full border border-white/15 pointer-events-none" />
+          <div className="absolute -bottom-28 -left-28 w-96 h-96 rounded-full border border-white/15 pointer-events-none" />
+          <div className="absolute top-1/4 right-8 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+
+          {/* CONTEÚDO DURANTE A TRANSIÇÃO PÓS-LOGIN (BANNER EXPANDIDO) */}
+          {isExpanding ? (
+            <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center animate-fade-in space-y-7 my-auto">
+              {/* Cabeçalho de carregamento */}
+              <div className="space-y-3">
+                <h2
+                  className="text-xl sm:text-2xl font-extrabold text-white tracking-tight"
+                  style={{ color: '#ffffff' }}
+                >
+                  Preparando seus estudos...
+                </h2>
+                <div className="w-52 h-1 bg-white/25 rounded-full overflow-hidden mx-auto">
+                  <div
+                    className="h-full bg-white rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${transitionProgress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Card central de Constância idêntico à referência visual */}
+              <div className="login-glass-card w-full max-w-[330px] rounded-2xl bg-white/12 backdrop-blur-md border border-white/20 p-6 shadow-2xl space-y-4">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-white/85">
+                  CONSTÂNCIA
+                </p>
+                <div className="grid grid-cols-7 gap-2 justify-items-center">
+                  {CONSTANCIA_GRID.flat().map((level, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-6 h-6 rounded-md transition-all duration-500 ${
+                        level === 3
+                          ? 'bg-white shadow-xs'
+                          : level === 2
+                          ? 'bg-white/55'
+                          : 'bg-white/25'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-white/90 pt-1">
+                  <strong className="font-extrabold text-white">18 dias</strong> seguidos de estudo
+                </p>
+              </div>
+
+              {/* Texto motivacional inferior */}
+              <div className="space-y-1.5 max-w-md">
+                <h3
+                  className="text-lg sm:text-xl font-extrabold text-white"
+                  style={{ color: '#ffffff' }}
+                >
+                  Sua constância, dia após dia
+                </h3>
+                <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
+                  O que sustenta a aprovação não é o dia bom — é a sequência.
+                </p>
+              </div>
+
+              {/* Indicadores de página */}
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                <span className="w-5 h-1.5 rounded-full bg-white" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+              </div>
+            </div>
+          ) : (
+            /* CONTEÚDO PADRÃO DO BANNER DIREITO (PRÉ-LOGIN) */
+            <>
+              {/* Topo do Banner */}
+              <div className="relative z-10 flex flex-col items-center text-center space-y-3 pt-1">
+                <span className="px-4 py-1 rounded-full border border-white/25 bg-white/10 backdrop-blur-xs text-[10px] font-extrabold uppercase tracking-widest text-white/95">
+                  SUA APROVAÇÃO A UM PASSO
+                </span>
+                <h2
+                  className="text-xl xl:text-[26px] font-extrabold text-white leading-tight max-w-md"
+                  style={{ color: '#ffffff' }}
+                >
+                  Tudo o que sua rotina de estudos precisa, em um só lugar
+                </h2>
+              </div>
+
+              {/* Palco Central de Cards Visuais */}
+              <div className="relative z-10 my-auto py-4 flex flex-col items-center justify-center">
+                {activeSlide === 0 && (
+                  <div className="w-full flex items-center justify-center relative min-h-[230px] animate-fade-in">
+                    {/* Card Esquerdo Secundário: Ciclo de Estudos */}
+                    <div className="login-glass-card-soft hidden xl:flex flex-col justify-between w-44 h-44 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-3.5 -mr-6 opacity-85 scale-95 shadow-lg">
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-white/80">
+                        CICLO DE ESTUDOS
+                      </span>
+                      <div className="flex items-center gap-2.5 my-auto">
+                        <svg className="w-16 h-16 -rotate-90 shrink-0" viewBox="0 0 36 36">
+                          <circle
+                            cx="18"
+                            cy="18"
+                            r="13"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.15)"
+                            strokeWidth="5"
+                          />
+                          <circle
+                            cx="18"
+                            cy="18"
+                            r="13"
+                            fill="none"
+                            stroke="#10b981"
+                            strokeWidth="5"
+                            strokeDasharray="32 82"
+                          />
+                          <circle
+                            cx="18"
+                            cy="18"
+                            r="13"
+                            fill="none"
+                            stroke="#8b5cf6"
+                            strokeWidth="5"
+                            strokeDasharray="22 82"
+                            strokeDashoffset="-32"
+                          />
+                          <circle
+                            cx="18"
+                            cy="18"
+                            r="13"
+                            fill="none"
+                            stroke="#f59e0b"
+                            strokeWidth="5"
+                            strokeDasharray="16 82"
+                            strokeDashoffset="-54"
+                          />
+                        </svg>
+                        <div className="space-y-1 text-[9px] text-white/80">
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-xs bg-purple-400" />
+                            <span>Dir. Const.</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-xs bg-emerald-400" />
+                            <span>Português</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-xs bg-amber-400" />
+                            <span>RLM</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Principal Central: Desafio em Andamento */}
+                    <div className="login-glass-card-main relative z-20 w-64 sm:w-72 rounded-2xl bg-white/18 backdrop-blur-md border border-white/30 p-5 shadow-2xl text-center space-y-3">
+                      {/* Selo Insígnia Hexagonal */}
+                      <div className="login-insignia-badge hidden sm:flex absolute -left-7 top-1/2 -translate-y-1/2 w-14 h-14 rounded-2xl bg-white/90 text-slate-900 border-2 border-white shadow-xl items-center justify-center rotate-12">
+                        <span className="-rotate-12 text-[9px] font-black uppercase tracking-tight text-slate-800">
+                          Insígnia
+                        </span>
+                      </div>
+
+                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/80">
+                        DESAFIO EM ANDAMENTO
+                      </p>
+                      <h4
+                        className="text-base font-extrabold text-white"
+                        style={{ color: '#ffffff' }}
+                      >
+                        Sprint de 500 questões
+                      </h4>
+                      <p className="text-xs text-white/85 font-medium">312 de 500 questões</p>
+                      <div className="w-full h-2 rounded-full bg-black/25 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: '64%',
+                            backgroundColor: themeStyles.accentLight,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card Direito Secundário: Constância */}
+                    <div className="login-glass-card-soft hidden xl:flex flex-col justify-between w-44 h-44 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-3.5 -ml-6 opacity-85 scale-95 shadow-lg">
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-white/80 text-right">
+                        CONSTÂNCIA
+                      </span>
+                      <div className="grid grid-cols-5 gap-1.5 my-auto pl-3">
+                        {Array.from({ length: 15 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-4 h-4 rounded-xs"
+                            style={{
+                              backgroundColor:
+                                i % 3 === 0
+                                  ? themeStyles.heatmapActive
+                                  : i % 2 === 0
+                                  ? themeStyles.heatmapMid
+                                  : themeStyles.heatmapSoft,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[9px] text-white/75 text-right">
+                        18 dias seguidos de estudo
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {activeSlide === 1 && (
+                  <div className="login-glass-card w-full max-w-[310px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-5 shadow-2xl space-y-3.5 text-center animate-fade-in">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/85">
+                      CONSTÂNCIA
+                    </p>
+                    <div className="grid grid-cols-7 gap-2 justify-items-center">
+                      {CONSTANCIA_GRID.flat().map((level, idx) => (
+                        <div
+                          key={idx}
+                          className={`w-5 h-5 rounded-md ${
+                            level === 3
+                              ? 'bg-white shadow-xs'
+                              : level === 2
+                              ? 'bg-white/55'
+                              : 'bg-white/25'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/90">
+                      <strong className="font-extrabold text-white">18 dias</strong> seguidos de
+                      estudo
+                    </p>
+                  </div>
+                )}
+
+                {activeSlide === 2 && (
+                  <div className="login-glass-card w-full max-w-[310px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-5 shadow-2xl space-y-3.5 animate-fade-in">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/85 text-center">
+                      CICLO INTELIGENTE
+                    </p>
+                    <div className="space-y-2.5 text-xs">
+                      <div className="login-glass-subitem flex items-center justify-between bg-white/10 rounded-xl px-3 py-2">
+                        <span className="font-bold text-white">Dir. Constitucional</span>
+                        <span className="font-mono text-white/85">45 min • 28%</span>
+                      </div>
+                      <div className="login-glass-subitem flex items-center justify-between bg-white/10 rounded-xl px-3 py-2">
+                        <span className="font-bold text-white">Língua Portuguesa</span>
+                        <span className="font-mono text-white/85">45 min • 24%</span>
+                      </div>
+                      <div className="login-glass-subitem flex items-center justify-between bg-white/10 rounded-xl px-3 py-2">
+                        <span className="font-bold text-white">Raciocínio Lógico</span>
+                        <span className="font-mono text-white/85">40 min • 18%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeSlide === 3 && (
+                  <div className="login-glass-card w-full max-w-[310px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-5 shadow-2xl space-y-3.5 text-center animate-fade-in">
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/85">
+                      REVISÃO ESPAÇADA
+                    </p>
+                    <div className="grid grid-cols-4 gap-2 pt-1">
+                      {['24h', '7d', '15d', '30d'].map((label, idx) => (
+                        <div
+                          key={label}
+                          className="login-glass-pill-box rounded-xl bg-white/15 border border-white/20 py-2.5 px-2 flex flex-col items-center"
+                        >
+                          <span className="text-xs font-black text-white">{label}</span>
+                          <span className="text-[10px] text-white/75 mt-0.5">
+                            {idx < 3 ? 'Concluída' : 'Ativa'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/90">
+                      Retenção média de <strong className="font-extrabold text-white">89%</strong> nos
+                      tópicos revisados
+                    </p>
+                  </div>
+                )}
+
+                {/* Texto descritivo do slide ativo */}
+                <div className="text-center space-y-1.5 mt-6 max-w-sm">
+                  <h3
+                    className="text-lg sm:text-xl font-extrabold text-white"
+                    style={{ color: '#ffffff' }}
+                  >
+                    {activeSlide === 0 && 'Desafios que puxam o seu ritmo'}
+                    {activeSlide === 1 && 'Sua constância, dia após dia'}
+                    {activeSlide === 2 && 'Ciclo adaptado ao seu domínio'}
+                    {activeSlide === 3 && 'Memória blindada até a prova'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
+                    {activeSlide === 0 &&
+                      'Metas com prazo, insígnia no fim e gente competindo junto.'}
+                    {activeSlide === 1 &&
+                      'O que sustenta a aprovação não é o dia bom — é a sequência.'}
+                    {activeSlide === 2 &&
+                      'Mais blocos para as disciplinas de maior peso e necessidade.'}
+                    {activeSlide === 3 &&
+                      'Ciclos de revisão 24h, 7, 15 e 30 dias agendados automaticamente.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Rodapé do Banner: Navegação do Carrossel */}
+              <div className="relative z-10 flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveSlide(prev => (prev - 1 + totalSlides) % totalSlides)}
+                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-colors cursor-pointer"
+                  aria-label="Slide anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalSlides }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveSlide(idx)}
+                      aria-label={`Ir para slide ${idx + 1}`}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        activeSlide === idx ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveSlide(prev => (prev + 1) % totalSlides)}
+                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-colors cursor-pointer"
+                  aria-label="Próximo slide"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Modal de Termos de Uso e Política de Privacidade */}

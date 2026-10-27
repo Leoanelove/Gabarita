@@ -125,6 +125,51 @@ app.post('/api/editais', async (req, res) => {
   }
 });
 
+app.get('/api/editais/:id', async (req, res) => {
+  const { id } = req.params;
+  console.log(`Buscando edital por id ${id} no Supabase...`);
+  try {
+    const numericId = parseInt(id, 10);
+    const queryId = isNaN(numericId) ? id : numericId;
+    const { data, error } = await supabase.from('editais').select('*').eq('id', queryId).maybeSingle();
+    if (error) {
+      console.error('Erro ao buscar edital por id no Supabase:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    if (!data) {
+      return res.status(404).json({ error: 'Edital não encontrado' });
+    }
+    res.json(data);
+  } catch (err: any) {
+    console.error('Erro detalhado Supabase getEditalById (catch):', err?.message || err);
+    res.status(500).json({ error: err?.message || 'Erro interno' });
+  }
+});
+
+app.post('/api/concursos', async (req, res) => {
+  console.log('Recebendo novo concurso para inserção no Supabase...');
+  try {
+    const payload = req.body;
+    if (!payload || !payload.title || !payload.organ) {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes (title, organ).' });
+    }
+    // Se o novo concurso for ativo, desativa os outros concursos do usuário
+    if (payload.user_id && (payload.active === true || payload.is_ativo === true)) {
+      await supabase.from('concursos').update({ active: false }).eq('user_id', payload.user_id);
+    }
+    const { data, error } = await supabase.from('concursos').insert([payload]).select();
+    if (error) {
+      console.error('Erro ao inserir concurso no Supabase via backend:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    console.log('Concurso inserido com sucesso via backend:', data);
+    res.status(201).json({ success: true, data: data?.[0] || data });
+  } catch (err: any) {
+    console.error('Erro na rota POST /api/concursos:', err);
+    res.status(500).json({ error: err?.message || 'Erro interno ao salvar concurso' });
+  }
+});
+
 // Endpoint: Edital parse via Gemini AI with heuristic fallback
 app.post('/api/edital/parse', async (req, res) => {
   try {

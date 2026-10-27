@@ -46,6 +46,7 @@ import { CriarCronogramaModal } from './CriarCronogramaModal';
 import { MetodoEstudoModal } from './MetodoEstudoModal';
 import { EmptyContestState } from '../common/EmptyContestState';
 import { useTheme } from '../../contexts/ThemeContext';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 // Banners do menu "Plano de Estudos" por tema (Supabase)
 export const PLANO_ESTUDOS_BANNER_THEMES: Record<string, string> = {
@@ -523,87 +524,72 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
       {/* =========================================================================
           1. BANNER PRINCIPAL DE DESTAQUE (TOPO DO PLANO DE ESTUDOS)
           ========================================================================= */}
-      <div
-        className="w-full relative overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[220px] flex items-center bg-slate-950"
-        style={{
-          backgroundImage: `url('${bannerPlanoUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
+      <MenuBannerFrame
+        bannerThemes={PLANO_ESTUDOS_BANNER_THEMES}
+        alt="Banner Plano de Estudos"
+        minHeight="min-h-[190px] md:min-h-[220px]"
+        className="w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
+        bgWrapperClassName="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
+        imgClassName="w-full h-full object-cover object-[78%_center] scale-[1.28] md:scale-[1.32] origin-[78%_center] transition-transform duration-300"
+        overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/45 to-transparent pointer-events-none"
+        contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4"
       >
-        {/* Imagem correspondente quando carregada da base do Supabase */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-          <img
-            key={bannerPlanoUrl}
-            src={bannerPlanoUrl}
-            alt="Banner Plano de Estudos"
-            className="w-full h-full object-cover object-[78%_center] scale-[1.28] md:scale-[1.32] origin-[78%_center] transition-transform duration-300"
-          />
-        </div>
-
-        {/* Gradiente sutil para garantir legibilidade de alto contraste sobre o fundo */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/45 to-transparent pointer-events-none" />
-
-        {/* Conteúdo à esquerda alinhado no mesmo padrão de Concursos & Provas */}
-        <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1
-                className="provas-banner-title text-2xl md:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md"
-                style={{
-                  color: '#FFFFFF',
-                  textShadow: themeGlowStyles.textShadow,
-                }}
-              >
-                Plano de Estudos
-              </h1>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs shrink-0">
-                {activeTab === 'ciclo' ? 'Ciclo de Estudos' : 'Cronograma Semanal'}
-              </span>
-            </div>
-
-            <p className="text-white/90 text-xs md:text-sm leading-relaxed max-w-lg">
-              Selecione entre rotação contínua proporcional por pesos ou grade semanal fixa para manter seu ritmo de aprovação.
-            </p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1
+              className="provas-banner-title text-2xl md:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md"
+              style={{
+                color: '#FFFFFF',
+                textShadow: themeGlowStyles.textShadow,
+              }}
+            >
+              Plano de Estudos
+            </h1>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs shrink-0">
+              {activeTab === 'ciclo' ? 'Ciclo de Estudos' : 'Cronograma Semanal'}
+            </span>
           </div>
 
-          <div className="pt-1 flex items-center gap-3 flex-wrap">
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => {
-                if (activeTab === 'ciclo') {
-                  setIsCreateCycleModalOpen(true);
-                } else {
-                  handleOpenAddSession();
-                }
-              }}
-              leftIcon={<Plus className="w-4 h-4" />}
-              className="font-bold shadow-lg shadow-black/25 cursor-pointer text-xs md:text-sm px-5 py-2.5"
-            >
-              {activeTab === 'ciclo' ? 'Novo Ciclo' : 'Nova Sessão'}
-            </Button>
-
-            <button
-              type="button"
-              ref={(el) => {
-                if (el) {
-                  el.style.setProperty('background-color', '#000000', 'important');
-                  el.style.setProperty('color', '#ffffff', 'important');
-                  el.style.setProperty('border-color', 'rgba(255, 255, 255, 0.3)', 'important');
-                }
-              }}
-              onClick={() => setIsMethodModalOpen(true)}
-              className="btn-banner-secundario inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold bg-black hover:bg-neutral-900 text-white border border-white/25 transition-all cursor-pointer shadow-lg shadow-black/25"
-              style={{ backgroundColor: '#000000', color: '#ffffff' }}
-            >
-              <Sliders className="w-4 h-4" style={{ color: themeGlowStyles.color }} />
-              <span>Replanejar Método</span>
-            </button>
-          </div>
+          <p className="text-white/90 text-xs md:text-sm leading-relaxed max-w-lg">
+            Selecione entre rotação contínua proporcional por pesos ou grade semanal fixa para manter seu ritmo de aprovação.
+          </p>
         </div>
-      </div>
+
+        <div className="pt-1 flex items-center gap-3 flex-wrap">
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => {
+              if (activeTab === 'ciclo') {
+                setIsCreateCycleModalOpen(true);
+              } else {
+                handleOpenAddSession();
+              }
+            }}
+            leftIcon={<Plus className="w-4 h-4" />}
+            className="font-bold shadow-lg shadow-black/25 cursor-pointer text-xs md:text-sm px-5 py-2.5"
+          >
+            {activeTab === 'ciclo' ? 'Novo Ciclo' : 'Nova Sessão'}
+          </Button>
+
+          <button
+            type="button"
+            ref={(el) => {
+              if (el) {
+                el.style.setProperty('background-color', '#000000', 'important');
+                el.style.setProperty('color', '#ffffff', 'important');
+                el.style.setProperty('border-color', 'rgba(255, 255, 255, 0.3)', 'important');
+              }
+            }}
+            onClick={() => setIsMethodModalOpen(true)}
+            className="btn-banner-secundario inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold bg-black hover:bg-neutral-900 text-white border border-white/25 transition-all cursor-pointer shadow-lg shadow-black/25"
+            style={{ backgroundColor: '#000000', color: '#ffffff' }}
+          >
+            <Sliders className="w-4 h-4" style={{ color: themeGlowStyles.color }} />
+            <span>Replanejar Método</span>
+          </button>
+        </div>
+      </MenuBannerFrame>
 
       {/* Dois Grandes Cards Seletores (Banners de Modo) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

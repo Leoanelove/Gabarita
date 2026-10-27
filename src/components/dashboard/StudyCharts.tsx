@@ -12,13 +12,14 @@ export const StudyCharts: React.FC<StudyChartsProps> = ({ sessoes, disciplinas }
   const [activeTab, setActiveTab] = useState<'semanal' | 'disciplinas'>('semanal');
 
   const last7DaysData = React.useMemo(() => {
-    const days: { dateStr: string; label: string; hours: number; questions: number; correct: number }[] = [];
+    const days: { dateStr: string; label: string; hours: number; questions: number; correct: number; dayOfWeek: number; isToday: boolean }[] = [];
     const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateKey = d.toISOString().split('T')[0];
-      const dayLabel = dayNames[d.getDay()];
+      const dayOfWeek = d.getDay();
+      const dayLabel = dayNames[dayOfWeek];
 
       const daySessoes = sessoes.filter(s => {
         const sDate = s.completedAt ? s.completedAt.split('T')[0] : s.createdAt.split('T')[0];
@@ -29,13 +30,15 @@ export const StudyCharts: React.FC<StudyChartsProps> = ({ sessoes, disciplinas }
       const totalCorrect = daySessoes.reduce((acc, s) => acc + (s.questionsCorrect || 0), 0);
       days.push({
         dateStr: dateKey,
-        label: i === 0 ? 'Hoje' : dayLabel,
+        label: dayLabel,
         hours: parseFloat((totalMinutes / 60).toFixed(1)),
         questions: totalQuestions,
         correct: totalCorrect,
+        dayOfWeek,
+        isToday: i === 0,
       });
     }
-    return days;
+    return days.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
   }, [sessoes]);
 
   const maxHours = Math.max(4, ...last7DaysData.map(d => d.hours));
@@ -84,7 +87,7 @@ export const StudyCharts: React.FC<StudyChartsProps> = ({ sessoes, disciplinas }
           <div className="flex items-end justify-between gap-2 h-44 pt-6 pb-2 px-2">
             {last7DaysData.map((day, idx) => {
               const heightPercent = Math.min(100, Math.max(10, Math.round((day.hours / maxHours) * 100)));
-              const isToday = day.label === 'Hoje';
+              const isToday = day.isToday;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -translate-y-28 bg-slate-900 text-white text-[10px] rounded-lg py-1 px-2 pointer-events-none shadow-md border border-slate-800 z-20 text-center whitespace-nowrap">

@@ -25,6 +25,7 @@ import { Button } from '../../design-system/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 import { NovaProvaModal } from './NovaProvaModal';
 import { DetalhesProvaModal } from './DetalhesProvaModal';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 // Banners da aba "Provas" por tema
 export const PROVAS_BANNER_THEMES: Record<string, string> = {
@@ -64,6 +65,16 @@ const normalizeProvasThemeSkin = (themeContext: any): 'verde' | 'azul' | 'roxo' 
   if (str.includes('rosa') || str.includes('pink') || str.includes('rose')) return 'rosa';
   if (str.includes('azul') || str.includes('blue') || str.includes('sky') || str.includes('cyan')) return 'azul';
   return 'verde';
+};
+
+export const computeEffectiveProvaStatus = (p: Prova): 'em_andamento' | 'concluida' => {
+  if (p.examDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(p.examDate.includes('T') ? p.examDate : `${p.examDate}T23:59:59`);
+    if (d < today) return 'concluida';
+  }
+  return p.status === 'concluida' ? 'concluida' : 'em_andamento';
 };
 
 export interface ProvasTabProps {
@@ -172,8 +183,8 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
       const pYear = p.year?.toString() || (p.examDate ? new Date(p.examDate).getFullYear().toString() : '');
       const matchYear = selectedYear === 'todos' || pYear === selectedYear;
 
-      const pStatus = p.status || 'agendada';
-      const matchStatus = selectedStatus === 'todos' || pStatus === selectedStatus;
+      const effStatus = computeEffectiveProvaStatus(p);
+      const matchStatus = selectedStatus === 'todos' || effStatus === selectedStatus;
 
       return matchSearch && matchBanca && matchYear && matchStatus;
     });
@@ -241,19 +252,13 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
       {/* =========================================================================
           1. BANNER PRINCIPAL DE DESTAQUE (TOPO DA ABA PROVAS)
           ========================================================================= */}
-      <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[220px] flex items-center bg-slate-950">
-        {/* Camada da imagem PNG oficial do Supabase preenchendo 100% do banner de ponta a ponta sem bordas internas */}
-        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-          <img 
-            key={currentBannerSrc}
-            src={currentBannerSrc} 
-            alt="Banner Próximas Provas" 
-            className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300" 
-          />
-        </div>
-
-        {/* Na área esquerda (relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-lg h-full) */}
-        <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-lg h-full gap-4">
+      <MenuBannerFrame
+        bannerThemes={PROVAS_BANNER_THEMES}
+        minHeight="min-h-[190px] md:min-h-[220px]"
+        className="border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
+        contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-lg h-full gap-4"
+        alt="Banner Próximas Provas"
+      >
           <div className="space-y-2">
             {/* Título: "Próximas Provas" em branco com efeito neon */}
             <h1 
@@ -284,8 +289,7 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
               Agendar Nova Prova
             </Button>
           </div>
-        </div>
-      </div>
+      </MenuBannerFrame>
 
       {/* =========================================================================
           2. FILTROS E BARRA DE PESQUISA
@@ -344,9 +348,8 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
               className="px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-emerald-500 cursor-pointer"
             >
               <option value="todos">Todos os Status</option>
-              <option value="agendada">Agendada</option>
-              <option value="em_andamento">Em Andamento</option>
-              <option value="concluida">Realizada / Concluída</option>
+              <option value="em_andamento">Em andamento</option>
+              <option value="concluida">Realizada</option>
             </select>
           </div>
 
@@ -413,7 +416,7 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
               leftIcon={<Plus className="w-4 h-4" />}
               className="font-bold shadow-md shadow-emerald-500/20"
             >
-              + Adicionar Primeiro Lembrete de Prova
+              Adicionar Lembrete de Prova
             </Button>
           </div>
         ) : (
@@ -424,8 +427,8 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
                 ? Math.ceil((new Date(prova.examDate).getTime() - new Date().getTime()) / 86400000)
                 : null;
 
-              const isCompleted = prova.status === 'concluida';
-              const isEmAndamento = prova.status === 'em_andamento';
+              const effStatus = computeEffectiveProvaStatus(prova);
+              const isCompleted = effStatus === 'concluida';
 
               return (
                 <div
@@ -505,11 +508,9 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
                         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
                           isCompleted
                             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                            : isEmAndamento
-                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/20'
-                            : 'bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/20'
+                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/20'
                         }`}>
-                          {isCompleted ? 'Concluída' : isEmAndamento ? 'Em Andamento' : 'Agendada'}
+                          {isCompleted ? 'Realizada' : 'Em andamento'}
                         </span>
                       </div>
 

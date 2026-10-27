@@ -3,9 +3,12 @@ import { AuthService, AuthState, RegisterResult } from '../services/auth';
 import { UserProfile } from '../types';
 
 interface AuthContextType extends AuthState {
+  isLoginTransitioning: boolean;
+  setLoginTransitioning: (active: boolean) => void;
   loginWithEmail: (email: string, pass: string) => Promise<UserProfile>;
   registerWithEmail: (name: string, email: string, pass: string, consentGiven?: boolean) => Promise<RegisterResult>;
   loginWithGoogle: () => Promise<void>;
+  loginAsGuest: () => Promise<UserProfile>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
@@ -21,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: false,
     error: null,
   });
+  const [isLoginTransitioning, setLoginTransitioning] = useState<boolean>(false);
 
   useEffect(() => {
     AuthService.init();
@@ -42,6 +46,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await AuthService.loginWithGoogle();
   };
 
+  const loginAsGuest = async () => {
+    return await AuthService.loginAsGuest();
+  };
+
   const resetPassword = async (email: string) => {
     return await AuthService.resetPassword(email);
   };
@@ -51,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    setLoginTransitioning(false);
     return await AuthService.logout();
   };
 
@@ -67,9 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         ...state,
+        isLoginTransitioning,
+        setLoginTransitioning,
         loginWithEmail,
         registerWithEmail,
         loginWithGoogle,
+        loginAsGuest,
         resetPassword,
         deleteAccount,
         logout,

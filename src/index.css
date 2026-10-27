@@ -1664,39 +1664,39 @@ html:not(.dark):not(.dark-mode) [data-skin="roxo"] aside .bg-emerald-50\/70 {
 }
 
 /* Cartões Principais no Modo Claro */
-html:not(.dark):not(.dark-mode) body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) body.theme-purple .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) .theme-purple .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) .theme-purple .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) body.theme-purple .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
-html:not(.dark):not(.dark-mode) .theme-purple .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *) {
+html:not(.dark):not(.dark-mode) body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-purple .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) .theme-purple .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) .theme-purple .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-purple .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) .theme-purple .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *) {
   background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Textos Principais no Modo Claro */
-html:not(.dark):not(.dark-mode) body.theme-purple h1:not(.provas-banner-title),
-html:not(.dark):not(.dark-mode) body.theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
-html:not(.dark):not(.dark-mode) body.theme-purple h3,
-html:not(.dark):not(.dark-mode) body.theme-purple h4:not(.text-white):not(.proximo-estudo-title),
-html:not(.dark):not(.dark-mode) .theme-purple h1:not(.provas-banner-title),
-html:not(.dark):not(.dark-mode) .theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
-html:not(.dark):not(.dark-mode) .theme-purple h3,
-html:not(.dark):not(.dark-mode) .theme-purple h4:not(.text-white):not(.proximo-estudo-title),
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] h1:not(.provas-banner-title),
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] h3,
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] h4:not(.text-white):not(.proximo-estudo-title),
-html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-900,
-html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-800,
-html:not(.dark):not(.dark-mode) .theme-purple .text-slate-900,
-html:not(.dark):not(.dark-mode) .theme-purple .text-slate-800,
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-900,
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-800 {
+html:not(.dark):not(.dark-mode) body.theme-purple h1:not(.provas-banner-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-purple h3:not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-purple h4:not(.text-white):not(.proximo-estudo-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) .theme-purple h1:not(.provas-banner-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) .theme-purple h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) .theme-purple h3:not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) .theme-purple h4:not(.text-white):not(.proximo-estudo-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h1:not(.provas-banner-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h3:not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] h4:not(.text-white):not(.proximo-estudo-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-900:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) body.theme-purple .text-slate-800:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) .theme-purple .text-slate-900:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) .theme-purple .text-slate-800:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-900:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .text-slate-800:not(.login-insignia-badge):not(.login-insignia-badge *) {
   color: #0f172a !important;
 }
 
@@ -1758,16 +1758,16 @@ html.dark-mode body.theme-purple aside .dark\:bg-emerald-950\/30 {
 }
 
 /* Cartões no Modo Escuro */
-body.dark.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark-mode.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark-mode.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark body.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark-mode body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark-mode body.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark [data-skin="roxo"] .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark [data-skin="roxo"] .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario) {
+body.dark.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark body.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark-mode body.theme-purple .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark-mode body.theme-purple .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="roxo"] .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="roxo"] .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario) {
   background-color: #0f172a !important;
   border-color: #1e293b !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
@@ -2110,39 +2110,39 @@ html:not(.dark):not(.dark-mode) [data-skin="laranja"] header {
 }
 
 /* Cartões no Modo Claro */
-html:not(.dark):not(.dark-mode) body.theme-orange .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) body.theme-orange .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) body.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) body.theme-laranja .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html:not(.dark):not(.dark-mode) body.theme-orange .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
-html:not(.dark):not(.dark-mode) body.theme-laranja .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *) {
+html:not(.dark):not(.dark-mode) body.theme-orange .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-orange .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-laranja .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .rounded-2xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .rounded-xl.border:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html:not(.dark):not(.dark-mode) body.theme-orange .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) body.theme-laranja .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .bg-slate-900:not(.banner-principal):not(.banner-principal *):not(.card-banner):not(.card-banner *):not(.revisoes-banner):not(.revisoes-banner *):not(.banner-revisao-concurso):not(.banner-revisao-concurso *):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.dias-restantes-card *):not(.bg-slate-950):not(.timer-focus-box):not([class*="bg-slate-950"]):not(.plano-card):not(button):not(button *) {
   background-color: #FFFFFF !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Textos Principais no Modo Claro */
-html:not(.dark):not(.dark-mode) body.theme-orange h1:not(.provas-banner-title),
-html:not(.dark):not(.dark-mode) body.theme-orange h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
-html:not(.dark):not(.dark-mode) body.theme-orange h3,
-html:not(.dark):not(.dark-mode) body.theme-orange h4:not(.text-white):not(.proximo-estudo-title),
-html:not(.dark):not(.dark-mode) body.theme-laranja h1:not(.provas-banner-title),
-html:not(.dark):not(.dark-mode) body.theme-laranja h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
-html:not(.dark):not(.dark-mode) body.theme-laranja h3,
-html:not(.dark):not(.dark-mode) body.theme-laranja h4:not(.text-white):not(.proximo-estudo-title),
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] h1:not(.provas-banner-title),
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *),
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] h3,
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] h4:not(.text-white):not(.proximo-estudo-title),
-html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-900,
-html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-800,
-html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-900,
-html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-800,
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-900,
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-800 {
+html:not(.dark):not(.dark-mode) body.theme-orange h1:not(.provas-banner-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-orange h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-orange h3:not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-orange h4:not(.text-white):not(.proximo-estudo-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-laranja h1:not(.provas-banner-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-laranja h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-laranja h3:not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-laranja h4:not(.text-white):not(.proximo-estudo-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h1:not(.provas-banner-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h2:not(.banner-principal *):not(.card-banner *):not(.revisoes-banner *):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h3:not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] h4:not(.text-white):not(.proximo-estudo-title):not(.login-showcase-banner *),
+html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-900:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) body.theme-orange .text-slate-800:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-900:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) body.theme-laranja .text-slate-800:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-900:not(.login-insignia-badge):not(.login-insignia-badge *),
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .text-slate-800:not(.login-insignia-badge):not(.login-insignia-badge *) {
   color: #0f172a !important;
 }
 
@@ -2192,16 +2192,16 @@ html.dark [data-skin="laranja"] header {
 }
 
 /* Cartões no Modo Escuro */
-body.dark.theme-orange .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark.theme-orange .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark-theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark-theme-laranja .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark.theme-laranja .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark-mode.theme-orange .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-body.dark-mode.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark [data-skin="laranja"] .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
-html.dark [data-skin="laranja"] .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario) {
+body.dark.theme-orange .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-orange .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-theme-laranja .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark.theme-laranja .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-orange .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+body.dark-mode.theme-laranja .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="laranja"] .rounded-2xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario),
+html.dark [data-skin="laranja"] .rounded-xl.border:not(.banner-principal):not(.card-banner):not(.revisoes-banner):not(.login-showcase-banner):not(.login-showcase-banner *):not(.dias-restantes-card):not(.timer-focus-box):not(.bg-slate-950):not(.plano-card):not(.card-seletor-icon):not([class*="card-seletor"]):not([class*="card-seletor"] *):not(.btn-banner-secundario) {
   background-color: #0f172a !important;
   border-color: #1e293b !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
@@ -3397,3 +3397,129 @@ html:not(.dark):not(.dark-mode) .theme-verde main,
   background-attachment: fixed !important;
 }
 
+/* =========================================================================
+   BLINDAGEM DO BANNER DE TRANSIÇÃO DA TELA DE LOGIN (.login-showcase-banner)
+   Garante aparência translúcida (glassmorphism) idêntica e fontes brancas
+   em TODOS os 5 temas (Verde, Azul, Rosa, Roxo e Laranja) e modos (Claro/Escuro).
+   ========================================================================= */
+html body .login-showcase-banner h2,
+html body .login-showcase-banner h3,
+html body .login-showcase-banner h4,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner h2,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner h3,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner h4,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner h2,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner h3,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner h4,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner h2,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner h3,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner h4,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner h2,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner h3,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner h4,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner h2,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner h3,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner h4 {
+  color: #FFFFFF !important;
+}
+
+html body .login-showcase-banner .login-glass-card,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner .login-glass-card,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner .login-glass-card,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner .login-glass-card,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner .login-glass-card,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner .login-glass-card,
+html.dark body.theme-purple .login-showcase-banner .login-glass-card,
+html.dark [data-skin="roxo"] .login-showcase-banner .login-glass-card,
+html.dark body.theme-orange .login-showcase-banner .login-glass-card,
+html.dark body.theme-laranja .login-showcase-banner .login-glass-card,
+html.dark [data-skin="laranja"] .login-showcase-banner .login-glass-card {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+html body .login-showcase-banner .login-glass-card-main,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner .login-glass-card-main,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner .login-glass-card-main,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner .login-glass-card-main,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner .login-glass-card-main,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner .login-glass-card-main,
+html.dark body.theme-purple .login-showcase-banner .login-glass-card-main,
+html.dark [data-skin="roxo"] .login-showcase-banner .login-glass-card-main,
+html.dark body.theme-orange .login-showcase-banner .login-glass-card-main,
+html.dark body.theme-laranja .login-showcase-banner .login-glass-card-main,
+html.dark [data-skin="laranja"] .login-showcase-banner .login-glass-card-main {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.30) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+html body .login-showcase-banner .login-glass-card-soft,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner .login-glass-card-soft,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner .login-glass-card-soft,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner .login-glass-card-soft,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner .login-glass-card-soft,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner .login-glass-card-soft,
+html.dark body.theme-purple .login-showcase-banner .login-glass-card-soft,
+html.dark [data-skin="roxo"] .login-showcase-banner .login-glass-card-soft,
+html.dark body.theme-orange .login-showcase-banner .login-glass-card-soft,
+html.dark body.theme-laranja .login-showcase-banner .login-glass-card-soft,
+html.dark [data-skin="laranja"] .login-showcase-banner .login-glass-card-soft {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15) !important;
+}
+
+html body .login-showcase-banner .login-glass-pill-box,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner .login-glass-pill-box,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner .login-glass-pill-box,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner .login-glass-pill-box,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner .login-glass-pill-box,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner .login-glass-pill-box,
+html.dark body.theme-purple .login-showcase-banner .login-glass-pill-box,
+html.dark [data-skin="roxo"] .login-showcase-banner .login-glass-pill-box,
+html.dark body.theme-orange .login-showcase-banner .login-glass-pill-box,
+html.dark body.theme-laranja .login-showcase-banner .login-glass-pill-box,
+html.dark [data-skin="laranja"] .login-showcase-banner .login-glass-pill-box {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  box-shadow: none !important;
+}
+
+html body .login-showcase-banner .login-glass-subitem,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner .login-glass-subitem,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner .login-glass-subitem,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner .login-glass-subitem,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner .login-glass-subitem,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner .login-glass-subitem {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  color: #FFFFFF !important;
+}
+
+html body .login-showcase-banner .login-insignia-badge,
+html:not(.dark):not(.dark-mode) body.theme-purple .login-showcase-banner .login-insignia-badge,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .login-showcase-banner .login-insignia-badge,
+html:not(.dark):not(.dark-mode) body.theme-orange .login-showcase-banner .login-insignia-badge,
+html:not(.dark):not(.dark-mode) body.theme-laranja .login-showcase-banner .login-insignia-badge,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .login-showcase-banner .login-insignia-badge,
+html.dark body.theme-purple .login-showcase-banner .login-insignia-badge,
+html.dark [data-skin="roxo"] .login-showcase-banner .login-insignia-badge,
+html.dark body.theme-orange .login-showcase-banner .login-insignia-badge,
+html.dark body.theme-laranja .login-showcase-banner .login-insignia-badge,
+html.dark [data-skin="laranja"] .login-showcase-banner .login-insignia-badge {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border: 2px solid #FFFFFF !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25) !important;
+}
+
+html body .login-showcase-banner .login-insignia-badge span {
+  color: #1e293b !important;
+}

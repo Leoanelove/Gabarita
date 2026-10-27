@@ -45,6 +45,7 @@ import { Modal } from '../../design-system/Modal';
 import { EditalImportModal } from './EditalImportModal';
 import { NovaMateriaModal } from './NovaMateriaModal';
 import { EmptyContestState } from '../common/EmptyContestState';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // Banners do menu "Edital Verticalizado" por tema (Supabase)
@@ -199,35 +200,27 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
     setAssuntos(propAssuntos);
   }, [propAssuntos]);
 
-  if (concursos.length === 0) {
-    return (
-      <EmptyContestState
-        title="Você ainda não possui um concurso ativo"
-        description="Cadastre seu concurso foco e importe o conteúdo programático do edital para desbloquear a matriz do Edital Verticalizado e monitorar seu domínio tópico a tópico."
-        actionText="Cadastrar Concurso Foco"
-        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
-      />
-    );
-  }
+  // 1. ISOLAMENTO TOTAL POR CONCURSO & SINCRONIZAÇÃO COM O CONCURSO ATIVO:
+  const activeConcurso = useMemo(() => {
+    return concursos.find(c => c.active || c.isAtivo) || 
+      (activeConcursoId ? concursos.find(c => c.id === activeConcursoId) : null) || 
+      concursos[0] || null;
+  }, [concursos, activeConcursoId]);
 
-  // 1. ISOLAMENTO TOTAL POR CONCURSO:
-  // Sincroniza o concurso selecionado priorizando o concurso ativo
-  const initialTargetId = activeConcursoId || concursos.find(c => c.active)?.id || concursos[0]?.id || '';
-  const [selectedConcursoId, setSelectedConcursoId] = useState<string>(initialTargetId);
+  const [selectedConcursoId, setSelectedConcursoId] = useState<string>(activeConcurso?.id || '');
 
+  // Sincroniza automaticamente a exibição com o concurso ativo
   useEffect(() => {
-    if (activeConcursoId && concursos.some(c => c.id === activeConcursoId)) {
-      setSelectedConcursoId(activeConcursoId);
-    } else if (!selectedConcursoId || !concursos.some(c => c.id === selectedConcursoId)) {
-      setSelectedConcursoId(concursos[0]?.id || '');
+    if (activeConcurso?.id) {
+      setSelectedConcursoId(activeConcurso.id);
     }
-  }, [activeConcursoId, concursos]);
+  }, [activeConcurso?.id]);
 
   const selectedConcurso = useMemo(() => {
-    return concursos.find(c => c.id === selectedConcursoId) || 
-      concursos.find(c => c.id === activeConcursoId) || 
-      concursos[0];
-  }, [concursos, selectedConcursoId, activeConcursoId]);
+    return (selectedConcursoId ? concursos.find(c => c.id === selectedConcursoId) : null) || 
+      activeConcurso || 
+      concursos[0] || null;
+  }, [concursos, selectedConcursoId, activeConcurso]);
 
   // FILTRO ESTRITO: As matérias e tópicos exibidos DEVEM pertencer EXCLUSIVAMENTE ao Concurso ativo/selecionado
   const currentConcursoDisciplinas = useMemo(() => {
@@ -865,6 +858,31 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
     return currentConcursoDisciplinas.every(d => !!expandedDisciplinas[d.id]);
   }, [currentConcursoDisciplinas, expandedDisciplinas]);
 
+  // Se não houver nenhum concurso cadastrado
+  if (concursos.length === 0) {
+    return (
+      <EmptyContestState
+        title="Você ainda não possui um concurso ativo"
+        description="Cadastre seu concurso foco e importe o conteúdo programático do edital para desbloquear a matriz do Edital Verticalizado e monitorar seu domínio tópico a tópico."
+        actionText="Cadastrar Concurso Foco"
+        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
+      />
+    );
+  }
+
+  // Se o concurso ativo não possuir disciplinas cadastradas, exibe a tela vazia padrão
+  if (currentConcursoDisciplinas.length === 0) {
+    return (
+      <EmptyContestState
+        title="Nenhuma disciplina cadastrada no concurso ativo"
+        description="Extraia as disciplinas do edital com IA ou adicione matérias no menu 'Concursos & Provas' para iniciar o Edital Verticalizado."
+        actionText="Cadastrar Matérias do Concurso"
+        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
+        icon={BookOpen}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {feedback && (
@@ -876,21 +894,13 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
       {/* =========================================================================
           1. BANNER PRINCIPAL DE DESTAQUE (TOPO DO EDITAL VERTICALIZADO)
           ========================================================================= */}
-      <div
-        className="w-full relative overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[220px] flex items-center bg-slate-950"
+      <MenuBannerFrame
+        bannerThemes={EDITAL_VERTICALIZADO_BANNER_THEMES}
+        minHeight="min-h-[190px] md:min-h-[220px]"
+        className="w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
+        contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4"
+        alt="Banner Edital Verticalizado"
       >
-        {/* Camada da imagem PNG oficial do Supabase preenchendo 100% do banner de ponta a ponta sem bordas internas */}
-        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-          <img
-            key={bannerEditalUrl}
-            src={bannerEditalUrl}
-            alt="Banner Edital Verticalizado"
-            className="w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300"
-          />
-        </div>
-
-        {/* Conteúdo à esquerda alinhado no mesmo padrão de Concursos & Provas e Plano de Estudos */}
-        <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
               <h1
@@ -917,7 +927,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                 >
                   {concursos.map(c => (
                     <option key={c.id} value={c.id} className="bg-slate-900 text-white">
-                      {c.title} {c.active ? '(Ativo)' : ''}
+                      {c.title} {(c.active || c.isAtivo) ? '(Foco Ativo)' : ''}
                     </option>
                   ))}
                 </select>
@@ -997,8 +1007,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
               <span>Importar por IA</span>
             </button>
           </div>
-        </div>
-      </div>
+      </MenuBannerFrame>
 
       {/* Global Summary Statistics */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">

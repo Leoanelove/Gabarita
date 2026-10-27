@@ -35,6 +35,7 @@ import { Modal } from '../../design-system/Modal';
 import { PlannerService } from '../../services/plannerService';
 import { EmptyContestState } from '../common/EmptyContestState';
 import { useTheme } from '../../contexts/ThemeContext';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 // Banners do menu "Revisões Espaçadas" por tema (Supabase)
 export const REVISOES_ESPACADAS_BANNER_THEMES: Record<string, string> = {
@@ -297,27 +298,15 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
         </div>
       )}
 
-      <div
-        ref={(el) => {
-          if (el) {
-            el.style.setProperty('background-image', `url('${bannerRevisoesUrl}')`, 'important');
-            el.style.setProperty('background-size', 'cover', 'important');
-            el.style.setProperty('background-position', 'center', 'important');
-            el.style.setProperty('background-repeat', 'no-repeat', 'important');
-          }
-        }}
-        className="revisoes-banner relative overflow-hidden border border-purple-800/40 rounded-3xl p-6 text-white shadow-md space-y-5 bg-slate-950"
-        style={{
-          backgroundImage: `url('${bannerRevisoesUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
+      <MenuBannerFrame
+        bannerThemes={REVISOES_ESPACADAS_BANNER_THEMES}
+        alt="Banner Revisões Espaçadas"
+        minHeight=""
+        className="revisoes-banner border border-purple-800/40 rounded-3xl p-6 text-white shadow-md bg-slate-950"
+        overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/40 to-slate-950/20 pointer-events-none z-[1]"
+        contentClassName="space-y-5"
       >
-        {/* Gradiente sutil para preservar legibilidade total de textos, badges e métricas sobre o banner */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/40 to-slate-950/20 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <h2
               ref={(el) => {
@@ -337,7 +326,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
           </div>
         </div>
 
-        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
           <div className="p-3.5 bg-slate-900/80 border border-slate-700/60 rounded-2xl">
             <span className="text-sky-400 text-[11px] font-medium">Hoje</span>
             <div className="text-2xl font-black font-mono text-sky-400">{srsStats.totalHoje}</div>
@@ -359,7 +348,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
             <div className="text-2xl font-black font-mono text-amber-400">{srsStats.retentionRate}%</div>
           </div>
         </div>
-      </div>
+      </MenuBannerFrame>
 
       <div className="revisoes-nav-tabs flex flex-wrap items-center justify-between gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto text-xs">
         <div className="flex items-center gap-1.5 overflow-x-auto">

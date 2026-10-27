@@ -23,6 +23,7 @@ import { Modal } from '../../design-system/Modal';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { DatabaseService } from '../../services/db';
+import { CycleService } from '../../services/cycleService';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export interface CriarCicloModalProps {
@@ -246,77 +247,16 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
       setIsSaving(true);
       setSavingPhase('optimizing');
 
-      // Tempo total da volta do ciclo
-      const totalLapMinutes = Math.max(360, Math.round(weeklyHours * 60)); // Mínimo de 6 horas
-      const targetSlotBase = Math.round((minBlockMinutes + maxBlockMinutes) / 2);
+      const targetConcursoId = resolvedActiveConcursoId || activeConcursoId || currentCycle?.concursoId || '';
 
-      const generatedBlocks: CycleBlock[] = [];
-      let blockCounter = 1;
-
-      // Gera os blocos proporcionais para cada disciplina
-      calculatedDistribution.forEach(item => {
-        const disc = item.disciplina;
-        const allocatedMinutes = Math.round((item.percentage / 100) * totalLapMinutes);
-        const numBlocks = Math.max(1, Math.round(allocatedMinutes / targetSlotBase));
-        const blockDuration = Math.min(
-          maxBlockMinutes,
-          Math.max(minBlockMinutes, Math.round(allocatedMinutes / numBlocks))
-        );
-
-        // Tópicos sugeridos da disciplina
-        const discAssuntos = assuntos.filter(a => a.disciplinaId === disc.id);
-        const unstudiedTopics = discAssuntos.filter(a => a.status === 'nao_iniciado');
-
-        for (let b = 0; b < numBlocks; b++) {
-          const suggestedTopic = unstudiedTopics[b] || discAssuntos[b % (discAssuntos.length || 1)];
-          const topicName = suggestedTopic?.name || 
-            (b === 0 ? 'Estudo Teórico Dirigido' : b === 1 ? 'Resolução de Questões de Fixação' : 'Revisão Tática & Lei Seca');
-
-          generatedBlocks.push({
-            id: `blk_${Date.now()}_${blockCounter++}`,
-            cycleId: currentCycle?.id || `cycle_${Date.now()}`,
-            disciplinaId: disc.id,
-            disciplinaName: disc.name,
-            disciplinaColor: disc.color || '#10b981',
-            order: 0,
-            durationMinutes: blockDuration,
-            weight: item.importancia,
-            assuntoSugeridoId: suggestedTopic?.id,
-            assuntoSugeridoName: topicName,
-            status: 'aguardando',
-            elapsedMinutes: 0,
-          });
-        }
-      });
-
-      // Intercalamento de matérias (Round-Robin Interleaving):
-      // Garante que o estudante nunca estude a mesma matéria em dois blocos consecutivos
-      const byDisc: Record<string, CycleBlock[]> = {};
-      generatedBlocks.forEach(blk => {
-        if (!byDisc[blk.disciplinaId]) byDisc[blk.disciplinaId] = [];
-        byDisc[blk.disciplinaId].push(blk);
-      });
-
-      const interleaved: CycleBlock[] = [];
-      const keys = Object.keys(byDisc);
-      let round = 0;
-      let hasRemaining = true;
-
-      while (hasRemaining) {
-        hasRemaining = false;
-        for (const k of keys) {
-          if (byDisc[k].length > round) {
-            interleaved.push(byDisc[k][round]);
-            hasRemaining = true;
-          }
-        }
-        round++;
-      }
-
-      // Ordenação final e marcação do primeiro bloco como 'em_andamento'
-      interleaved.forEach((blk, idx) => {
-        blk.order = idx + 1;
-        blk.status = idx === 0 ? 'em_andamento' : 'aguardando';
+      // Montagem dos blocos com Proporção Real por Matéria e Intercalação Estrita sem Repetição Sequencial
+      const interleaved = CycleService.createStudyBlocks({
+        calculatedDistribution,
+        assuntos,
+        weeklyHours,
+        minBlockMinutes,
+        maxBlockMinutes,
+        cycleId: targetConcursoId ? `cycle_${targetConcursoId}` : (currentCycle?.id || `cycle_${Date.now()}`),
       });
 
       const totalCalculatedMinutes = interleaved.reduce((acc, b) => acc + b.durationMinutes, 0);
@@ -325,8 +265,6 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
       const resolvedTitle = activeMatch
         ? `${activeMatch.organ || activeMatch.orgao || activeMatch.title} - ${activeMatch.role}`
         : currentCycle?.concursoTitle || 'Plano Personalizado';
-
-      const targetConcursoId = resolvedActiveConcursoId || activeConcursoId || currentCycle?.concursoId || '';
 
       const newCycle: StudyCycle = {
         id: `cycle_${targetConcursoId || Date.now()}`,
@@ -905,9 +843,18 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
                   </label>
                   <select
                     value={minBlockMinutes}
-                    onChange={(e) => setMinBlockMinutes(parseInt(e.target.value, 10))}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setMinBlockMinutes(val);
+                      if (maxBlockMinutes < val) {
+                        setMaxBlockMinutes(val);
+                      }
+                    }}
                     className="w-full p-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
                   >
+                    <option value={15}>15 minutos</option>
+                    <option value={20}>20 minutos</option>
+                    <option value={25}>25 minutos (Pomodoro curto)</option>
                     <option value={30}>30 minutos</option>
                     <option value={45}>45 minutos</option>
                     <option value={50}>50 minutos (Pomodoro)</option>
@@ -921,9 +868,18 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
                   </label>
                   <select
                     value={maxBlockMinutes}
-                    onChange={(e) => setMaxBlockMinutes(parseInt(e.target.value, 10))}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setMaxBlockMinutes(val);
+                      if (minBlockMinutes > val) {
+                        setMinBlockMinutes(val);
+                      }
+                    }}
                     className="w-full p-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
                   >
+                    <option value={15}>15 minutos</option>
+                    <option value={20}>20 minutos</option>
+                    <option value={25}>25 minutos</option>
                     <option value={30}>30 minutos</option>
                     <option value={45}>45 minutos</option>
                     <option value={60}>60 minutos</option>

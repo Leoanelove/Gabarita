@@ -218,45 +218,91 @@ export class SupabaseEditaisService {
     }
 
     // Normalização dos dados retornado do Supabase
-    return rawList.map((item: any, idx: number) => {
-      const organ = String(item.orgao || item.organ || item.instituicao || '').trim();
-      const role = String(item.cargo || item.role || '').trim();
-      const title = String(
-        item.titulo || item.title || item.nome || (role ? `${organ} - ${role}` : organ) || `Edital #${idx + 1}`
-      ).trim();
+    return rawList.map((item: any, idx: number) => this.normalizeEdital(item, idx));
+  }
 
-      let materias = item.materias ?? item.disciplinas ?? item.conteudo_programatico ?? item.syllabus ?? [];
-      const extractedDisciplines = normalizarMaterias(materias);
+  static normalizeEdital(item: any, idx = 0): SupabaseEdital {
+    const organ = String(item.orgao || item.organ || item.instituicao || '').trim();
+    const role = String(item.cargo || item.role || '').trim();
+    const title = String(
+      item.titulo || item.title || item.nome || (role ? `${organ} - ${role}` : organ) || `Edital #${idx + 1}`
+    ).trim();
 
-      const parsedRemuneracao = item.salario_maximo != null ? parseFloat(item.salario_maximo) : (item.remuneracao != null ? parseFloat(item.remuneracao) : (item.salario != null ? parseFloat(item.salario) : (item.remuneration != null ? parseFloat(item.remuneration) : undefined)));
+    const materias = item.materias ?? item.disciplinas ?? item.conteudo_programatico ?? item.syllabus ?? [];
+    const extractedDisciplines = normalizarMaterias(materias);
 
-      return {
-        id: String(item.id ?? `edital_${idx + 1}`),
-        titulo: title,
-        title,
-        orgao: organ,
-        organ,
-        cargo: role,
-        role,
-        banca: String(item.banca || item.banca_examinadora || 'A Definir').trim(),
-        esfera: item.esfera || item.sphere || (organ.toLowerCase().includes('cgu') || organ.toLowerCase().includes('uniao') ? 'Federal' : 'Estadual'),
-        sphere: item.sphere || item.esfera || (organ.toLowerCase().includes('cgu') || organ.toLowerCase().includes('uniao') ? 'federal' : 'estadual'),
-        status: item.status || item.situacao || 'edital_publicado',
-        data_prova: item.data_prova || item.exam_date || item.examDate,
-        examDate: item.exam_date || item.examDate || item.data_prova,
-        remuneracao: parsedRemuneracao,
-        remuneration: parsedRemuneracao,
-        salario_maximo: item.salario_maximo ?? parsedRemuneracao,
-        salario: item.salario ?? parsedRemuneracao,
-        vagas: item.vagas != null ? parseInt(item.vagas, 10) : (item.vacant_positions != null ? parseInt(item.vacant_positions, 10) : undefined),
-        vacantPositions: item.vacant_positions != null ? parseInt(item.vacant_positions, 10) : (item.vagas != null ? parseInt(item.vagas, 10) : undefined),
-        editalUrl: item.edital_url || item.editalUrl || item.link_edital || item.url || '',
-        notes: item.notes || item.observacoes || '',
-        observacoes: item.observacoes || item.notes || '',
-        materias,
-        disciplinas: extractedDisciplines,
-      };
-    });
+    const parsedRemuneracao = item.salario_maximo != null ? parseFloat(item.salario_maximo) : (item.remuneracao != null ? parseFloat(item.remuneracao) : (item.salario != null ? parseFloat(item.salario) : (item.remuneration != null ? parseFloat(item.remuneration) : undefined)));
+
+    return {
+      id: String(item.id ?? `edital_${idx + 1}`),
+      titulo: title,
+      title,
+      orgao: organ,
+      organ,
+      cargo: role,
+      role,
+      banca: String(item.banca || item.banca_examinadora || 'A Definir').trim(),
+      esfera: item.esfera || item.sphere || (organ.toLowerCase().includes('cgu') || organ.toLowerCase().includes('uniao') ? 'Federal' : 'Estadual'),
+      sphere: item.sphere || item.esfera || (organ.toLowerCase().includes('cgu') || organ.toLowerCase().includes('uniao') ? 'federal' : 'estadual'),
+      status: item.status || item.situacao || 'edital_publicado',
+      data_prova: item.data_prova || item.exam_date || item.examDate,
+      examDate: item.exam_date || item.examDate || item.data_prova,
+      remuneracao: parsedRemuneracao,
+      remuneration: parsedRemuneracao,
+      salario_maximo: item.salario_maximo ?? parsedRemuneracao,
+      salario: item.salario ?? parsedRemuneracao,
+      vagas: item.vagas != null ? parseInt(item.vagas, 10) : (item.vacant_positions != null ? parseInt(item.vacant_positions, 10) : undefined),
+      vacantPositions: item.vacant_positions != null ? parseInt(item.vacant_positions, 10) : (item.vagas != null ? parseInt(item.vagas, 10) : undefined),
+      editalUrl: item.edital_url || item.editalUrl || item.link_edital || item.url || '',
+      notes: item.notes || item.observacoes || '',
+      observacoes: item.observacoes || item.notes || '',
+      materias,
+      disciplinas: extractedDisciplines,
+    };
+  }
+
+  /**
+   * Busca um edital específico utilizando seu id (int8) da tabela editais
+   */
+  static async getEditalById(id: number | string): Promise<SupabaseEdital | null> {
+    const numericId = typeof id === 'number' ? id : parseInt(String(id), 10);
+    const queryId = isNaN(numericId) ? id : numericId;
+    console.log(`[SupabaseEditaisService] Buscando edital por id (int8):`, queryId);
+
+    // 1. Consulta direta no Supabase pelo id (int8)
+    try {
+      const { data, error } = await supabase
+        .from('editais')
+        .select('*')
+        .eq('id', queryId)
+        .maybeSingle();
+
+      if (!error && data) {
+        console.log('[SupabaseEditaisService] Edital encontrado no Supabase por id:', data);
+        return this.normalizeEdital(data);
+      }
+      if (error) {
+        console.warn('[SupabaseEditaisService] Erro ao buscar edital no Supabase:', error.message);
+      }
+    } catch (e) {
+      console.warn('[SupabaseEditaisService] Exceção ao buscar edital por id no Supabase:', e);
+    }
+
+    // 2. Consulta de contingência via backend /api/editais/:id
+    try {
+      const res = await fetch(`/api/editais/${queryId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && !json.error) {
+          console.log('[SupabaseEditaisService] Edital encontrado via backend por id:', json);
+          return this.normalizeEdital(json);
+        }
+      }
+    } catch (apiErr) {
+      console.warn('[SupabaseEditaisService] Falha na consulta backend de edital por id:', apiErr);
+    }
+
+    return null;
   }
 
   static mapToExtractedDisciplines(edital: any): ExtractedDiscipline[] {

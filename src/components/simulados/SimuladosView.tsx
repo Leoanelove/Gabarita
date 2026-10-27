@@ -22,6 +22,7 @@ import { SimuladoLineChart } from './SimuladoLineChart';
 import { RegisterSimuladoModal } from './RegisterSimuladoModal';
 import { SimuladoDetailModal } from './SimuladoDetailModal';
 import { EmptyContestState } from '../common/EmptyContestState';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const SIMULADOS_BANNER_THEMES: Record<string, string> = {
@@ -179,20 +180,15 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Topo: Banner Principal Dinâmico por Tema - Registrador de Simulados */}
-      <div
-        className="simulados-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8 card-banner metas-xp-banner"
+      <MenuBannerFrame
+        bannerThemes={SIMULADOS_BANNER_THEMES}
+        minHeight="min-h-[190px] md:min-h-[210px]"
+        className="simulados-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8 card-banner metas-xp-banner"
+        contentClassName="w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4"
+        imgClassName="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
+        alt="Banner Registrador de Simulados"
+        fallbackSkin="azul"
       >
-        {/* Imagem correspondente cobrindo 100% do container em PC, Tablet e Mobile */}
-        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-          <img
-            key={bannerUrl}
-            src={bannerUrl}
-            alt="Banner Registrador de Simulados"
-            className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
-          />
-        </div>
-
-        <div className="relative z-10 w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
               <div
@@ -230,8 +226,7 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
               Novo Simulado
             </Button>
           </div>
-        </div>
-      </div>
+      </MenuBannerFrame>
 
       {/* 1. Layout Principal: Topo Esquerdo (2 Cards Verticais) + Topo Direito (Gráfico de Linha Largo) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">

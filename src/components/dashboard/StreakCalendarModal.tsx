@@ -5,11 +5,8 @@ import {
   ChevronRight, 
   Check, 
   X, 
-  Calendar as CalendarIcon, 
-  Trophy, 
-  Sparkles 
 } from 'lucide-react';
-import { SessaoEstudo } from '../../types';
+import { SessaoEstudo, Concurso, Disciplina } from '../../types';
 import { Modal } from '../../design-system/Modal';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
@@ -20,7 +17,24 @@ interface StreakCalendarModalProps {
   streakDays: number;
   bestStreakDays?: number;
   sessoes?: SessaoEstudo[];
+  activeConcurso?: Concurso | null;
+  disciplinas?: Disciplina[];
 }
+
+const extractLocalDateStr = (raw?: string): string => {
+  if (!raw) return '';
+  const clean = String(raw).trim();
+  const datePart = clean.split('T')[0].split(' ')[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    return datePart;
+  }
+  const parsed = new Date(clean);
+  if (isNaN(parsed.getTime())) return '';
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, '0');
+  const d = String(parsed.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
   isOpen,
@@ -28,6 +42,8 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
   streakDays,
   bestStreakDays,
   sessoes = [],
+  activeConcurso = null,
+  disciplinas = [],
 }) => {
   // Controle de navegação de meses
   const [currentDate, setCurrentDate] = useState(() => new Date());
@@ -44,25 +60,53 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
     return `${y}-${m}-${day}`;
   }, []);
 
-  // Mapeamento e geração de conjunto de dias estudados
-  const studiedDatesSet = useMemo(() => {
+  // Conjunto de disciplinas válidas do concurso ativo (quando aplicável)
+  const validDisciplinaIds = useMemo(() => {
+    if (!activeConcurso || !disciplinas || disciplinas.length === 0) return null;
+    const filtered = disciplinas.filter(
+      (d) => !d.concursoId || String(d.concursoId) === String(activeConcurso.id)
+    );
+    if (filtered.length === 0) return null;
+    return new Set(filtered.map((d) => String(d.id)));
+  }, [activeConcurso, disciplinas]);
+
+  // Mapeamento estrito de dias com estudo efetivo e marco inicial (dataInicioEstudo)
+  const { studiedDatesSet, dataInicioEstudo, realBestStreak } = useMemo(() => {
     const set = new Set<string>();
 
-    // 1. Extrai datas das sessões reais cadastradas
+    // 1. Extrai datas das sessões reais cadastradas no concurso ativo
     sessoes.forEach((s) => {
-      const d = s.completedAt ? s.completedAt.split('T')[0] : (s.createdAt ? s.createdAt.split('T')[0] : '');
-      if (d) set.add(d);
+      if (validDisciplinaIds && s.disciplinaId && !validDisciplinaIds.has(String(s.disciplinaId))) {
+        return;
+      }
+      const hasStudy = (s.durationMinutes || 0) > 0 || (s.questionsAttempted || 0) > 0;
+      if (!hasStudy) return;
+      const d = extractLocalDateStr(s.completedAt) || extractLocalDateStr(s.createdAt);
+      if (d && d <= todayStr) {
+        set.add(d);
+      }
     });
 
-    // 2. Extrai datas dos blocos de questões reais cadastrados
+    // 2. Extrai datas dos blocos de questões reais cadastrados no concurso ativo
     try {
       const rawBlocos = localStorage.getItem('gabarita_blocos_questoes');
       if (rawBlocos) {
         const blocos = JSON.parse(rawBlocos);
         if (Array.isArray(blocos)) {
           blocos.forEach((b: any) => {
-            const bDate = b.date || (b.createdAt ? b.createdAt.split('T')[0] : '');
-            if (bDate) set.add(bDate);
+            if (
+              validDisciplinaIds &&
+              b.disciplinaId &&
+              !validDisciplinaIds.has(String(b.disciplinaId))
+            ) {
+              return;
+            }
+            const totalQ = Number(b.totalQuestions) || 0;
+            if (totalQ <= 0) return;
+            const bDate = extractLocalDateStr(b.date) || extractLocalDateStr(b.createdAt);
+            if (bDate && bDate <= todayStr) {
+              set.add(bDate);
+            }
           });
         }
       }
@@ -70,21 +114,41 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       // ignore
     }
 
-    // 3. Dias de ofensiva real ativa do usuário (streakDays)
-    if (streakDays > 0) {
-      const now = new Date();
-      for (let i = 0; i < streakDays; i++) {
-        const pastDate = new Date(now);
-        pastDate.setDate(now.getDate() - i);
-        const y = pastDate.getFullYear();
-        const m = String(pastDate.getMonth() + 1).padStart(2, '0');
-        const d = String(pastDate.getDate()).padStart(2, '0');
-        set.add(`${y}-${m}-${d}`);
-      }
-    }
+    const sortedDates = Array.from(set).sort();
 
-    return set;
-  }, [sessoes, streakDays]);
+    // Se o usuário nunca iniciou nenhum estudo no concurso selecionado, dataInicioEstudo é null
+    const startStudyDate: string | null = sortedDates.length > 0 ? sortedDates[0] : null;
+
+    // Cálculo do recorde real de dias consecutivos a partir das datas estudadas
+    let maxStreak = 0;
+    let currentRun = 0;
+    let prevTime: number | null = null;
+
+    sortedDates.forEach((dateStr) => {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const time = new Date(y, m - 1, d).getTime();
+      if (prevTime !== null) {
+        const diffDays = Math.round((time - prevTime) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          currentRun += 1;
+        } else if (diffDays > 1) {
+          currentRun = 1;
+        }
+      } else {
+        currentRun = 1;
+      }
+      if (currentRun > maxStreak) {
+        maxStreak = currentRun;
+      }
+      prevTime = time;
+    });
+
+    return {
+      studiedDatesSet: set,
+      dataInicioEstudo: startStudyDate,
+      realBestStreak: maxStreak,
+    };
+  }, [sessoes, validDisciplinaIds, todayStr]);
 
   // Navegação de mês
   const handlePrevMonth = () => {
@@ -118,13 +182,14 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       isCurrentMonth: boolean;
       isToday: boolean;
       isFuture: boolean;
+      isBeforeStart: boolean;
       studied: boolean;
     }
 
     const grid: DayGridItem[] = [];
     let studiedInMonthCount = 0;
 
-    // Espaçamento dos dias do mês anterior
+    // 1. Espaçamento dos dias do mês anterior (Padding)
     const prevMonthLastDate = new Date(year, month, 0).getDate();
     for (let i = firstDayWeekIndex - 1; i >= 0; i--) {
       const dNum = prevMonthLastDate - i;
@@ -133,27 +198,31 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       const m = String(prevDate.getMonth() + 1).padStart(2, '0');
       const d = String(dNum).padStart(2, '0');
       const dateStr = `${y}-${m}-${d}`;
-      const isFuture = dateStr > todayStr;
-      const studied = studiedDatesSet.has(dateStr);
 
       grid.push({
         dayNumber: dNum,
         dateStr,
         isCurrentMonth: false,
-        isToday: dateStr === todayStr,
-        isFuture,
-        studied,
+        isToday: false,
+        isFuture: dateStr > todayStr,
+        isBeforeStart: !dataInicioEstudo || dateStr < dataInicioEstudo,
+        studied: false,
       });
     }
 
-    // Dias do mês atual
+    // 2. Dias do mês atual
     for (let dNum = 1; dNum <= totalDaysInMonth; dNum++) {
       const m = String(month + 1).padStart(2, '0');
       const d = String(dNum).padStart(2, '0');
       const dateStr = `${year}-${m}-${d}`;
       const isFuture = dateStr > todayStr;
-      const studied = studiedDatesSet.has(dateStr);
-      if (studied) studiedInMonthCount++;
+      const isBeforeStart = !dataInicioEstudo || dateStr < dataInicioEstudo;
+      const isWithinActiveInterval = !isFuture && !isBeforeStart;
+      const studied = isWithinActiveInterval && studiedDatesSet.has(dateStr);
+
+      if (studied) {
+        studiedInMonthCount++;
+      }
 
       grid.push({
         dayNumber: dNum,
@@ -161,11 +230,12 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
         isCurrentMonth: true,
         isToday: dateStr === todayStr,
         isFuture,
+        isBeforeStart,
         studied,
       });
     }
 
-    // Completar até fechar múltiplos de 7 (próximo mês)
+    // 3. Completar até fechar múltiplos de 7 (próximo mês - Padding)
     const remainingDays = (7 - (grid.length % 7)) % 7;
     for (let dNum = 1; dNum <= remainingDays; dNum++) {
       const nextDate = new Date(year, month + 1, dNum);
@@ -178,8 +248,9 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
         dayNumber: dNum,
         dateStr,
         isCurrentMonth: false,
-        isToday: dateStr === todayStr,
-        isFuture: true,
+        isToday: false,
+        isFuture: dateStr > todayStr,
+        isBeforeStart: !dataInicioEstudo || dateStr < dataInicioEstudo,
         studied: false,
       });
     }
@@ -189,11 +260,21 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       daysInGrid: grid,
       totalStudiedInMonth: studiedInMonthCount,
     };
-  }, [year, month, todayStr, studiedDatesSet]);
+  }, [year, month, todayStr, studiedDatesSet, dataInicioEstudo]);
 
-  // Total geral de dias estudados computados no histórico
-  const totalDiasEstudados = studiedDatesSet.size;
-  const recordeDias = bestStreakDays || Math.max(streakDays, 21);
+  // Total geral de dias estudados computados estritamente dentro do intervalo ativo
+  const totalDiasEstudados = useMemo(() => {
+    if (!dataInicioEstudo) return 0;
+    let count = 0;
+    studiedDatesSet.forEach((dateStr) => {
+      if (dateStr >= dataInicioEstudo && dateStr <= todayStr) {
+        count++;
+      }
+    });
+    return count;
+  }, [studiedDatesSet, dataInicioEstudo, todayStr]);
+
+  const recordeDias = bestStreakDays !== undefined ? bestStreakDays : Math.max(streakDays, realBestStreak);
 
   return (
     <Modal
@@ -272,18 +353,43 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
           {/* Células de dias */}
           <div className="grid grid-cols-7 gap-1.5 pt-1.5">
             {daysInGrid.map((item, idx) => {
-              const { dayNumber, isCurrentMonth, isToday, isFuture, studied } = item;
+              const { dayNumber, isCurrentMonth, isToday, isFuture, isBeforeStart, studied } = item;
 
-              let style = 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400';
+              let style =
+                'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400';
               let icon = null;
 
-              if (isFuture) {
-                style = 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-slate-400 dark:text-slate-600';
+              if (!isCurrentMonth) {
+                // 1. Dias fora do mês atual (Padding): neutros/esmaecidos, sem ícone ("X" ou "check")
+                style =
+                  'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-slate-400 dark:text-slate-600';
+                icon = null;
+              } else if (isFuture) {
+                // 2. Dias posteriores a hoje (Futuro): estilo neutro, sem marcação
+                style =
+                  'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-slate-400 dark:text-slate-600';
+                icon = null;
               } else if (studied) {
-                style = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs';
-                icon = <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" />;
+                // 3. Usuário estudou no dia: indicador de sucesso (Check verde)
+                style =
+                  'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs';
+                icon = (
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
+                );
+              } else if (isToday) {
+                // 4. Dia de hoje ainda sem estudo registrado: pendente/neutro com badge "Hoje", sem "X" vermelho precipitado
+                style =
+                  'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-semibold';
+                icon = null;
+              } else if (isBeforeStart) {
+                // 5. Dias anteriores ao início dos estudos (ou quando nunca iniciou): totalmente neutros, sem "X" e sem "check"
+                style =
+                  'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400';
+                icon = null;
               } else {
-                style = 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-medium';
+                // 6. Intervalo válido (dataInicioEstudo <= diaGrid < dataHoje) em que o usuário NÃO estudou: "X" vermelho
+                style =
+                  'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-medium';
                 icon = <X className="w-3.5 h-3.5 text-rose-500 stroke-[3]" />;
               }
 
@@ -292,7 +398,11 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
                   key={`${item.dateStr}_${idx}`}
                   className={`relative px-2.5 py-1.5 h-10 sm:h-11 rounded-xl border flex items-center justify-between transition-all select-none ${
                     !isCurrentMonth ? 'opacity-35' : ''
-                  } ${isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-slate-900 z-10' : ''} ${style}`}
+                  } ${
+                    isToday
+                      ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-slate-900 z-10'
+                      : ''
+                  } ${style}`}
                 >
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono text-xs">{dayNumber}</span>
@@ -348,3 +458,4 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
     </Modal>
   );
 };
+

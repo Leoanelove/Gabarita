@@ -31,6 +31,7 @@ import { Modal } from '../../design-system/Modal';
 import { FlashcardPlayer, ReviewSessionStats } from './FlashcardPlayer';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DatabaseService } from '../../services/db';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 export const FLASHCARDS_BANNER_THEMES: Record<string, string> = {
   verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Flashcards/Banner-Flashcard-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBGbGFzaGNhcmRzL0Jhbm5lci1GbGFzaGNhcmQtdmVyZGUucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY3MzAxOCwiZXhwIjo0OTQ2MjczMDE4fQ.bUX6pEhu81GWiSFf7TSYaSRDmwR77OUyqM2p9GqMXq-dKP0mDbjAFRwny2WwZnzAvDl397t51dWbYdaKEG4PVQ",
@@ -448,74 +449,60 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
       )}
 
       {/* 1. Banner Principal Dinâmico por Tema - Hub de Flashcards */}
-      <div
-        className="flashcards-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8"
-        style={{
-          backgroundImage: `url('${bannerUrl}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
+      <MenuBannerFrame
+        bannerThemes={FLASHCARDS_BANNER_THEMES}
+        alt="Banner Hub de Flashcards"
+        minHeight="min-h-[190px] md:min-h-[210px]"
+        className="flashcards-banner w-full rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8"
+        bgWrapperClassName="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
+        imgClassName="w-full h-full object-cover object-[72%_center] scale-[1.38] origin-[72%_center] transition-transform duration-300"
+        overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-950/20 pointer-events-none"
+        contentClassName="w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4"
       >
-        {/* Imagem correspondente cobrindo 100% do container em PC, Tablet e Mobile */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-          <img
-            key={bannerUrl}
-            src={bannerUrl}
-            alt="Banner Hub de Flashcards"
-            className="w-full h-full object-cover object-[72%_center] scale-[1.38] origin-[72%_center] transition-transform duration-300"
-          />
-        </div>
-
-        {/* Overlay suave para garantir legibilidade e contraste em modo claro e escuro */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-950/20 pointer-events-none" />
-
-        <div className="relative z-10 w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div
-                className="w-11 h-11 rounded-xl bg-black/50 border border-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-md"
-                style={{ color: themeGlowStyles.color }}
-              >
-                <Layers className="w-6 h-6" />
-              </div>
-              <h1
-                className="provas-banner-title text-xl sm:text-2xl md:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md flex items-center gap-2.5 flex-wrap"
-                style={{
-                  color: '#FFFFFF',
-                  textShadow: themeGlowStyles.textShadow,
-                }}
-              >
-                <span>Hub de Flashcards</span>
-                <span
-                  className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-black/60 text-white border border-white/25 backdrop-blur-md shadow-xs"
-                  style={{ color: '#FFFFFF', textShadow: 'none' }}
-                >
-                  SM-2 Ativo
-                </span>
-              </h1>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div
+              className="w-11 h-11 rounded-xl bg-black/50 border border-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-md"
+              style={{ color: themeGlowStyles.color }}
+            >
+              <Layers className="w-6 h-6" />
             </div>
-            <p
-              className="text-xs sm:text-sm !text-white/90 leading-relaxed max-w-xl drop-shadow-xs"
-              style={{ color: 'rgba(255, 255, 255, 0.92)' }}
+            <h1
+              className="provas-banner-title text-xl sm:text-2xl md:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md flex items-center gap-2.5 flex-wrap"
+              style={{
+                color: '#FFFFFF',
+                textShadow: themeGlowStyles.textShadow,
+              }}
             >
-              Memorização ativa de alto rendimento por disciplinas e repetição inteligente.
-            </p>
+              <span>Hub de Flashcards</span>
+              <span
+                className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-black/60 text-white border border-white/25 backdrop-blur-md shadow-xs"
+                style={{ color: '#FFFFFF', textShadow: 'none' }}
+              >
+                SM-2 Ativo
+              </span>
+            </h1>
           </div>
-
-          <div className="pt-1 flex flex-wrap items-center gap-2.5 shrink-0">
-            <Button
-              variant="primary"
-              size="md"
-              leftIcon={<Plus className="w-4 h-4 shrink-0" />}
-              onClick={() => handleOpenCreateModal()}
-              className="theme-btn-primary h-10 px-5 !rounded-xl shadow-lg shadow-black/30 font-bold text-xs md:text-sm tracking-wide cursor-pointer whitespace-nowrap"
-            >
-              Criar Flashcard
-            </Button>
-          </div>
+          <p
+            className="text-xs sm:text-sm !text-white/90 leading-relaxed max-w-xl drop-shadow-xs"
+            style={{ color: 'rgba(255, 255, 255, 0.92)' }}
+          >
+            Memorização ativa de alto rendimento por disciplinas e repetição inteligente.
+          </p>
         </div>
-      </div>
+
+        <div className="pt-1 flex flex-wrap items-center gap-2.5 shrink-0">
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<Plus className="w-4 h-4 shrink-0" />}
+            onClick={() => handleOpenCreateModal()}
+            className="theme-btn-primary h-10 px-5 !rounded-xl shadow-lg shadow-black/30 font-bold text-xs md:text-sm tracking-wide cursor-pointer whitespace-nowrap"
+          >
+            Criar Flashcard
+          </Button>
+        </div>
+      </MenuBannerFrame>
 
       {/* 2. Barra Superior com Estatísticas / Métricas Resumidas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

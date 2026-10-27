@@ -10,7 +10,9 @@ import {
   X,
   Layers,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Minus,
+  Plus
 } from 'lucide-react';
 import { Prova, ProvaStatus } from '../../types';
 import { Button } from '../../design-system/Button';
@@ -57,6 +59,14 @@ export const NovaProvaModal: React.FC<NovaProvaModalProps> = ({
 }) => {
   const { colorSkin } = useTheme();
 
+  const isDateInPast = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const examDateObj = dateStr.includes('T') ? new Date(dateStr) : new Date(`${dateStr}T23:59:59`);
+    return examDateObj < today;
+  };
+
   const [organ, setOrgan] = useState('');
   const [role, setRole] = useState('');
   const [banca, setBanca] = useState('Cebraspe');
@@ -65,10 +75,41 @@ export const NovaProvaModal: React.FC<NovaProvaModalProps> = ({
   const [category, setCategory] = useState('TRIBUNAL');
   const [questionsCount, setQuestionsCount] = useState('100');
   const [durationMinutes, setDurationMinutes] = useState('240');
-  const [status, setStatus] = useState<ProvaStatus>('agendada');
+  const [status, setStatus] = useState<ProvaStatus>('em_andamento');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const currentMinutes = Math.max(30, parseInt(durationMinutes, 10) || 240);
+
+  const formatHoursDisplay = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (m === 0) {
+      return `${h}h 00min`;
+    }
+    return `${h}h ${m < 10 ? '0' : ''}${m}min`;
+  };
+
+  const getHoursVerbose = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h === 0) return `${m} minutos`;
+    if (m === 0) return `${h} ${h === 1 ? 'hora' : 'horas'}`;
+    return `${h}h e ${m}min (${h === 1 ? '1 hora' : `${h} horas`} e ${m} min)`;
+  };
+
+  const adjustDuration = (deltaMinutes: number) => {
+    const nextVal = Math.max(30, Math.min(720, currentMinutes + deltaMinutes));
+    setDurationMinutes(nextVal.toString());
+  };
+
+  const handleExamDateChange = (val: string) => {
+    setExamDate(val);
+    if (isDateInPast(val)) {
+      setStatus('concluida');
+    }
+  };
 
   useEffect(() => {
     if (editingProva) {
@@ -81,11 +122,16 @@ export const NovaProvaModal: React.FC<NovaProvaModalProps> = ({
         setBanca('Outra');
         setCustomBanca(editingProva.banca || '');
       }
-      setExamDate(editingProva.examDate ? editingProva.examDate.split('T')[0] : '');
+      const pDate = editingProva.examDate ? editingProva.examDate.split('T')[0] : '';
+      setExamDate(pDate);
       setCategory(editingProva.category || 'TRIBUNAL');
       setQuestionsCount((editingProva.questionsCount || 100).toString());
       setDurationMinutes((editingProva.durationMinutes || 240).toString());
-      setStatus(editingProva.status || 'agendada');
+      if (isDateInPast(pDate)) {
+        setStatus('concluida');
+      } else {
+        setStatus(editingProva.status === 'concluida' ? 'concluida' : 'em_andamento');
+      }
       setNotes(editingProva.notes || '');
     } else {
       setOrgan('');
@@ -95,11 +141,12 @@ export const NovaProvaModal: React.FC<NovaProvaModalProps> = ({
       // Sugere uma data daqui a 45 dias
       const defaultDate = new Date();
       defaultDate.setDate(defaultDate.getDate() + 45);
-      setExamDate(defaultDate.toISOString().split('T')[0]);
+      const defaultDateStr = defaultDate.toISOString().split('T')[0];
+      setExamDate(defaultDateStr);
       setCategory('TRIBUNAL');
       setQuestionsCount('100');
       setDurationMinutes('240');
-      setStatus('agendada');
+      setStatus('em_andamento');
       setNotes('');
     }
     setErrorMsg('');
@@ -131,7 +178,7 @@ export const NovaProvaModal: React.FC<NovaProvaModalProps> = ({
           year: yearFromDate,
           examDate: examDate ? examDate : undefined,
           category,
-          status,
+          status: (examDate && isDateInPast(examDate)) ? 'concluida' : status,
           questionsCount: parseInt(questionsCount, 10) || 100,
           durationMinutes: parseInt(durationMinutes, 10) || 240,
           notes: notes.trim(),
@@ -274,49 +321,47 @@ export const NovaProvaModal: React.FC<NovaProvaModalProps> = ({
               <input
                 type="date"
                 value={examDate}
-                onChange={(e) => setExamDate(e.target.value)}
+                onChange={(e) => handleExamDateChange(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all cursor-pointer"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
-                Status da Prova
-              </label>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setStatus('agendada')}
-                  className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                    status === 'agendada'
-                      ? 'bg-sky-500/15 border-sky-500 text-sky-600 dark:text-sky-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  Agendada
-                </button>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
+                  Status da Prova
+                </label>
+                {isDateInPast(examDate) && (
+                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                    Data passada (Realizada)
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setStatus('em_andamento')}
-                  className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     status === 'em_andamento'
-                      ? 'bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-300'
+                      ? 'bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-300 shadow-xs ring-1 ring-amber-500/30'
                       : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  Em Andamento
+                  <Clock className="w-3.5 h-3.5" />
+                  Em andamento
                 </button>
                 <button
                   type="button"
                   onClick={() => setStatus('concluida')}
-                  className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     status === 'concluida'
-                      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-300'
+                      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-xs ring-1 ring-emerald-500/30'
                       : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  Concluída
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Realizada
                 </button>
               </div>
             </div>
@@ -340,22 +385,72 @@ export const NovaProvaModal: React.FC<NovaProvaModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                Duração Estimada (minutos)
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  Duração Estimada da Prova
+                </span>
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  ± 30 minutos
+                </span>
               </label>
-              <input
-                type="number"
-                min="10"
-                step="10"
-                placeholder="240"
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
-              />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                {Math.floor((parseInt(durationMinutes, 10) || 0) / 60)}h {(parseInt(durationMinutes, 10) || 0) % 60}m de aplicação
-              </span>
+
+              {/* Controle Stepper de Duração em Horas com botões de -30min e +30min */}
+              <div className="flex items-stretch gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => adjustDuration(-30)}
+                  disabled={currentMinutes <= 30}
+                  className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed select-none cursor-pointer shrink-0"
+                  title="Diminuir 30 minutos (-30 min)"
+                >
+                  <Minus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-300" />
+                  <span>-30 min</span>
+                </button>
+
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    readOnly
+                    value={formatHoursDisplay(currentMinutes)}
+                    className="w-full h-full text-center px-3.5 py-2.5 rounded-xl text-sm font-black tracking-wide bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all select-none cursor-default"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => adjustDuration(30)}
+                  disabled={currentMinutes >= 720}
+                  className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed select-none cursor-pointer shrink-0"
+                  title="Aumentar 30 minutos (+30 min)"
+                >
+                  <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-300" />
+                  <span>+30 min</span>
+                </button>
+              </div>
+
+              {/* Descrição legível em horas e atalhos rápidos */}
+              <div className="flex items-center justify-between mt-1.5 px-0.5">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                  {getHoursVerbose(currentMinutes)} ({currentMinutes} min)
+                </span>
+                <div className="flex items-center gap-1">
+                  {[180, 210, 240, 270, 300].map((quickMins) => (
+                    <button
+                      key={quickMins}
+                      type="button"
+                      onClick={() => setDurationMinutes(quickMins.toString())}
+                      className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
+                        currentMinutes === quickMins
+                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800/80'
+                      }`}
+                    >
+                      {Math.floor(quickMins / 60)}h{quickMins % 60 ? '30' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -91,6 +91,8 @@ export interface Concurso {
   registrationEndDate?: string;
   editalUrl?: string;
   active: boolean;
+  isAtivo?: boolean;
+  is_ativo?: boolean;
   userId?: string;
   notes?: string;
   createdAt: string;

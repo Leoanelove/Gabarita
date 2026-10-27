@@ -10,6 +10,7 @@ import {
   Simulado, 
   Notificacao, 
   Prova, 
+  ProvaStatus,
   Subtopico, 
   TopicStatus, 
   TopicDifficulty, 
@@ -211,6 +212,8 @@ function mapConcursoFromDb(row: any): Concurso {
     registrationEndDate: row.registration_end_date || undefined,
     editalUrl: row.edital_url || undefined,
     active: Boolean(row.active),
+    isAtivo: Boolean(row.active),
+    is_ativo: Boolean(row.active),
     notes: row.notes || undefined,
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
@@ -640,6 +643,7 @@ export class DatabaseService {
 
   // --- CONCURSOS ---
   static async getConcursos(): Promise<Concurso[]> {
+    const rawStored = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
     try {
       const { data, error } = await supabase
         .from('concursos')
@@ -647,22 +651,44 @@ export class DatabaseService {
         .order('created_at', { ascending: false });
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapConcursoFromDb);
-        saveStored(STORAGE_KEYS.CONCURSOS, list);
-        return list;
+        const remoteList = data.map(mapConcursoFromDb);
+        const remoteIds = new Set(remoteList.map(r => String(r.id)));
+        const unsynced = rawStored.filter(item => !remoteIds.has(String(item.id)));
+        const merged = [...remoteList, ...unsynced];
+
+        let foundActive = false;
+        const normalized = merged.map(c => {
+          const isCand = Boolean(c.active || c.isAtivo || c.is_ativo);
+          const isActive = isCand && !foundActive;
+          if (isActive) foundActive = true;
+          return {
+            ...c,
+            active: isActive,
+            isAtivo: isActive,
+            is_ativo: isActive,
+          };
+        });
+        saveStored(STORAGE_KEYS.CONCURSOS, normalized);
+        return normalized;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar concursos do Supabase:', e);
     }
 
-    const rawList = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
-    return rawList.map(c => {
+    let foundActive = false;
+    return rawStored.map(c => {
       const organ = (c.organ || c.orgao || c.nome || '').trim();
       const title = (c.title && c.title.length === 1 && organ.length > 1)
         ? (c.role ? `${organ} - ${c.role}` : organ)
         : (c.title || c.titulo || organ);
+      const isCandidateActive = Boolean(c.active || c.isAtivo || c.is_ativo);
+      const isActive = isCandidateActive && !foundActive;
+      if (isActive) foundActive = true;
       return {
         ...c,
+        active: isActive,
+        isAtivo: isActive,
+        is_ativo: isActive,
         organ: organ || c.organ,
         orgao: organ || c.orgao,
         nome: organ || c.nome,
@@ -672,30 +698,91 @@ export class DatabaseService {
     });
   }
 
+  static async autoScheduleProvaForConcurso(concurso: Concurso): Promise<Prova | null> {
+    if (!concurso.examDate) return null;
+    const cleanDate = concurso.examDate.trim();
+    if (!cleanDate) return null;
+
+    try {
+      const existingProvas = await this.getProvas();
+      const alreadyScheduled = existingProvas.some(
+        p => (p.concursoId && String(p.concursoId) === String(concurso.id)) ||
+             (p.organ.toLowerCase().trim() === concurso.organ.toLowerCase().trim() &&
+              p.role.toLowerCase().trim() === concurso.role.toLowerCase().trim() &&
+              p.examDate?.split('T')[0] === cleanDate.split('T')[0])
+      );
+      if (alreadyScheduled) return null;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const examDateObj = cleanDate.includes('T') ? new Date(cleanDate) : new Date(`${cleanDate}T23:59:59`);
+      const status: ProvaStatus = examDateObj < today ? 'concluida' : 'em_andamento';
+
+      const yearFromDate = !isNaN(new Date(cleanDate).getFullYear())
+        ? new Date(cleanDate).getFullYear()
+        : new Date().getFullYear();
+
+      const newProva = await this.addProva({
+        concursoId: concurso.id,
+        organ: concurso.organ,
+        role: concurso.role,
+        banca: concurso.banca || 'A Definir',
+        year: yearFromDate,
+        questionsCount: 100,
+        durationMinutes: 240,
+        examDate: cleanDate,
+        category: 'CONCURSO',
+        status,
+        notes: `Agendamento automático gerado a partir do cadastro do edital ${concurso.organ} - ${concurso.role}.`,
+      });
+
+      return newProva;
+    } catch (err) {
+      console.warn('Gabarita: Erro no agendamento automático de prova:', err);
+      return null;
+    }
+  }
+
   static async addConcurso(concurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>): Promise<Concurso> {
     const list = await this.getConcursos();
     const organ = (concurso.organ || concurso.orgao || concurso.nome || '').trim();
+    const cleanRole = (concurso.role || '').trim();
     const title = (concurso.title && concurso.title.length === 1 && organ.length > 1)
-      ? (concurso.role ? `${organ} - ${concurso.role}` : organ)
+      ? (cleanRole ? `${organ} - ${cleanRole}` : organ)
       : (concurso.title || concurso.titulo || organ);
 
-    const newConcurso: Concurso = {
+    const isNewActive = concurso.active !== undefined ? Boolean(concurso.active) : true;
+    const nowIso = new Date().toISOString();
+    const generatedId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `conc_${Date.now()}`;
+
+    let newConcurso: Concurso = {
       ...concurso,
+      id: generatedId,
+      active: isNewActive,
+      isAtivo: isNewActive,
+      is_ativo: isNewActive,
       organ: organ || concurso.organ,
       orgao: organ || concurso.orgao,
       nome: organ || concurso.nome,
       title: title || concurso.title,
       titulo: title || concurso.titulo,
-      id: `conc_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      role: cleanRole,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
-    const updated = [newConcurso, ...list];
-    saveStored(STORAGE_KEYS.CONCURSOS, updated);
 
-    getCurrentUserId().then(uid => {
-      if (uid) {
-        supabase.from('concursos').insert([{
+    // 1. Executa o INSERT na tabela concursos gerando o novo registro antes de tentar qualquer ativação de foco
+    const uid = await getCurrentUserId();
+    if (uid) {
+      try {
+        if (isNewActive) {
+          // Desmarca os demais concursos do usuário no Supabase para respeitar a regra de exclusividade
+          await supabase.from('concursos').update({ active: false }).eq('user_id', uid);
+        }
+
+        const insertPayload: any = {
           id: newConcurso.id,
           user_id: uid,
           title: newConcurso.title,
@@ -710,16 +797,74 @@ export class DatabaseService {
           exam_date: newConcurso.examDate || null,
           registration_start_date: newConcurso.registrationStartDate || null,
           registration_end_date: newConcurso.registrationEndDate || null,
-          edital_url: newConcurso.editalUrl,
-          active: newConcurso.active,
-          notes: newConcurso.notes,
+          edital_url: newConcurso.editalUrl || null,
+          active: true,
+          notes: newConcurso.notes || '',
           created_at: newConcurso.createdAt,
           updated_at: newConcurso.updatedAt,
-        }]).then(({ error }) => {
-          if (error) console.warn('Gabarita: Erro ao inserir concurso no Supabase:', error.message);
-        });
+        };
+
+        const { data, error } = await supabase
+          .from('concursos')
+          .insert([insertPayload])
+          .select()
+          .maybeSingle();
+
+        if (!error && data) {
+          newConcurso = mapConcursoFromDb(data);
+          newConcurso.active = true;
+          newConcurso.isAtivo = true;
+          newConcurso.is_ativo = true;
+        } else if (error) {
+          console.warn('Gabarita: Aviso no INSERT em concursos via Supabase client:', error.message);
+          // Fallback via endpoint backend
+          try {
+            const beRes = await fetch('/api/concursos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(insertPayload),
+            });
+            if (beRes.ok) {
+              const beJson = await beRes.json();
+              if (beJson.data) {
+                newConcurso = mapConcursoFromDb(beJson.data);
+                newConcurso.active = true;
+                newConcurso.isAtivo = true;
+                newConcurso.is_ativo = true;
+              }
+            }
+          } catch (beErr) {
+            console.warn('Gabarita: Falha no fallback backend de inserção:', beErr);
+          }
+        }
+      } catch (insertErr) {
+        console.warn('Gabarita: Exceção no INSERT de concursos:', insertErr);
       }
-    });
+    }
+
+    // 2. Regra de exclusividade no armazenamento local:
+    // O novo concurso é colocado no topo como único ativo; os demais são desativados
+    const updated = isNewActive
+      ? [newConcurso, ...list.filter(c => String(c.id) !== String(newConcurso.id)).map(c => ({ ...c, active: false, isAtivo: false, is_ativo: false, updatedAt: new Date().toISOString() }))]
+      : [newConcurso, ...list.filter(c => String(c.id) !== String(newConcurso.id))];
+
+    saveStored(STORAGE_KEYS.CONCURSOS, updated);
+
+    if (isNewActive) {
+      await this.updateUserProfile({
+        targetConcursoId: newConcurso.id,
+        targetConcursoTitle: `${newConcurso.organ} - ${newConcurso.role}`,
+      });
+      await this.syncActiveContestStorage();
+    }
+
+    if (newConcurso.examDate) {
+      try {
+        await this.autoScheduleProvaForConcurso(newConcurso);
+      } catch (e) {
+        console.warn('Gabarita: Falha ao agendar prova automática para concurso:', e);
+      }
+    }
 
     return newConcurso;
   }
@@ -727,14 +872,29 @@ export class DatabaseService {
   static async updateConcurso(id: string, partial: Partial<Concurso>): Promise<Concurso> {
     const list = await this.getConcursos();
     let updatedItem: Concurso | null = null;
+    const isActivating = partial.active === true || partial.isAtivo === true || partial.is_ativo === true;
     const updatedList = list.map(c => {
-      if (c.id === id) {
+      if (String(c.id) === String(id)) {
+        const activeVal = isActivating ? true : (partial.active !== undefined ? partial.active : (partial.isAtivo !== undefined ? partial.isAtivo : (partial.is_ativo !== undefined ? partial.is_ativo : c.active)));
         updatedItem = {
           ...c,
           ...partial,
+          active: activeVal,
+          isAtivo: activeVal,
+          is_ativo: activeVal,
           updatedAt: new Date().toISOString(),
         };
         return updatedItem;
+      }
+      // Regra de exclusividade: ao ativar este concurso, desativa automaticamente os demais
+      if (isActivating) {
+        return {
+          ...c,
+          active: false,
+          isAtivo: false,
+          is_ativo: false,
+          updatedAt: new Date().toISOString(),
+        };
       }
       return c;
     });
@@ -755,11 +915,23 @@ export class DatabaseService {
     if (partial.registrationStartDate !== undefined) snakeObj.registration_start_date = partial.registrationStartDate || null;
     if (partial.registrationEndDate !== undefined) snakeObj.registration_end_date = partial.registrationEndDate || null;
     if (partial.editalUrl !== undefined) snakeObj.edital_url = partial.editalUrl;
-    if (partial.active !== undefined) snakeObj.active = partial.active;
+    if (isActivating) {
+      snakeObj.active = true;
+    } else if (partial.active !== undefined) {
+      snakeObj.active = partial.active;
+    }
     if (partial.notes !== undefined) snakeObj.notes = partial.notes;
 
-    supabase.from('concursos').update(snakeObj).eq('id', id).then(({ error }) => {
-      if (error) console.warn('Gabarita: Erro ao atualizar concurso no Supabase:', error.message);
+    getCurrentUserId().then(uid => {
+      if (uid && isActivating) {
+        supabase.from('concursos').update({ active: false }).eq('user_id', uid).then(() => {
+          supabase.from('concursos').update(snakeObj).eq('id', id);
+        });
+      } else {
+        supabase.from('concursos').update(snakeObj).eq('id', id).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao atualizar concurso no Supabase:', error.message);
+        });
+      }
     });
 
     if ((partial.title || partial.role) && (updatedItem as Concurso).active) {
@@ -767,6 +939,15 @@ export class DatabaseService {
         targetConcursoTitle: `${(updatedItem as Concurso).organ} - ${(updatedItem as Concurso).role}`,
       });
     }
+
+    if (partial.examDate && updatedItem) {
+      try {
+        await this.autoScheduleProvaForConcurso(updatedItem as Concurso);
+      } catch (e) {
+        console.warn('Gabarita: Falha ao agendar prova automática ao atualizar concurso:', e);
+      }
+    }
+
     return updatedItem;
   }
 
@@ -811,21 +992,73 @@ export class DatabaseService {
   }
 
   static async setActiveConcurso(id: string): Promise<{ concursos: Concurso[]; activeConcurso: Concurso }> {
-    const list = await this.getConcursos();
-    let activeConcurso: Concurso | null = null;
+    let list = await this.getConcursos();
+    let target = list.find(c => String(c.id) === String(id));
+
+    // Se não encontrou na lista, busca no storage local
+    if (!target) {
+      const localList = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, []);
+      target = localList.find(c => String(c.id) === String(id));
+      if (target) {
+        list = [target, ...list.filter(c => String(c.id) !== String(id))];
+      }
+    }
+
+    // Se ainda não encontrou, busca direto por ID no Supabase
+    if (!target) {
+      try {
+        const { data } = await supabase.from('concursos').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          target = mapConcursoFromDb(data);
+          list = [target, ...list.filter(c => String(c.id) !== String(id))];
+        }
+      } catch {}
+    }
+
+    if (!target) {
+      if (list.length > 0) {
+        target = list[0];
+      } else {
+        throw new Error('Concurso não encontrado para ativação.');
+      }
+    }
+
+    const activeConcurso: Concurso = {
+      ...target,
+      active: true,
+      isAtivo: true,
+      is_ativo: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Regra de exclusividade: apenas o concurso selecionado terá active/isAtivo = true, os outros são desativados
     const updatedList = list.map(c => {
-      const isActive = c.id === id;
-      if (isActive) activeConcurso = { ...c, active: true };
-      return { ...c, active: isActive };
+      const isActive = String(c.id) === String(activeConcurso.id);
+      if (isActive) {
+        return activeConcurso;
+      }
+      return { ...c, active: false, isAtivo: false, is_ativo: false, updatedAt: new Date().toISOString() };
     });
-    if (!activeConcurso) throw new Error('Concurso não encontrado para ativação.');
+
     saveStored(STORAGE_KEYS.CONCURSOS, updatedList);
     await this.updateUserProfile({
-      targetConcursoId: (activeConcurso as Concurso).id,
-      targetConcursoTitle: `${(activeConcurso as Concurso).organ} - ${(activeConcurso as Concurso).role}`,
+      targetConcursoId: activeConcurso.id,
+      targetConcursoTitle: `${activeConcurso.organ} - ${activeConcurso.role}`,
     });
     await this.syncActiveContestStorage();
-    return { concursos: updatedList, activeConcurso: activeConcurso as Concurso };
+
+    // Sincroniza exclusividade no Supabase
+    const uid = await getCurrentUserId();
+    if (uid) {
+      try {
+        await supabase.from('concursos').update({ active: false }).eq('user_id', uid);
+        await supabase.from('concursos').update({ active: true }).eq('id', activeConcurso.id);
+      } catch (e) {
+        console.warn('Gabarita: Erro ao sincronizar foco ativo no Supabase:', e);
+      }
+    }
+
+    return { concursos: updatedList, activeConcurso };
   }
 
   // --- SINGLE SOURCE OF TRUTH (gabarita_active_contest) ---
@@ -883,12 +1116,18 @@ export class DatabaseService {
       }>;
     }>
   ): Promise<{ concurso: Concurso; disciplinas: Disciplina[]; assuntos: Assunto[] }> {
-    // 1. Criar e ativar Concurso
+    // 1. Executa o INSERT na tabela concursos gerando o novo registro antes de tentar qualquer ativação de foco
     const newConcurso = await this.addConcurso({
       ...concursoData,
       active: true,
+      isAtivo: true,
+      is_ativo: true,
     });
-    await this.setActiveConcurso(newConcurso.id);
+    try {
+      await this.setActiveConcurso(newConcurso.id);
+    } catch (actErr) {
+      console.warn('Gabarita: Ativação secundária finalizada por addConcurso:', actErr);
+    }
 
     const createdDisciplinas: Disciplina[] = [];
     const createdAssuntos: Assunto[] = [];

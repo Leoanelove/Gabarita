@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Identificação segura do concurso ativo
   const currentActiveId = activeConcursoId || 
-    displayConcursos.find(c => c.active)?.id || 
+    displayConcursos.find(c => c.active || c.isAtivo)?.id || 
     user?.targetConcursoId || 
     displayConcursos[0]?.id || '';
 

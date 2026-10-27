@@ -7,6 +7,7 @@ import { Card, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { useTheme } from '../../contexts/ThemeContext';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 export const PLANOS_BANNER_THEMES: Record<string, string> = {
   verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Planos%20e%20Precos/Banner-Planos-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFub3MgZSBQcmVjb3MvQmFubmVyLVBsYW5vcy12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjgxMjMyLCJleHAiOjQ5NDYyODEyMzJ9.ZKORMkXE457LoKX9tEhc3W5g6MPo09tNmoRT4aCb3uhwwZrWWJe_TnXkKSG6_iMG7s3lA5Ze5givXGDXuOtyKA",
@@ -143,63 +144,42 @@ export const PlanosAssinaturaView: React.FC<PlanosAssinaturaViewProps> = ({
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-fade-in">
-      <div
-        ref={(el) => {
-          if (el) {
-            el.style.setProperty('background-image', `url('${bannerUrl}')`, 'important');
-            el.style.setProperty('background-size', '135% 135%', 'important');
-            el.style.setProperty('background-position', '72% center', 'important');
-            el.style.setProperty('background-repeat', 'no-repeat', 'important');
-          }
-        }}
-        className="planos-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center justify-center bg-slate-950 py-8 px-6 md:px-10 card-banner metas-xp-banner"
-        style={{
-          backgroundImage: `url('${bannerUrl}')`,
-          backgroundSize: '135% 135%',
-          backgroundPosition: '72% center',
-          backgroundRepeat: 'no-repeat',
-        }}
+      <MenuBannerFrame
+        bannerThemes={PLANOS_BANNER_THEMES}
+        alt="Banner Planos & Assinatura"
+        minHeight="min-h-[190px] md:min-h-[210px]"
+        className="planos-banner w-full rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center justify-center bg-slate-950 py-8 px-6 md:px-10 card-banner metas-xp-banner"
+        bgWrapperClassName="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
+        imgClassName="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
+        overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/55 to-slate-950/75 pointer-events-none z-[1]"
+        contentClassName="text-center max-w-2xl mx-auto space-y-3"
       >
-        {/* Imagem correspondente cobrindo 100% do container */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
-          <img
-            key={bannerUrl}
-            src={bannerUrl}
-            alt="Banner Planos & Assinatura"
-            className="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
-          />
+        <div
+          className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/55 backdrop-blur-md border text-xs font-bold tracking-wide shadow-md"
+          style={{
+            color: themeGlowStyles.color,
+            borderColor: themeGlowStyles.borderColor,
+          }}
+        >
+          <Crown className="w-3.5 h-3.5 inline shrink-0" />
+          <span>Assinatura & Planos</span>
         </div>
-
-        {/* Overlay suave para alto contraste e legibilidade em modo claro e escuro */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/55 to-slate-950/75 pointer-events-none z-[1]" />
-
-        <div className="relative z-10 text-center max-w-2xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/55 backdrop-blur-md border text-xs font-bold tracking-wide shadow-md"
-            style={{
-              color: themeGlowStyles.color,
-              borderColor: themeGlowStyles.borderColor,
-            }}
-          >
-            <Crown className="w-3.5 h-3.5 inline shrink-0" />
-            <span>Assinatura & Planos</span>
-          </div>
-          <h2
-            className="provas-banner-title text-2xl sm:text-3xl font-black !text-white tracking-tight leading-tight select-none drop-shadow-md"
-            style={{
-              color: '#FFFFFF',
-              textShadow: themeGlowStyles.textShadow,
-            }}
-          >
-            Escolha o plano ideal para a sua aprovação
-          </h2>
-          <p
-            className="text-xs sm:text-sm !text-white/90 leading-relaxed max-w-xl mx-auto drop-shadow-xs"
-            style={{ color: 'rgba(255, 255, 255, 0.92)' }}
-          >
-            Desbloqueie inteligência artificial avançada e editais ilimitados.
-          </p>
-        </div>
-      </div>
+        <h2
+          className="provas-banner-title text-2xl sm:text-3xl font-black !text-white tracking-tight leading-tight select-none drop-shadow-md"
+          style={{
+            color: '#FFFFFF',
+            textShadow: themeGlowStyles.textShadow,
+          }}
+        >
+          Escolha o plano ideal para a sua aprovação
+        </h2>
+        <p
+          className="text-xs sm:text-sm !text-white/90 leading-relaxed max-w-xl mx-auto drop-shadow-xs"
+          style={{ color: 'rgba(255, 255, 255, 0.92)' }}
+        >
+          Desbloqueie inteligência artificial avançada e editais ilimitados.
+        </p>
+      </MenuBannerFrame>
 
       {successMessage && (
         <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 max-w-xl mx-auto">

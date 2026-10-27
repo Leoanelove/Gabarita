@@ -24,6 +24,7 @@ import {
 import { Card, CardHeader, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
+import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const ESTATISTICAS_BANNER_THEMES: Record<string, string> = {
@@ -170,16 +171,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Banner Superior Dinâmico - Estatísticas & Relatórios */}
-      <div className="estatisticas-banner w-full relative overflow-hidden rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl min-h-[190px] md:min-h-[210px] flex items-center bg-slate-950 p-6 md:p-8 card-banner metas-xp-banner">
-        <div className="absolute -inset-2 overflow-hidden pointer-events-none select-none z-0">
-          <img
-            key={bannerUrl}
-            src={bannerUrl}
-            alt="Estatísticas & Relatórios"
-            className="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
-          />
-        </div>
-        <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+      <MenuBannerFrame
+        bannerThemes={ESTATISTICAS_BANNER_THEMES}
+        minHeight="min-h-[190px] md:min-h-[210px]"
+        className="estatisticas-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8 card-banner metas-xp-banner"
+        contentClassName="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5"
+        imgClassName="w-full h-full object-cover object-center scale-[1.14] pointer-events-none select-none transition-transform duration-300"
+        alt="Estatísticas & Relatórios"
+        fallbackSkin="laranja"
+      >
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-3 flex-wrap">
               <div
@@ -205,8 +205,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               Métricas consolidadas e desempenho por matéria.
             </p>
           </div>
-        </div>
-      </div>
+      </MenuBannerFrame>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/5">

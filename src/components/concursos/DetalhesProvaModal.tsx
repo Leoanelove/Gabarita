@@ -40,28 +40,29 @@ export const DetalhesProvaModal: React.FC<DetalhesProvaModalProps> = ({
     ? Math.ceil((new Date(prova.examDate).getTime() - new Date().getTime()) / 86400000)
     : null;
 
+  const isDateInPast = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T23:59:59`);
+    return d < today;
+  };
+
+  const isCompleted = prova.status === 'concluida' || isDateInPast(prova.examDate);
+
   const getStatusBadge = () => {
-    switch (prova.status) {
-      case 'concluida':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Concluída / Realizada
-          </span>
-        );
-      case 'em_andamento':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-            <AlertCircle className="w-3.5 h-3.5" /> Em Andamento
-          </span>
-        );
-      case 'agendada':
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30">
-            <Calendar className="w-3.5 h-3.5" /> Agendada
-          </span>
-        );
+    if (isCompleted) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+          <CheckCircle2 className="w-3.5 h-3.5" /> Realizada
+        </span>
+      );
     }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+        <Clock className="w-3.5 h-3.5" /> Em andamento
+      </span>
+    );
   };
 
   return (
@@ -175,28 +176,26 @@ export const DetalhesProvaModal: React.FC<DetalhesProvaModalProps> = ({
               </span>
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => onUpdateStatus(prova.id, 'agendada')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                    prova.status === 'agendada' ? 'bg-sky-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  Agendada
-                </button>
-                <button
                   onClick={() => onUpdateStatus(prova.id, 'em_andamento')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                    prova.status === 'em_andamento' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    !isCompleted
+                      ? 'bg-amber-500 text-white shadow-xs font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  Em Andamento
+                  <Clock className="w-3.5 h-3.5" />
+                  Em andamento
                 </button>
                 <button
                   onClick={() => onUpdateStatus(prova.id, 'concluida')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                    prova.status === 'concluida' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isCompleted
+                      ? 'bg-emerald-500 text-white shadow-xs font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  Concluída
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Realizada
                 </button>
               </div>
             </div>
