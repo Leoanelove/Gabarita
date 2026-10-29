@@ -72,9 +72,14 @@ export const SimuladoDetailModal: React.FC<SimuladoDetailModalProps> = ({
         {/* Cabeçalho */}
         <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-slate-900/50">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
                 {simulado.banca || 'Simulado'}
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                {simulado.tipoGabarito === 'CERTO_ERRADO' || simulado.modalidade === 'certo_errado'
+                  ? 'Certo e Errado'
+                  : `Múltipla Escolha ${simulado.variacaoMultiplaEscolha === 'A_A_D' ? '(A a D)' : '(A a E)'}`}
               </span>
               <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
@@ -126,10 +131,12 @@ export const SimuladoDetailModal: React.FC<SimuladoDetailModalProps> = ({
 
             <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-center">
               <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                Pontos Líquidos
+                {simulado.tipoGabarito === 'CERTO_ERRADO' || simulado.modalidade === 'certo_errado'
+                  ? 'Pontos Líquidos'
+                  : 'Pontos Ponderados'}
               </span>
               <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-slate-100">
-                {liquidScore}
+                {simulado.score !== undefined ? simulado.score : liquidScore}
               </span>
             </div>
           </div>
@@ -171,9 +178,16 @@ export const SimuladoDetailModal: React.FC<SimuladoDetailModalProps> = ({
                       className="p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                          {d.disciplinaName}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                            {d.disciplinaName}
+                          </span>
+                          {d.peso !== undefined && d.peso !== 1 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50">
+                              Peso {d.peso}x
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] font-mono text-slate-400">
                             {d.acertos}/{dTotal} questões
@@ -213,7 +227,13 @@ export const SimuladoDetailModal: React.FC<SimuladoDetailModalProps> = ({
                         <span className="text-emerald-500 font-medium">✓ {d.acertos} acertos</span>
                         <span className="text-rose-500 font-medium">✗ {d.erros} erros</span>
                         <span className="text-amber-500 font-medium">- {d.brancos || 0} brancos</span>
-                        <span className="text-slate-300 font-mono">Líquida: {d.acertos - d.erros}</span>
+                        {d.peso !== undefined && d.peso !== 1 ? (
+                          <span className="text-indigo-500 font-mono font-bold">
+                            Pontos: {d.pontosObtidos ?? (d.acertos * d.peso)} pts
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 font-mono">Líquida: {d.acertos - d.erros}</span>
+                        )}
                       </div>
                     </div>
                   );

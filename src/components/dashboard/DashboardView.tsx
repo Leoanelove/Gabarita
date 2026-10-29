@@ -295,6 +295,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
   };
 
+  const activeConcurso = useMemo(() => {
+    return concursos.find(c => c.active || c.isAtivo) || 
+      concursos.find(c => c.id === user.targetConcursoId) || 
+      concursos[0] || null;
+  }, [concursos, user.targetConcursoId]);
+
+  const activeDisciplinasList = useMemo(() => {
+    if (!activeConcurso) return [];
+    return disciplinas.filter(d => d.concursoId === activeConcurso.id);
+  }, [disciplinas, activeConcurso]);
+
+  const activeDiscIds = useMemo(() => {
+    return new Set(activeDisciplinasList.map(d => d.id));
+  }, [activeDisciplinasList]);
+
+  const relevantAssuntos = useMemo(() => {
+    if (activeDiscIds.size === 0) return [];
+    return assuntos.filter(a => activeDiscIds.has(a.disciplinaId));
+  }, [assuntos, activeDiscIds]);
+
+  const activeAssuntoIds = useMemo(() => {
+    return new Set(relevantAssuntos.map(a => a.id));
+  }, [relevantAssuntos]);
+
+  const activeSessoes = useMemo(() => {
+    if (!activeConcurso || activeDiscIds.size === 0) return [];
+    return sessoes.filter(s => {
+      if (!s || !s.disciplinaId || !activeDiscIds.has(s.disciplinaId)) return false;
+      if (s.concursoId && s.concursoId !== activeConcurso.id) return false;
+      if (s.assuntoId && !activeAssuntoIds.has(s.assuntoId)) return false;
+      return true;
+    });
+  }, [sessoes, activeConcurso, activeDiscIds, activeAssuntoIds]);
+
   // Cálculo dinâmico das horas e questões realizadas na semana atual (iniciando na segunda-feira)
   const { minutosSemana, questoesSemana } = useMemo(() => {
     const now = new Date();
@@ -307,7 +341,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     let mins = 0;
     let questions = 0;
 
-    sessoes.forEach((s) => {
+    activeSessoes.forEach((s) => {
       const sDate = s.completedAt ? s.completedAt.split('T')[0] : (s.createdAt ? s.createdAt.split('T')[0] : '');
       if (sDate >= mondayStr) {
         mins += s.durationMinutes || 0;
@@ -315,25 +349,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       }
     });
 
-    try {
-      const rawBlocos = localStorage.getItem('gabarita_blocos_questoes');
-      if (rawBlocos) {
-        const blocos = JSON.parse(rawBlocos);
-        if (Array.isArray(blocos)) {
-          blocos.forEach((b: any) => {
-            const bDate = b.date || (b.createdAt ? b.createdAt.split('T')[0] : '');
-            if (bDate >= mondayStr) {
-              questions += Number(b.totalQuestions) || 0;
-            }
-          });
-        }
-      }
-    } catch {
-      // ignore
-    }
-
     return { minutosSemana: mins, questoesSemana: questions };
-  }, [sessoes]);
+  }, [activeSessoes]);
 
   // Histórico das últimas 5 semanas (incluindo a semana atual) para o gráfico "Suas Últimas Semanas"
   const lastFiveWeeksHistory = useMemo(() => {
@@ -344,17 +361,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const currentMonday = new Date(now);
     currentMonday.setHours(0, 0, 0, 0);
     currentMonday.setDate(now.getDate() + diffToMonday);
-
-    let extraBlocos: any[] = [];
-    try {
-      const rawBlocos = localStorage.getItem('gabarita_blocos_questoes');
-      if (rawBlocos) {
-        const parsed = JSON.parse(rawBlocos);
-        if (Array.isArray(parsed)) extraBlocos = parsed;
-      }
-    } catch {
-      // ignore
-    }
 
     const weeks: {
       key: string;
@@ -379,7 +385,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       let wMins = 0;
       let wQuestions = 0;
 
-      sessoes.forEach((s) => {
+      activeSessoes.forEach((s) => {
         const sDate = s.completedAt
           ? s.completedAt.split('T')[0]
           : s.createdAt
@@ -388,13 +394,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         if (sDate >= startStr && sDate <= endStr) {
           wMins += s.durationMinutes || 0;
           wQuestions += s.questionsAttempted || 0;
-        }
-      });
-
-      extraBlocos.forEach((b: any) => {
-        const bDate = b.date || (b.createdAt ? b.createdAt.split('T')[0] : '');
-        if (bDate >= startStr && bDate <= endStr) {
-          wQuestions += Number(b.totalQuestions) || 0;
         }
       });
 
@@ -422,10 +421,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
 
     return weeks;
-  }, [sessoes, weeklyGoals.hours, weeklyGoals.questions]);
+  }, [activeSessoes, weeklyGoals.hours, weeklyGoals.questions]);
 
-  // Filtragem estrita: apenas revisões de HOJE (ou atrasadas de dias anteriores).
-  // Declarado incondicionalmente no topo de acordo com as Regras dos Hooks do React!
+  // Filtragem estrita: apenas revisões de HOJE (ou atrasadas de dias anteriores) pertencentes ao concurso ativo
   const todayStr = useMemo(() => {
     const d = new Date();
     const ano = d.getFullYear();
@@ -435,19 +433,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, []);
 
   const pendingRevisoes = useMemo(() => {
+    if (activeDiscIds.size === 0) return [];
     return revisoes.filter(r => {
       if (r.status === "concluida") return false;
+      if (!r.disciplinaId || !activeDiscIds.has(r.disciplinaId)) return false;
+      if (r.assuntoId && !activeAssuntoIds.has(r.assuntoId)) return false;
       const scheduledDate = r.scheduledFor.includes("T") ? r.scheduledFor.split("T")[0] : r.scheduledFor;
-      // Exclusivamente data igual a hoje ou atrasada de dias anteriores
       return scheduledDate <= todayStr;
     });
-  }, [revisoes, todayStr]);
-
-  const activeConcurso = useMemo(() => {
-    return concursos.find(c => c.active) || 
-      concursos.find(c => c.id === user.targetConcursoId) || 
-      concursos[0] || null;
-  }, [concursos, user.targetConcursoId]);
+  }, [revisoes, todayStr, activeDiscIds, activeAssuntoIds]);
 
   const diasRestantes = useMemo(() => {
     const rawDate = activeConcurso?.examDate || 
@@ -568,24 +562,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     );
   }
 
-  const totalStudyMinutes = sessoes.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+  const totalStudyMinutes = activeSessoes.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
   const totalStudyHours = (totalStudyMinutes / 60).toFixed(1);
 
-  const totalQuestionsAttempted = sessoes.reduce((acc, s) => acc + (s.questionsAttempted || 0), 0);
-  const totalQuestionsCorrect = sessoes.reduce((acc, s) => acc + (s.questionsCorrect || 0), 0);
+  const totalQuestionsAttempted = activeSessoes.reduce((acc, s) => acc + (s.questionsAttempted || 0), 0);
+  const totalQuestionsCorrect = activeSessoes.reduce((acc, s) => acc + (s.questionsCorrect || 0), 0);
   const globalAccuracyRate = totalQuestionsAttempted > 0 
     ? Math.round((totalQuestionsCorrect / totalQuestionsAttempted) * 100) 
     : 0;
 
-
-
-  const relevantAssuntos = activeConcurso 
-    ? assuntos.filter(a => {
-        const disc = disciplinas.find(d => d.id === a.disciplinaId);
-        return disc && (!disc.concursoId || disc.concursoId === activeConcurso.id);
-      })
-    : assuntos;
-  const completedTopicsCount = relevantAssuntos.filter(a => a.completed).length;
+  const completedTopicsCount = relevantAssuntos.filter(a => a.completed || a.status === 'dominado').length;
   const totalTopicsCount = relevantAssuntos.length;
   const editalProgressPercent = totalTopicsCount > 0 
     ? Math.round((completedTopicsCount / totalTopicsCount) * 100) 
@@ -593,13 +579,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const nextAssuntoToStudy = relevantAssuntos.find(a => !a.completed) || relevantAssuntos[0];
   const nextDisciplina = nextAssuntoToStudy 
-    ? disciplinas.find(d => d.id === nextAssuntoToStudy.disciplinaId) 
-    : disciplinas[0];
-
-  // Construção da fila de estudos recomendados (baseada no Ciclo Ativo ou nas Disciplinas do Concurso Ativo)
-  const activeDisciplinasList = activeConcurso
-    ? disciplinas.filter(d => !d.concursoId || d.concursoId === activeConcurso.id)
-    : disciplinas;
+    ? activeDisciplinasList.find(d => d.id === nextAssuntoToStudy.disciplinaId) 
+    : activeDisciplinasList[0];
 
   const hasActiveCycle = Boolean(
     cycle &&
@@ -1006,7 +987,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </CardBody>
         </Card>
-        <Card hoverEffect className="border-l-4 border-l-purple-500">
+        <Card
+          hoverEffect
+          role="button"
+          tabIndex={0}
+          onClick={() => onNavigateTab('revisoes')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onNavigateTab('revisoes');
+            }
+          }}
+          className="border-l-4 border-l-purple-500 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+        >
           <CardBody className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Revisões Pendentes</p>
@@ -1579,7 +1572,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Quadro 3 (Inferior Esquerdo): Rendimento & Histórico de Estudos */}
         <Card className="h-full flex flex-col">
-          <CardHeader title="Rendimento & Histórico de Estudos" />
+          <CardHeader
+            title="Rendimento & Histórico de Estudos"
+            action={
+              <Button size="sm" variant="ghost" onClick={() => onNavigateTab('historico')} rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>
+                Ver Histórico
+              </Button>
+            }
+          />
           <CardBody className="p-5 flex-1">
             <StudyCharts sessoes={sessoes} disciplinas={disciplinas} />
           </CardBody>

@@ -71,7 +71,9 @@ export type ConcursoStatus =
   | 'escolha_banca'
   | 'edital_publicado'
   | 'inscricoes_abertas'
-  | 'encerrado';
+  | 'encerrado'
+  | 'ativo'
+  | 'arquivado';
 
 export interface Concurso {
   id: string;
@@ -79,23 +81,33 @@ export interface Concurso {
   organ: string;
   orgao?: string;
   nome?: string;
+  nomeOrgao?: string;
+  cargo?: string;
   titulo?: string;
   banca: string;
   role: string;
   sphere: ConcursoSphere;
+  esfera?: 'MUNICIPAL' | 'ESTADUAL' | 'FEDERAL' | ConcursoSphere;
   remuneration: number;
   vacantPositions: number;
   status: ConcursoStatus;
   examDate?: string;
+  dataProva?: string;
+  diasProva?: number;
   registrationStartDate?: string;
   registrationEndDate?: string;
   editalUrl?: string;
   active: boolean;
   isAtivo?: boolean;
   is_ativo?: boolean;
+  isFocoAtivo?: boolean;
+  isArquivado?: boolean;
+  arquivadoEm?: string;
+  previousStatus?: ConcursoStatus;
   userId?: string;
   notes?: string;
   createdAt: string;
+  criadoEm?: string;
   updatedAt: string;
 }
 
@@ -217,29 +229,38 @@ export interface VideoaulaRecord {
   fim: string;
 }
 
+export type StudyRecordOrigin = 'manual' | 'cronometro' | 'pomodoro' | 'edital' | 'revisoes' | 'flashcards' | 'simulados' | 'caderno_erros' | 'plano' | (string & {});
+
 export interface SessaoEstudo {
   id: string;
   userId: string;
+  concursoId?: string;
   disciplinaId: string;
   assuntoId?: string;
   disciplinaName?: string;
   assuntoName?: string;
   durationMinutes: number;
+  durationSeconds?: number;
   plannedMinutes?: number;
   type: StudySessionType;
+  origem?: StudyRecordOrigin;
+  material?: string;
   questionsAttempted?: number;
   questionsCorrect?: number;
   accuracyRate?: number;
   notes?: string;
   teoriaFinalizada?: boolean;
+  programarRevisoes?: boolean;
+  contabilizarPlanejamento?: boolean;
   pageIntervals?: PageInterval[];
   videoaulas?: VideoaulaRecord[];
   completedAt: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
-export type RevisionMethod = '24h' | '7d' | '15d' | '30d' | '60d' | 'personalizado' | 'intervalada' | 'adaptativo_desempenho';
-export type RevisionStatus = 'pendente' | 'concluida' | 'atrasada';
+export type RevisionMethod = '24h' | '7d' | '15d' | '30d' | '60d' | 'personalizado' | 'intervalada' | 'adaptativo_desempenho' | (string & {});
+export type RevisionStatus = 'pendente' | 'concluida' | 'atrasada' | 'ignorada';
 export type RevisionRating = 'dificil' | 'medio' | 'facil' | 'errei';
 
 export interface RevisionSettings {
@@ -253,12 +274,12 @@ export interface RevisionSettings {
 
 export interface Revisao {
   id: string;
-  userId: string;
+  userId?: string;
   disciplinaId: string;
   assuntoId?: string;
-  disciplinaName?: string;
-  assuntoName?: string;
-  method: RevisionMethod;
+  disciplinaName: string;
+  assuntoName: string;
+  method?: RevisionMethod | string;
   stage?: number;
   totalStages?: number;
   intervalDays?: number;
@@ -274,6 +295,16 @@ export interface Revisao {
   nextRevisionId?: string;
   createdAt: string;
   updatedAt?: string;
+
+  // Metadados do bloco de estudo original que gerou a revisão:
+  originalStudyDate?: string; // 'YYYY-MM-DD'
+  originalCategory?: string; // 'Teoria' | 'Questões' | 'Lei Seca' | 'Resumo' | etc.
+  originalDurationMinutes?: number; // ex: 164 min (exibido como 2h44min)
+  originalQuestionsAttempted?: number; // total de questões feitas na sessão
+  originalQuestionsCorrect?: number; // acertos na sessão
+  originalAccuracyRate?: number; // % de acerto
+  originalPages?: string; // ex: "p. 1 ~ 44" (tratando para nunca exibir "p. null ~ 44")
+  originalMaterial?: string; // ex: "Aula 21"
 }
 
 export type QuestionDifficulty = 'facil' | 'media' | 'dificil';
@@ -451,6 +482,8 @@ export interface EstatisticasProgressoReal {
 
 export type SimuladoStatus = 'agendado' | 'em_andamento' | 'pausado' | 'finalizado';
 export type SimuladoModalidade = 'multipla_escolha' | 'certo_errado';
+export type SimuladoTipoGabarito = 'MULTIPLA_ESCOLHA' | 'CERTO_ERRADO';
+export type SimuladoVariacaoMultiplaEscolha = 'A_A_E' | 'A_A_D';
 
 export interface SimuladoDisciplinaConfig {
   disciplinaId: string;
@@ -501,6 +534,9 @@ export interface SimuladoDesempenhoDisciplina {
   acertos: number;
   erros: number;
   brancos: number;
+  peso?: number;
+  pontosObtidos?: number;
+  pontosPossiveis?: number;
   taxaAcerto: number;
   pontuacaoLiquida: number;
   desempenhoAssuntos?: SimuladoDesempenhoAssunto[];
@@ -515,6 +551,8 @@ export interface Simulado {
   description?: string;
   banca?: string;
   modalidade: SimuladoModalidade;
+  tipoGabarito?: SimuladoTipoGabarito;
+  variacaoMultiplaEscolha?: SimuladoVariacaoMultiplaEscolha;
   cebraspePenalty?: boolean;
   questionsCount: number;
   durationMinutes: number;
@@ -643,6 +681,8 @@ export interface CycleBlock {
   assuntoSugeridoName?: string;
   status: CycleBlockStatus;
   elapsedMinutes: number;
+  completed?: boolean;
+  progressPercent?: number;
   completedAt?: string;
 }
 
@@ -705,6 +745,7 @@ export type NavigationTab =
   | 'cronograma'
   | 'estudos'
   | 'revisoes'
+  | 'historico'
   | 'flashcards'
   | 'questoes'
   | 'caderno_erros'

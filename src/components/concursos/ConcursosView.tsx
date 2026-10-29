@@ -28,7 +28,9 @@ import {
   ChevronDown,
   ChevronUp,
   BarChart2,
-  FolderPlus
+  FolderPlus,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
 import { 
   Concurso, 
@@ -51,6 +53,7 @@ import { NovaMateriaModal } from '../disciplinas/NovaMateriaModal';
 import { ProvasTab } from './ProvasTab';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
+import { DatabaseService } from '../../services/db';
 
 const MAX_CONCURSOS = 3;
 
@@ -88,6 +91,8 @@ interface ConcursosViewProps {
   onUpdateConcurso: (id: string, partial: Partial<Concurso>) => Promise<void>;
   onDeleteConcurso: (id: string) => Promise<void>;
   onSetActiveConcurso: (id: string) => Promise<void>;
+  onArchiveConcurso?: (id: string) => Promise<void>;
+  onUnarchiveConcurso?: (id: string) => Promise<void>;
   onAddProva: (prova: Omit<Prova, 'id' | 'createdAt'>) => Promise<void>;
   onUpdateProva: (id: string, partial: Partial<Prova>) => Promise<void>;
   onDeleteProva: (id: string) => Promise<void>;
@@ -117,6 +122,8 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   onUpdateConcurso,
   onDeleteConcurso,
   onSetActiveConcurso,
+  onArchiveConcurso,
+  onUnarchiveConcurso,
   onAddProva,
   onUpdateProva,
   onDeleteProva,
@@ -196,10 +203,20 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   
   // Modals state
   const [isNovoConcursoWizardOpen, setIsNovoConcursoWizardOpen] = useState(false);
+  const [novoConcursoInstanceKey, setNovoConcursoInstanceKey] = useState(0);
   const [editingConcurso, setEditingConcurso] = useState<Concurso | null>(null);
   const [deletingConcursoId, setDeletingConcursoId] = useState<string | null>(null);
+  const [archivingConcurso, setArchivingConcurso] = useState<Concurso | null>(null);
+  const [isLimitAlertModalOpen, setIsLimitAlertModalOpen] = useState(false);
+  const [isArchivedSectionExpanded, setIsArchivedSectionExpanded] = useState(true);
   const [isAddProvaModalOpen, setIsAddProvaModalOpen] = useState(false);
   const [deletingProvaId, setDeletingProvaId] = useState<string | null>(null);
+
+  const handleOpenNovoConcurso = () => {
+    if (isLimitReached) return;
+    setNovoConcursoInstanceKey(prev => prev + 1);
+    setIsNovoConcursoWizardOpen(true);
+  };
 
   // Drill-down Disciplinas & Tópicos states
   const [expandedDisciplinas, setExpandedDisciplinas] = useState<Record<string, boolean>>({});
@@ -242,7 +259,17 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const isLimitReached = concursos.length >= MAX_CONCURSOS;
+  // Separação estrita entre concursos ativos e arquivados
+  const concursosAtivos = useMemo(() => {
+    return concursos.filter(c => c.status !== 'arquivado' && !c.isArquivado);
+  }, [concursos]);
+
+  const concursosArquivados = useMemo(() => {
+    return concursos.filter(c => c.status === 'arquivado' || c.isArquivado);
+  }, [concursos]);
+
+  const totalAtivos = concursosAtivos.length;
+  const isLimitReached = totalAtivos >= MAX_CONCURSOS;
 
   // Selected Concurso
   const selectedConcurso = useMemo(() => {
@@ -355,6 +382,53 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
       showFeedback('success', `"${concursoTitle}" agora é o seu concurso ativo principal!`);
     } catch {
       showFeedback('error', 'Falha ao ativar concurso.');
+    }
+  };
+
+  const handleConfirmArchiveConcurso = async () => {
+    if (!archivingConcurso) return;
+    setIsSubmitting(true);
+    try {
+      const targetId = archivingConcurso.id;
+      const targetTitle = archivingConcurso.organ || archivingConcurso.title || 'Concurso';
+      if (onArchiveConcurso) {
+        await onArchiveConcurso(targetId);
+      } else {
+        await DatabaseService.archiveConcurso(targetId);
+      }
+      if (selectedConcursoId === targetId) {
+        setSelectedConcursoId(null);
+      }
+      setArchivingConcurso(null);
+      showFeedback('success', `Concurso "${targetTitle}" arquivado com sucesso! Vaga liberada.`);
+    } catch {
+      showFeedback('error', 'Falha ao arquivar concurso.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUnarchiveConcursoAction = async (concursoId: string, concursoTitle: string) => {
+    if (totalAtivos >= MAX_CONCURSOS) {
+      setIsLimitAlertModalOpen(true);
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      if (onUnarchiveConcurso) {
+        await onUnarchiveConcurso(concursoId);
+      } else {
+        await DatabaseService.unarchiveConcurso(concursoId);
+      }
+      showFeedback('success', `Concurso "${concursoTitle}" desarquivado com sucesso! Você já pode retomar seus estudos e edições.`);
+    } catch (e: any) {
+      if (e?.message === 'LIMIT_REACHED') {
+        setIsLimitAlertModalOpen(true);
+      } else {
+        showFeedback('error', 'Falha ao desarquivar concurso.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -522,8 +596,8 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
     }
   };
 
-  const getStatusBadge = (st: ConcursoStatus) => {
-    const map: Record<ConcursoStatus, { label: string; variant: any }> = {
+  const getStatusBadge = (st: ConcursoStatus | string) => {
+    const map: Record<string, { label: string; variant: any }> = {
       previsto: { label: 'Previsto', variant: 'slate' },
       autorizado: { label: 'Autorizado', variant: 'sky' },
       comissao_formada: { label: 'Comissão', variant: 'amber' },
@@ -531,19 +605,38 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
       edital_publicado: { label: 'Edital', variant: 'emerald' },
       inscricoes_abertas: { label: 'Inscrições Abertas', variant: 'emerald' },
       encerrado: { label: 'Encerrado', variant: 'slate' },
+      ativo: { label: 'Ativo', variant: 'emerald' },
+      arquivado: { label: 'Arquivado', variant: 'amber' },
     };
-    const item = map[st] || { label: st, variant: 'slate' };
+    const item = map[st] || { label: String(st), variant: 'slate' };
     return <Badge variant={item.variant} size="sm">{item.label}</Badge>;
   };
 
-  const filteredConcursos = concursos.filter(c => {
-    const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.organ.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.banca.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.role.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSphere = sphereFilter === 'todas' || c.sphere === sphereFilter;
-    return matchesSearch && matchesSphere;
-  });
+  const filteredConcursosAtivos = useMemo(() => {
+    return concursosAtivos.filter(c => {
+      const title = (c.title || c.titulo || c.organ || '').toLowerCase();
+      const organ = (c.organ || c.orgao || c.nome || '').toLowerCase();
+      const banca = (c.banca || '').toLowerCase();
+      const role = (c.role || c.cargo || '').toLowerCase();
+      const term = searchTerm.toLowerCase();
+      const matchesSearch = title.includes(term) || organ.includes(term) || banca.includes(term) || role.includes(term);
+      const matchesSphere = sphereFilter === 'todas' || c.sphere === sphereFilter;
+      return matchesSearch && matchesSphere;
+    });
+  }, [concursosAtivos, searchTerm, sphereFilter]);
+
+  const filteredConcursosArquivados = useMemo(() => {
+    return concursosArquivados.filter(c => {
+      const title = (c.title || c.titulo || c.organ || '').toLowerCase();
+      const organ = (c.organ || c.orgao || c.nome || '').toLowerCase();
+      const banca = (c.banca || '').toLowerCase();
+      const role = (c.role || c.cargo || '').toLowerCase();
+      const term = searchTerm.toLowerCase();
+      const matchesSearch = title.includes(term) || organ.includes(term) || banca.includes(term) || role.includes(term);
+      const matchesSphere = sphereFilter === 'todas' || c.sphere === sphereFilter;
+      return matchesSearch && matchesSphere;
+    });
+  }, [concursosArquivados, searchTerm, sphereFilter]);
 
   const filteredProvas = provas.filter(p => {
     return p.organ.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -555,7 +648,8 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   // VIEW: DRILL-DOWN / PAINEL DO CONCURSO (ESTILO ESTUDEI)
   // =========================================================================
   if (selectedConcurso) {
-    const isSelectedActive = Boolean(selectedConcurso.active || selectedConcurso.isAtivo || user.targetConcursoId === selectedConcurso.id);
+    const isArchived = selectedConcurso.status === 'arquivado' || Boolean(selectedConcurso.isArquivado);
+    const isSelectedActive = !isArchived && Boolean(selectedConcurso.active || selectedConcurso.isAtivo || selectedConcurso.isFocoAtivo || user.targetConcursoId === selectedConcurso.id);
     const diffDays = selectedConcurso.examDate 
       ? Math.ceil((new Date(selectedConcurso.examDate).getTime() - new Date().getTime()) / 86400000)
       : null;
@@ -574,6 +668,27 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
           </div>
         )}
 
+        {/* Banner de Aviso de Concurso Arquivado (Modo Somente Leitura) */}
+        {isArchived && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
+              <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+              <span>
+                Este concurso está arquivado. Todos os dados estão disponíveis para consulta, mas bloqueados para edição. Desarquive o concurso para fazer alterações.
+              </span>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => handleUnarchiveConcursoAction(selectedConcurso.id, fullTitle)}
+              leftIcon={<ArchiveRestore className="w-4 h-4" />}
+              className="shrink-0 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white border-amber-600 cursor-pointer shadow-sm"
+            >
+              Desarquivar Concurso
+            </Button>
+          </div>
+        )}
+
         {/* Top Header / Breadcrumb */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <button
@@ -585,19 +700,33 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
           </button>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-            {!isSelectedActive ? (
+            {isArchived ? (
               <Button
-                variant="outline"
+                variant="primary"
                 size="sm"
-                onClick={() => handleActivate(selectedConcurso.id, fullTitle)}
-                leftIcon={<Star className="w-3.5 h-3.5 text-amber-400" />}
+                onClick={() => handleUnarchiveConcursoAction(selectedConcurso.id, fullTitle)}
+                leftIcon={<ArchiveRestore className="w-3.5 h-3.5" />}
+                className="bg-amber-600 hover:bg-amber-700 text-white border-amber-600 font-bold"
               >
-                Ativar Foco
+                Desarquivar
               </Button>
             ) : (
-              <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5" /> Foco Ativo
-              </span>
+              <>
+                {!isSelectedActive ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleActivate(selectedConcurso.id, fullTitle)}
+                    leftIcon={<Star className="w-3.5 h-3.5 text-amber-400" />}
+                  >
+                    Ativar Foco
+                  </Button>
+                ) : (
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" /> Foco Ativo
+                  </span>
+                )}
+              </>
             )}
 
             {onNavigateTab && (
@@ -605,7 +734,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  handleActivate(selectedConcurso.id, fullTitle);
+                  if (!isArchived) handleActivate(selectedConcurso.id, fullTitle);
                   onNavigateTab('estudos');
                 }}
                 leftIcon={<BookOpen className="w-3.5 h-3.5 text-emerald-400" />}
@@ -614,30 +743,34 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
               </Button>
             )}
 
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                setEditingDisciplina(null);
-                setNewDiscName('');
-                setNewDiscWeight('2.0');
-                setNewDiscColor('#10b981');
-                setIsAddDisciplinaModalOpen(true);
-              }}
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
-              className="shadow-md shadow-emerald-500/20"
-            >
-              Nova Matéria
-            </Button>
+            {!isArchived && (
+              <>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setEditingDisciplina(null);
+                    setNewDiscName('');
+                    setNewDiscWeight('2.0');
+                    setNewDiscColor('#10b981');
+                    setIsAddDisciplinaModalOpen(true);
+                  }}
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                  className="shadow-md shadow-emerald-500/20"
+                >
+                  Nova Matéria
+                </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenEditConcurso(selectedConcurso)}
-              leftIcon={<Edit2 className="w-3.5 h-3.5" />}
-            >
-              Editar
-            </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditConcurso(selectedConcurso)}
+                  leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                >
+                  Editar
+                </Button>
+              </>
+            )}
 
             <Button
               variant="ghost"
@@ -745,20 +878,22 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
               </p>
             </div>
 
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                setEditingDisciplina(null);
-                setNewDiscName('');
-                setNewDiscWeight('2.0');
-                setNewDiscColor('#10b981');
-                setIsAddDisciplinaModalOpen(true);
-              }}
-              leftIcon={<Plus className="w-4 h-4" />}
-            >
-              Adicionar Matéria
-            </Button>
+            {!isArchived && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setEditingDisciplina(null);
+                  setNewDiscName('');
+                  setNewDiscWeight('2.0');
+                  setNewDiscColor('#10b981');
+                  setIsAddDisciplinaModalOpen(true);
+                }}
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
+                Adicionar Matéria
+              </Button>
+            )}
           </div>
 
           {selectedConcursoDisciplinas.length === 0 ? (
@@ -771,22 +906,26 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                   Nenhuma disciplina cadastrada neste concurso
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Cadastre as matérias do edital ou importe tópicos para começar a estudar.
+                  {isArchived
+                    ? 'Este concurso está arquivado e não possui disciplinas cadastradas.'
+                    : 'Cadastre as matérias do edital ou importe tópicos para começar a estudar.'}
                 </p>
               </div>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setEditingDisciplina(null);
-                  setNewDiscName('');
-                  setNewDiscWeight('2.0');
-                  setNewDiscColor('#10b981');
-                  setIsAddDisciplinaModalOpen(true);
-                }}
-                leftIcon={<Plus className="w-4 h-4" />}
-              >
-                Cadastrar Primeira Matéria
-              </Button>
+              {!isArchived && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setEditingDisciplina(null);
+                    setNewDiscName('');
+                    setNewDiscWeight('2.0');
+                    setNewDiscColor('#10b981');
+                    setIsAddDisciplinaModalOpen(true);
+                  }}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  Cadastrar Primeira Matéria
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -822,28 +961,30 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setEditingDisciplina(disc);
-                              setNewDiscName(disc.name);
-                              setNewDiscWeight(disc.weight.toString());
-                              setNewDiscColor(disc.color || '#10b981');
-                              setIsAddDisciplinaModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                            title="Editar Matéria"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setDeletingDisciplinaId(disc.id)}
-                            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                            title="Excluir Matéria"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {!isArchived && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setEditingDisciplina(disc);
+                                setNewDiscName(disc.name);
+                                setNewDiscWeight(disc.weight.toString());
+                                setNewDiscColor(disc.color || '#10b981');
+                                setIsAddDisciplinaModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                              title="Editar Matéria"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeletingDisciplinaId(disc.id)}
+                              className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                              title="Excluir Matéria"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Progresso da Disciplina */}
@@ -867,7 +1008,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
 
                       {/* Ações da Disciplina */}
                       <div className="flex items-center justify-between pt-1 gap-2">
-                        {onOpenStudyTimer && (
+                        {!isArchived && onOpenStudyTimer && (
                           <Button
                             variant="primary"
                             size="sm"
@@ -910,9 +1051,10 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                                 >
                                   {/* Status Circle */}
                                   <button
-                                    onClick={(e) => handleToggleTopicStatus(topic, e)}
-                                    className="shrink-0 cursor-pointer p-0.5 rounded-md hover:bg-slate-800"
-                                    title="Alternar Status (Não Iniciado -> Em Estudo -> Dominado)"
+                                    disabled={isArchived}
+                                    onClick={(e) => !isArchived && handleToggleTopicStatus(topic, e)}
+                                    className={`shrink-0 p-0.5 rounded-md ${isArchived ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-800'}`}
+                                    title={isArchived ? 'Concurso arquivado (somente leitura)' : 'Alternar Status (Não Iniciado -> Em Estudo -> Dominado)'}
                                   >
                                     {isCompleted ? (
                                       <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-500/10" />
@@ -959,7 +1101,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                                   </div>
 
                                   {/* Actions on Topic */}
-                                  {!isEditing && (
+                                  {!isEditing && !isArchived && (
                                     <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
                                       {onOpenStudyTimer && (
                                         <button
@@ -993,27 +1135,29 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                         )}
 
                         {/* Quick Add Topic Input */}
-                        <div className="flex items-center gap-2 pt-1">
-                          <input
-                            type="text"
-                            placeholder="Adicionar novo tópico nesta matéria..."
-                            value={newTopicInputs[disc.id] || ''}
-                            onChange={(e) => setNewTopicInputs(prev => ({ ...prev, [disc.id]: e.target.value }))}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleAddTopicToDisciplina(disc.id);
-                            }}
-                            className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 px-3 py-1.5 rounded-xl text-xs placeholder:text-slate-500 focus:outline-hidden focus:border-emerald-500"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAddTopicToDisciplina(disc.id)}
-                            leftIcon={<Plus className="w-3 h-3" />}
-                            className="text-xs py-1.5 px-3 shrink-0"
-                          >
-                            Adicionar
-                          </Button>
-                        </div>
+                        {!isArchived && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <input
+                              type="text"
+                              placeholder="Adicionar novo tópico nesta matéria..."
+                              value={newTopicInputs[disc.id] || ''}
+                              onChange={(e) => setNewTopicInputs(prev => ({ ...prev, [disc.id]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleAddTopicToDisciplina(disc.id);
+                              }}
+                              className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 px-3 py-1.5 rounded-xl text-xs placeholder:text-slate-500 focus:outline-hidden focus:border-emerald-500"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddTopicToDisciplina(disc.id)}
+                              leftIcon={<Plus className="w-3 h-3" />}
+                              className="text-xs py-1.5 px-3 shrink-0"
+                            >
+                              Adicionar
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1181,7 +1325,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
               activeTab === 'concursos' ? 'concursos-tab-btn-active' : 'concursos-tab-btn-inactive'
             }`}
           >
-            Concursos ({concursos.length}/{MAX_CONCURSOS})
+            Concursos ({totalAtivos}/{MAX_CONCURSOS})
           </button>
 
           <button
@@ -1239,7 +1383,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                   Central de Concursos e Editais
                 </h1>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs shrink-0">
-                  {concursos.length}/{MAX_CONCURSOS} Cadastrados
+                  {totalAtivos}/{MAX_CONCURSOS} Cadastrados
                 </span>
               </div>
 
@@ -1253,9 +1397,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                 variant={isLimitReached ? 'outline' : 'primary'}
                 size="md"
                 disabled={isLimitReached}
-                onClick={() => {
-                  if (!isLimitReached) setIsNovoConcursoWizardOpen(true);
-                }}
+                onClick={handleOpenNovoConcurso}
                 leftIcon={isLimitReached ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 className={`font-bold shadow-lg shadow-black/25 text-xs md:text-sm px-5 py-2.5 ${
                   !isLimitReached ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed !text-white border-white/30'
@@ -1288,9 +1430,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
               <Button
                 variant={isLimitReached ? 'outline' : 'primary'}
                 disabled={isLimitReached}
-                onClick={() => {
-                  if (!isLimitReached) setIsNovoConcursoWizardOpen(true);
-                }}
+                onClick={handleOpenNovoConcurso}
                 leftIcon={<Plus className="w-4 h-4" />}
                 className={!isLimitReached ? 'shadow-md shadow-emerald-500/20' : 'opacity-60 cursor-not-allowed'}
               >
@@ -1301,7 +1441,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Cards dos Concursos Cadastrados */}
-            {filteredConcursos.map(concurso => {
+            {filteredConcursosAtivos.map(concurso => {
               const isActive = Boolean(concurso.active || concurso.isAtivo || user.targetConcursoId === concurso.id);
               const diffDays = concurso.examDate 
                 ? Math.ceil((new Date(concurso.examDate).getTime() - new Date().getTime()) / 86400000)
@@ -1402,6 +1542,14 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
 
                       <div className="flex items-center gap-1">
                         <button
+                          type="button"
+                          onClick={() => setArchivingConcurso(concurso)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                          title="Arquivar Concurso"
+                        >
+                          <Archive className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={() => handleOpenEditConcurso(concurso)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                           title="Editar Concurso"
@@ -1425,7 +1573,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
             {/* Card de Ação Rápida: Cadastrar Novo Concurso com Trava de 3 Concursos */}
             {!isLimitReached ? (
               <div
-                onClick={() => setIsNovoConcursoWizardOpen(true)}
+                onClick={handleOpenNovoConcurso}
                 className="group relative rounded-2xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all min-h-[220px]"
               >
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 flex items-center justify-center mb-3 transition-transform shadow-inner">
@@ -1438,7 +1586,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                   Importe disciplinas e tópicos do edital via Inteligência Artificial.
                 </p>
                 <span className="mt-3 text-[11px] font-bold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                  {concursos.length} de {MAX_CONCURSOS} cadastrados
+                  {totalAtivos} de {MAX_CONCURSOS} cadastrados
                 </span>
               </div>
             ) : (
@@ -1450,7 +1598,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                   Limite de 3 Concursos Atingido
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
-                  Você já atingiu a cota máxima de 3 concursos cadastrados. Para adicionar um novo certame, exclua um concurso existente.
+                  Você já atingiu a cota máxima de 3 concursos cadastrados. Para adicionar um novo certame, arquive ou exclua um concurso existente.
                 </p>
                 <span className="mt-3 text-[11px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
                   3/3 Planos Utilizados
@@ -1458,6 +1606,140 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
               </div>
             )}
           </div>
+
+          {/* =========================================================================
+              3. SEÇÃO: CONCURSOS ARQUIVADOS (PRESERVAÇÃO TOTAL & LIBERAÇÃO DE VAGA)
+              ========================================================================= */}
+          {concursosArquivados.length > 0 && (
+            <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800/80 space-y-4">
+              <button
+                type="button"
+                onClick={() => setIsArchivedSectionExpanded(prev => !prev)}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-900/60 hover:bg-slate-200/70 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 transition-all cursor-pointer text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                    <Archive className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      Concursos Arquivados ({concursosArquivados.length})
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Certames arquivados preservam todos os dados e não ocupam sua cota de 3 concursos ativos.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-slate-400">
+                  <span className="text-xs font-semibold hidden sm:inline">
+                    {isArchivedSectionExpanded ? 'Recolher' : 'Expandir'}
+                  </span>
+                  {isArchivedSectionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+
+              {isArchivedSectionExpanded && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-fade-in">
+                  {filteredConcursosArquivados.map(concurso => {
+                    const discCount = disciplinas.filter(d => d.concursoId === concurso.id).length;
+                    const discIds = new Set(disciplinas.filter(d => d.concursoId === concurso.id).map(d => d.id));
+                    const topicos = assuntos.filter(a => discIds.has(a.disciplinaId));
+                    const dominadosCount = topicos.filter(a => a.completed || a.status === 'dominado' || a.status === 'revisado').length;
+                    const totalStudyMinutes = disciplinas
+                      .filter(d => d.concursoId === concurso.id)
+                      .reduce((acc, d) => acc + (d.totalStudyMinutes || 0), 0);
+
+                    const fullTitle = concurso.orgao || concurso.nome || concurso.titulo || 
+                      (concurso.organ && concurso.title && concurso.title.length === 1 ? concurso.organ : concurso.title) || 
+                      concurso.organ;
+
+                    return (
+                      <Card
+                        key={concurso.id}
+                        className="relative overflow-hidden flex flex-col justify-between opacity-90 hover:opacity-100 transition-all border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 hover:border-slate-400 dark:hover:border-slate-700"
+                      >
+                        <div className="absolute top-0 right-0 bg-amber-500/15 border-b border-l border-amber-500/30 text-amber-500 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-bl-lg flex items-center gap-1 shadow-xs">
+                          <Archive className="w-3 h-3" /> Arquivado
+                        </div>
+
+                        <CardBody className="p-5 space-y-4">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="amber" size="sm">Arquivado</Badge>
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                {concurso.sphere}
+                              </span>
+                            </div>
+
+                            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                              {fullTitle}
+                            </h3>
+                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                              Cargo: {concurso.role}
+                            </p>
+                          </div>
+
+                          {/* Stats Grid */}
+                          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">Matérias</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                {discCount} disciplinas
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">Tópicos</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                {dominadosCount}/{topicos.length}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">Estudo</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                {totalStudyMinutes ? `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m` : '0h'}
+                              </span>
+                            </div>
+                          </div>
+                        </CardBody>
+
+                        <CardFooter className="flex flex-col gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 bg-slate-100/40 dark:bg-slate-900/40">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedConcursoId(concurso.id)}
+                            className="w-full justify-center font-bold text-xs"
+                            rightIcon={<ChevronRight className="w-4 h-4" />}
+                          >
+                            Visualizar Painel / Edital
+                          </Button>
+
+                          <div className="flex items-center justify-between w-full pt-1">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleUnarchiveConcursoAction(concurso.id, fullTitle)}
+                              leftIcon={<ArchiveRestore className="w-3.5 h-3.5" />}
+                              className="text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white border-amber-600 cursor-pointer shadow-xs"
+                            >
+                              Desarquivar
+                            </Button>
+
+                            <button
+                              onClick={() => setDeletingConcursoId(concurso.id)}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                              title="Excluir Concurso"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1473,11 +1755,14 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
       )}
 
       {/* Wizard Modal: Novo Concurso + Extração IA */}
-      <NovoConcursoModal
-        isOpen={isNovoConcursoWizardOpen}
-        onClose={() => setIsNovoConcursoWizardOpen(false)}
-        onSaveConcursoWithDisciplinas={handleSaveNewConcursoWithDisciplinas}
-      />
+      {isNovoConcursoWizardOpen && (
+        <NovoConcursoModal
+          key={novoConcursoInstanceKey}
+          isOpen={isNovoConcursoWizardOpen}
+          onClose={() => setIsNovoConcursoWizardOpen(false)}
+          onSaveConcursoWithDisciplinas={handleSaveNewConcursoWithDisciplinas}
+        />
+      )}
 
       {/* Modal: Editar Concurso Existente */}
       <Modal
@@ -1584,6 +1869,80 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
               }}
             >
               Confirmar Exclusão
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Confirmação de Arquivamento de Concurso */}
+      <Modal
+        isOpen={archivingConcurso !== null}
+        onClose={() => setArchivingConcurso(null)}
+        title="Arquivar Concurso"
+        maxWidth="md"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200">
+            <Archive className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                Deseja arquivar o concurso "{archivingConcurso?.organ || archivingConcurso?.title}"?
+              </p>
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                Todos os seus dados (disciplinas, tópicos, edital verticalizado, histórico de estudos, questões e revisões) serão <strong>100% preservados</strong>.
+              </p>
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                O certame será movido para <em>"Concursos Arquivados"</em> e <strong>liberará 1 vaga</strong> na sua cota para cadastrar um novo concurso ativo.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button type="button" variant="outline" onClick={() => setArchivingConcurso(null)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleConfirmArchiveConcurso}
+              isLoading={isSubmitting}
+              leftIcon={<Archive className="w-4 h-4" />}
+              className="bg-amber-600 hover:bg-amber-700 text-white border-amber-600"
+            >
+              Confirmar Arquivamento
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Alerta de Limite de Concursos Ativos Atingido ao tentar Desarquivar */}
+      <Modal
+        isOpen={isLimitAlertModalOpen}
+        onClose={() => setIsLimitAlertModalOpen(false)}
+        title="Limite de Concursos Ativos Atingido"
+        maxWidth="sm"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200">
+            <Lock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1.5">
+              <p className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                Você já possui 3 concursos ativos no momento.
+              </p>
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                O limite máximo é de 3 concursos simultâneos em andamento. Para desarquivar este certame, primeiro arquive ou exclua um dos seus 3 concursos ativos.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setIsLimitAlertModalOpen(false)}
+              className="px-5 font-bold"
+            >
+              Entendido
             </Button>
           </div>
         </div>

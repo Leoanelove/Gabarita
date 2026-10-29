@@ -33,13 +33,17 @@ import { ProfilePhotoModal } from './ProfilePhotoModal';
 interface PerfilViewProps {
   user: UserProfile;
   concursos: Concurso[];
+  activeConcursoId?: string;
   onUpdateProfile: (updated: Partial<UserProfile>) => Promise<void>;
+  onDataSanitized?: () => void;
 }
 
 export const PerfilView: React.FC<PerfilViewProps> = ({
   user,
   concursos,
+  activeConcursoId,
   onUpdateProfile,
+  onDataSanitized,
 }) => {
   const { logout, deleteAccount } = useAuth();
 
@@ -99,6 +103,47 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isSanitizing, setIsSanitizing] = useState(false);
+  const [isResetHistoryModalOpen, setIsResetHistoryModalOpen] = useState(false);
+  const [isResettingHistory, setIsResettingHistory] = useState(false);
+  const [maintenanceFeedback, setMaintenanceFeedback] = useState<string | null>(null);
+
+  const handleSanitizeOrphanData = async () => {
+    setIsSanitizing(true);
+    setMaintenanceFeedback(null);
+    try {
+      const { removedCount } = await DatabaseService.sanitizeOrphanData();
+      onDataSanitized?.();
+      setMaintenanceFeedback(
+        `${removedCount} registros órfãos foram removidos com sucesso. Seu banco de dados está sincronizado!`
+      );
+      setTimeout(() => setMaintenanceFeedback(null), 6000);
+    } catch (err) {
+      console.error('Erro ao otimizar banco de dados:', err);
+    } finally {
+      setIsSanitizing(false);
+    }
+  };
+
+  const handleResetConcursoHistoryConfirm = async () => {
+    const targetId = activeConcursoId || user.targetConcursoId || concursos[0]?.id || '';
+    setIsResettingHistory(true);
+    setMaintenanceFeedback(null);
+    try {
+      if (targetId) {
+        await DatabaseService.resetConcursoHistory(targetId);
+      }
+      await DatabaseService.sanitizeOrphanData();
+      onDataSanitized?.();
+      setIsResetHistoryModalOpen(false);
+      setMaintenanceFeedback('Histórico do concurso ativo resetado com sucesso! Suas matérias e tópicos do edital foram mantidos intactos.');
+      setTimeout(() => setMaintenanceFeedback(null), 6000);
+    } catch (err) {
+      console.error('Erro ao resetar histórico do concurso:', err);
+    } finally {
+      setIsResettingHistory(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,23 +435,65 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
         <Card>
           <CardHeader
             title="Infraestrutura & Armazenamento"
-            subtitle="Status da conexão de dados do Gabarita"
+            subtitle="Status da conexão e manutenção de integridade de dados do Gabarita"
           />
-          <CardBody className="p-6 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <Database className="w-5 h-5 text-emerald-500" />
+          <CardBody className="p-6 space-y-4 text-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-emerald-500" />
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-slate-100">
+                    Supabase & Armazenamento Local Seguro
+                  </p>
+                  <p className="text-slate-500">
+                    Sincronização com banco de dados Supabase e persistência local garantida sem perda de dados.
+                  </p>
+                </div>
+              </div>
+              <Badge variant="emerald" size="sm">
+                Sincronizado
+              </Badge>
+            </div>
+
+            {maintenanceFeedback && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>{maintenanceFeedback}</span>
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <p className="font-bold text-slate-900 dark:text-slate-100">
-                  Supabase & Armazenamento Local Seguro
+                <p className="font-bold text-slate-800 dark:text-slate-200">
+                  Manutenção & Integridade Referencial
                 </p>
-                <p className="text-slate-500">
-                  Sincronização com banco de dados Supabase e persistência local garantida sem perda de dados.
+                <p className="text-[11px] text-slate-500">
+                  Remova registros órfãos de concursos/matérias excluídas ou zere apenas o histórico de sessões do concurso ativo.
                 </p>
               </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  isLoading={isSanitizing}
+                  onClick={handleSanitizeOrphanData}
+                  leftIcon={<Sparkles className="w-3.5 h-3.5 text-emerald-500" />}
+                >
+                  🧹 Otimizar & Limpar Dados Órfãos
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsResetHistoryModalOpen(true)}
+                  className="text-amber-600 dark:text-amber-400 hover:border-amber-400"
+                  leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                >
+                  Resetar Histórico deste Concurso
+                </Button>
+              </div>
             </div>
-            <Badge variant="emerald" size="sm">
-              Sincronizado
-            </Badge>
           </CardBody>
         </Card>
 
@@ -480,6 +567,43 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
       </Modal>
 
       <PrivacyPolicyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
+
+      <Modal
+        isOpen={isResetHistoryModalOpen}
+        onClose={() => setIsResetHistoryModalOpen(false)}
+        title="Resetar Histórico deste Concurso"
+        description="Esta ação apagará apenas as sessões de estudo e revisões vinculadas ao concurso ativo."
+        maxWidth="sm"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 rounded-xl flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+            <span>
+              As matérias e tópicos do seu Edital Verticalizado serão mantidos intactos, mas as horas estudadas e questões registradas neste concurso voltarão para zero.
+            </span>
+          </div>
+          <p className="text-slate-600 dark:text-slate-300">
+            Deseja confirmar a limpeza do histórico de estudos do concurso ativo?
+          </p>
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsResetHistoryModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              isLoading={isResettingHistory}
+              onClick={handleResetConcursoHistoryConfirm}
+            >
+              Sim, Resetar Histórico
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal de Alteração Real da Foto de Perfil (Câmera ou Galeria) */}
       <ProfilePhotoModal

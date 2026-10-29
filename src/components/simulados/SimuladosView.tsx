@@ -439,6 +439,11 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                       <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
                         {sim.banca || 'Simulado'}
                       </span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                        {sim.tipoGabarito === 'CERTO_ERRADO' || sim.modalidade === 'certo_errado'
+                          ? 'Certo/Errado'
+                          : `Múltipla Escolha ${sim.variacaoMultiplaEscolha === 'A_A_D' ? '(A-D)' : '(A-E)'}`}
+                      </span>
                       {disciplinesCount > 0 && (
                         <span className="text-[11px] font-medium text-slate-400">
                           • {disciplinesCount} {disciplinesCount === 1 ? 'matéria' : 'matérias'}
@@ -490,6 +495,12 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                       }`}>
                         {accuracy}%
                       </span>
+                      {sim.score !== undefined && (
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-mono">
+                          {sim.tipoGabarito === 'CERTO_ERRADO' || sim.modalidade === 'certo_errado' ? 'Líq: ' : 'Pontos: '}
+                          <strong className="text-slate-700 dark:text-slate-300">{sim.score}</strong> pts
+                        </span>
+                      )}
                     </div>
 
                     {/* Ações */}

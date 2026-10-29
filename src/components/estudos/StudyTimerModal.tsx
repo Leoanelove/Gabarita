@@ -170,6 +170,7 @@ export interface StudyTimerModalProps {
   onClose: () => void;
   initialDurationMinutes?: number;
   initialMode?: TimerMode;
+  contextSubtitle?: string;
   onStopAndSave: (elapsedSeconds: number, initialMetaMinutes: number) => void;
 }
 
@@ -178,6 +179,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
   onClose,
   initialDurationMinutes = 25,
   initialMode = 'foco',
+  contextSubtitle,
   onStopAndSave,
 }) => {
   const { colorSkin, palette, effectiveTheme } = useTheme();
@@ -368,7 +370,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 !mt-0 z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
@@ -376,11 +378,11 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
       />
 
       {/* Caixa do Modal de Foco (Limpo, sem formulários) */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-[560px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
         
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div 
               className="w-10 h-10 rounded-full border flex items-center justify-center shrink-0 transition-all duration-300"
               style={{
@@ -392,20 +394,20 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
             >
               <Target className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white tracking-tight leading-tight">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white tracking-tight leading-tight whitespace-nowrap">
                 Cronômetro de Foco
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 font-normal">
-                Mantenha o foco absoluto no seu bloco atual
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 font-normal truncate">
+                {contextSubtitle || 'Mantenha o foco absoluto no seu bloco atual'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Ciclo Pomodoro */}
             <div 
-              className="font-mono text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-semibold border transition-all duration-300"
+              className="font-mono text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-semibold border transition-all duration-300 whitespace-nowrap shrink-0"
               style={{
                 backgroundColor: `${palette.primary}15`,
                 borderColor: `${palette.primary}30`,
@@ -414,7 +416,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
               }}
             >
               <span 
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0"
                 style={{ 
                   backgroundColor: palette.primary,
                   boxShadow: `0 0 6px ${palette.primary}`,
@@ -427,7 +429,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
             <button
               type="button"
               onClick={() => setIsMinimized(true)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               title="Minimizar cronômetro"
               aria-label="Minimizar cronômetro"
             >
@@ -438,7 +440,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
             <button
               type="button"
               onClick={() => handleClose()}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               title="Fechar janela"
               aria-label="Fechar janela"
             >
@@ -448,7 +450,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
         </div>
 
         {/* Conteúdo Central do Cronômetro */}
-        <div className="overflow-y-auto p-4 sm:p-5 space-y-5 custom-scrollbar text-xs sm:text-sm">
+        <div className="overflow-y-auto px-5 py-4 sm:px-6 sm:py-5 space-y-5 custom-scrollbar text-xs sm:text-sm">
           
           {/* Abas de Ciclo (Foco | Pausa curta | Pausa longa) */}
           <div className="bg-slate-100 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800 p-1 rounded-xl grid grid-cols-3 gap-1 shadow-inner">
@@ -612,7 +614,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
             </div>
 
             {/* Controles Principais + Botão Stop Retrátil */}
-            <div className="flex items-center justify-center gap-2.5 sm:gap-3 mt-4 w-full max-w-sm">
+            <div className="flex items-center justify-center gap-2.5 sm:gap-3 mt-4 w-full max-w-md">
               {/* Botão Reiniciar Bloco */}
               <button
                 type="button"
@@ -633,7 +635,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleToggleTimer()}
-                className="flex-1 text-white font-semibold py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all text-xs sm:text-sm active:scale-95 cursor-pointer shadow-md hover:opacity-95"
+                className="flex-1 text-white font-semibold py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all text-xs sm:text-sm active:scale-95 cursor-pointer shadow-md hover:opacity-95 whitespace-nowrap"
                 style={{
                   backgroundColor: palette.primary,
                   boxShadow: `0 4px 14px ${palette.primary}40`,
@@ -641,12 +643,12 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
               >
                 {isRunning ? (
                   <>
-                    <Pause className="w-4 h-4 fill-current" />
+                    <Pause className="w-4 h-4 fill-current shrink-0" />
                     <span>Pausar</span>
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4 fill-current" />
+                    <Play className="w-4 h-4 fill-current shrink-0" />
                     <span>{secondsRemaining < currentTotalSeconds ? 'Retomar' : currentMode === 'foco' ? 'Iniciar Foco' : 'Iniciar Pausa'}</span>
                   </>
                 )}
@@ -679,7 +681,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
 
             {/* Confirmação de Zerar */}
             {showResetConfirm && (
-              <div className="mt-4 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between w-full max-w-sm animate-in fade-in">
+              <div className="mt-4 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between w-full max-w-md animate-in fade-in">
                 <span className="flex items-center gap-1.5">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                   Deseja reiniciar este bloco?
@@ -705,7 +707,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
 
             {/* Seletor de Metas / Presets de Minutos de Foco */}
             {currentMode === 'foco' && !isRunning && (
-              <div className="flex items-center gap-1 mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex-nowrap whitespace-nowrap justify-center w-full">
+              <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap sm:flex-nowrap whitespace-nowrap justify-center w-full">
                 <span className="mr-0.5 font-semibold shrink-0">Meta de Foco:</span>
                 {[25, 30, 45, 50, 60, 90].map(mins => {
                   const isSelected = focoMinutes === mins && customMinutesInput === '';
@@ -717,7 +719,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                         setCustomMinutesInput('');
                         handleChangeFocoMinutes(mins);
                       }}
-                      className={`px-1.5 py-1 rounded-md border text-[11px] transition-all cursor-pointer font-medium shrink-0 whitespace-nowrap ${
+                      className={`px-2 py-1 rounded-md border text-[11px] transition-all cursor-pointer font-medium shrink-0 whitespace-nowrap ${
                         isSelected 
                           ? 'text-white font-bold shadow-xs' 
                           : 'border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-400 bg-white dark:bg-slate-900'
@@ -734,7 +736,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
 
                 {/* Campo para tempo personalizado */}
                 <div
-                  className={`inline-flex items-center rounded-md border pl-1.5 pr-1 py-0.5 text-[11px] transition-all bg-white dark:bg-slate-900 shrink-0 whitespace-nowrap ${
+                  className={`inline-flex items-center rounded-md border pl-2 pr-1 py-0.5 text-[11px] transition-all bg-white dark:bg-slate-900 shrink-0 whitespace-nowrap ${
                     customMinutesInput !== ''
                       ? 'font-bold shadow-xs'
                       : 'border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-400'
@@ -780,7 +782,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                         e.currentTarget.blur();
                       }
                     }}
-                    className="w-8 bg-transparent text-center font-mono text-[11px] leading-none text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-9 bg-transparent text-center font-mono text-[11px] leading-none text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     style={
                       customMinutesInput !== ''
                         ? { color: isDarkMode ? '#ffffff' : palette.primary }
@@ -837,19 +839,19 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
         </div>
 
         {/* Rodapé Informativo Limpo */}
-        <div className="p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+        <div className="px-5 py-3.5 sm:px-6 sm:py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <span>Foco líquido atual: <strong className="text-slate-900 dark:text-white font-mono">{Math.floor(totalFocusSeconds / 60)}m {totalFocusSeconds % 60}s</strong></span>
           </div>
 
           <button
             type="button"
             onClick={handleStopAndSave}
-            className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
           >
             <span>Concluir sessão</span>
-            <Square className="w-3.5 h-3.5 fill-current" />
+            <Square className="w-3.5 h-3.5 fill-current shrink-0" />
           </button>
         </div>
 

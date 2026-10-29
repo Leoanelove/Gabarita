@@ -48,6 +48,7 @@ import { ConcursosView } from './components/concursos/ConcursosView';
 import { PlanoView } from './components/plano/PlanoView';
 import { DisciplinasView } from './components/disciplinas/DisciplinasView';
 import { RevisoesView } from './components/revisoes/RevisoesView';
+import { HistoricoView } from './components/historico/HistoricoView';
 import { FlashcardsView } from './components/flashcards/FlashcardsView';
 import { QuestoesView } from './components/questoes/QuestoesView';
 import { CadernoErrosView } from './components/questoes/CadernoErrosView';
@@ -117,29 +118,32 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
-  const loadData = () => {
+  const loadData = async () => {
     setIsDataLoading(true);
     setDataError(null);
-    Promise.all([
-      DatabaseService.getConcursos(),
-      DatabaseService.getProvas(),
-      DatabaseService.getDisciplinas(),
-      DatabaseService.getAssuntos(),
-      DatabaseService.getSessoes(),
-      DatabaseService.getRevisoes(),
-      DatabaseService.getRevisionSettings(),
-      DatabaseService.getQuestoes(),
-      DatabaseService.getBlocosQuestoes(),
-      DatabaseService.getCadernoErros(),
-      DatabaseService.getMetas(),
-      DatabaseService.getConquistas(),
-      DatabaseService.getMarcos(),
-      DatabaseService.getEstatisticasProgressoReal(user?.id || 'user_demo_01'),
-      DatabaseService.getSimulados(),
-      DatabaseService.getStudyPlan(),
-      DatabaseService.getStudyCycle(),
-      DatabaseService.getStudyMethod(),
-    ]).then(([c, p, d, a, ses, r, srsSettings, q, bq, errs, m, achs, mrcs, st, s, pl, cy, sm]) => {
+    try {
+      await DatabaseService.purgeDuplicateGhostSessions();
+      await DatabaseService.sanitizeOrphanData();
+      const [c, p, d, a, ses, r, srsSettings, q, bq, errs, m, achs, mrcs, st, s, pl, cy, sm] = await Promise.all([
+        DatabaseService.getConcursos(),
+        DatabaseService.getProvas(),
+        DatabaseService.getDisciplinas(),
+        DatabaseService.getAssuntos(),
+        DatabaseService.getSessoes(),
+        DatabaseService.getRevisoes(),
+        DatabaseService.getRevisionSettings(),
+        DatabaseService.getQuestoes(),
+        DatabaseService.getBlocosQuestoes(),
+        DatabaseService.getCadernoErros(),
+        DatabaseService.getMetas(),
+        DatabaseService.getConquistas(),
+        DatabaseService.getMarcos(),
+        DatabaseService.getEstatisticasProgressoReal(user?.id || 'user_demo_01'),
+        DatabaseService.getSimulados(),
+        DatabaseService.getStudyPlan(),
+        DatabaseService.getStudyCycle(),
+        DatabaseService.getStudyMethod(),
+      ]);
       setConcursos(c);
       setProvas(p);
       setDisciplinas(d);
@@ -156,7 +160,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
       setStats(st);
       setSimulados(s);
       setPlan(pl);
-      const activeC = c.find(item => item.active) || c[0];
+      const activeC = c.find(item => item.active || item.isAtivo) || c[0];
       const targetId = activeC?.id || '';
       if (targetId && cy && cy.concursoId !== targetId) {
         DatabaseService.getStudyCycle(targetId).then(setCycle);
@@ -165,18 +169,29 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
       }
       setStudyMethod(sm || 'ciclo');
       setIsDataLoading(false);
-    }).catch(err => {
+    } catch (err) {
       console.error('Erro ao carregar dados do Gabarita:', err);
       setDataError('Falha na sincronização dos dados locais e em nuvem.');
       setIsDataLoading(false);
-    });
+    }
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user?.id) {
       loadData();
+    } else if (!isAuthenticated) {
+      setConcursos([]);
+      setProvas([]);
+      setDisciplinas([]);
+      setAssuntos([]);
+      setSessoes([]);
+      setRevisoes([]);
+      setBlocosQuestoes([]);
+      setCadernoErros([]);
+      setSimulados([]);
+      setMetas([]);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   if (isLoading) {
     return (
@@ -194,9 +209,10 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     return <AuthPage />;
   }
 
-  const activeConcurso = concursos.find(c => c.active || c.isAtivo) || 
-    concursos.find(c => c.id === user.targetConcursoId) || 
-    concursos[0] || null;
+  const activeConcursos = concursos.filter(c => c.status !== 'arquivado' && !c.isArquivado);
+  const activeConcurso = activeConcursos.find(c => c.active || c.isAtivo || c.isFocoAtivo) || 
+    activeConcursos.find(c => c.id === user.targetConcursoId) || 
+    activeConcursos[0] || null;
   const activeConcursoId = activeConcurso?.id || '';
 
   const handleOpenStudyTimer = (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual') => {
@@ -278,8 +294,12 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const handleDeleteConcurso = async (id: string) => {
     const updatedList = await DatabaseService.deleteConcurso(id);
     setConcursos(updatedList);
-    const updatedProvas = await DatabaseService.getProvas();
-    setProvas(updatedProvas);
+    const nextActive = updatedList.find(c => c.active || c.isAtivo) || updatedList[0];
+    refreshProfile({
+      targetConcursoId: nextActive?.id,
+      targetConcursoTitle: nextActive ? `${nextActive.organ} - ${nextActive.role}` : undefined,
+    });
+    await loadData();
   };
 
   const handleSetActiveConcurso = async (id: string) => {
@@ -299,6 +319,37 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     } catch (e) {
       console.warn('Erro ao atualizar ciclo e plano do concurso ativo:', e);
     }
+  };
+
+  const handleArchiveConcurso = async (concursoId: string) => {
+    const result = await DatabaseService.archiveConcurso(concursoId);
+    setConcursos(result.concursos);
+    if (result.nextActiveConcurso) {
+      refreshProfile({
+        targetConcursoId: result.nextActiveConcurso.id,
+        targetConcursoTitle: `${result.nextActiveConcurso.organ} - ${result.nextActiveConcurso.role}`,
+      });
+      try {
+        const [newCycle, newPlan] = await Promise.all([
+          DatabaseService.getStudyCycle(result.nextActiveConcurso.id),
+          DatabaseService.getStudyPlan(result.nextActiveConcurso.id),
+        ]);
+        setCycle(newCycle);
+        setPlan(newPlan);
+      } catch (e) {
+        console.warn('Erro ao atualizar ciclo e plano após arquivar:', e);
+      }
+    } else {
+      refreshProfile({
+        targetConcursoId: '',
+        targetConcursoTitle: '',
+      });
+    }
+  };
+
+  const handleUnarchiveConcurso = async (concursoId: string) => {
+    const result = await DatabaseService.unarchiveConcurso(concursoId);
+    setConcursos(result.concursos);
   };
 
   const handleAddProva = async (newProva: Omit<Prova, 'id' | 'createdAt'>) => {
@@ -349,8 +400,22 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const handleDeleteDisciplina = async (id: string) => {
     const updatedList = await DatabaseService.deleteDisciplina(id);
     setDisciplinas(updatedList);
-    const updatedAssuntos = await DatabaseService.getAssuntos();
+    const [updatedAssuntos, updatedSessoes, updatedRevisoes, updatedBq, updatedErrs, updatedSimulados, updatedStats] = await Promise.all([
+      DatabaseService.getAssuntos(),
+      DatabaseService.getSessoes(),
+      DatabaseService.getRevisoes(),
+      DatabaseService.getBlocosQuestoes(),
+      DatabaseService.getCadernoErros(),
+      DatabaseService.getSimulados(),
+      DatabaseService.getEstatisticasProgressoReal(user?.id || 'user_demo_01'),
+    ]);
     setAssuntos(updatedAssuntos);
+    setSessoes(updatedSessoes);
+    setRevisoes(updatedRevisoes);
+    setBlocosQuestoes(updatedBq);
+    setCadernoErros(updatedErrs);
+    setSimulados(updatedSimulados);
+    setStats(updatedStats);
   };
 
   const handleDuplicateDisciplina = async (id: string) => {
@@ -372,8 +437,20 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const handleDeleteAssunto = async (id: string) => {
     const updatedList = await DatabaseService.deleteAssunto(id);
     setAssuntos(updatedList);
-    const updatedDisciplinas = await DatabaseService.getDisciplinas();
+    const [updatedDisciplinas, updatedSessoes, updatedRevisoes, updatedBq, updatedErrs, updatedStats] = await Promise.all([
+      DatabaseService.getDisciplinas(),
+      DatabaseService.getSessoes(),
+      DatabaseService.getRevisoes(),
+      DatabaseService.getBlocosQuestoes(),
+      DatabaseService.getCadernoErros(),
+      DatabaseService.getEstatisticasProgressoReal(user?.id || 'user_demo_01'),
+    ]);
     setDisciplinas(updatedDisciplinas);
+    setSessoes(updatedSessoes);
+    setRevisoes(updatedRevisoes);
+    setBlocosQuestoes(updatedBq);
+    setCadernoErros(updatedErrs);
+    setStats(updatedStats);
   };
 
   const handleDuplicateAssunto = async (id: string) => {
@@ -458,8 +535,6 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const handleAdvanceCycle = async (minutesStudied?: number) => {
     const updated = await DatabaseService.advanceStudyCycle(minutesStudied);
     setCycle(updated);
-    const updatedSessoes = await DatabaseService.getSessoes();
-    setSessoes(updatedSessoes);
   };
 
   const handleRewindCycle = async () => {
@@ -470,8 +545,6 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const handleRecordCycleProgress = async (additionalMinutes: number) => {
     const updated = await DatabaseService.recordCycleProgress(additionalMinutes);
     setCycle(updated);
-    const updatedSessoes = await DatabaseService.getSessoes();
-    setSessoes(updatedSessoes);
   };
 
   const handleResetCycleLap = async () => {
@@ -495,8 +568,20 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     accuracyRate?: number, 
     questionsAttempted?: number, 
     questionsCorrect?: number, 
-    notes?: string
+    notes?: string,
+    sessionDetails?: {
+      durationMinutes?: number;
+      durationSeconds?: number;
+      material?: string;
+      teoriaFinalizada?: boolean;
+      programarRevisoes?: boolean;
+      contabilizarPlanejamento?: boolean;
+      pageIntervals?: any[];
+      videoaulas?: any[];
+      completedAt?: string;
+    }
   ) => {
+    const revTarget = revisoes.find(r => r.id === revisaoId);
     const { allRevisoes } = await DatabaseService.completeRevisaoWithPerformance(
       revisaoId, 
       rating, 
@@ -506,27 +591,86 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
       notes
     );
     setRevisoes(allRevisoes);
-    const [profile, updatedAss] = await Promise.all([
+
+    if (revTarget) {
+      const durationSeconds = sessionDetails?.durationSeconds ?? ((sessionDetails?.durationMinutes || 15) * 60);
+      const durationMinutes = sessionDetails?.durationMinutes ?? Math.max(1, Math.round(durationSeconds / 60));
+      const recorded = await DatabaseService.recordStudySession({
+        userId: user.id,
+        concursoId: activeConcursoId || undefined,
+        disciplinaId: revTarget.disciplinaId,
+        assuntoId: revTarget.assuntoId,
+        disciplinaName: revTarget.disciplinaName,
+        assuntoName: revTarget.assuntoName,
+        durationMinutes,
+        durationSeconds,
+        type: 'revisao',
+        origem: 'revisoes',
+        material: sessionDetails?.material,
+        questionsAttempted,
+        questionsCorrect,
+        accuracyRate,
+        notes: notes !== undefined ? notes : '',
+        teoriaFinalizada: sessionDetails?.teoriaFinalizada,
+        programarRevisoes: sessionDetails?.programarRevisoes,
+        contabilizarPlanejamento: sessionDetails?.contabilizarPlanejamento,
+        pageIntervals: sessionDetails?.pageIntervals,
+        videoaulas: sessionDetails?.videoaulas,
+        completedAt: sessionDetails?.completedAt || new Date().toISOString(),
+      });
+      setSessoes(prev => [recorded, ...prev]);
+
+      if (sessionDetails?.teoriaFinalizada && revTarget.assuntoId) {
+        try {
+          await DatabaseService.updateAssuntoStatus(revTarget.assuntoId, 'dominado');
+        } catch (e) {
+          console.warn('Erro ao atualizar status do tópico no edital:', e);
+        }
+      }
+
+      if (sessionDetails?.programarRevisoes && revTarget.assuntoId) {
+        try {
+          const updatedRevs = await DatabaseService.gerarCicloCompletoRevisao(
+            user.id,
+            revTarget.disciplinaId,
+            revTarget.assuntoId,
+            revTarget.assuntoName,
+            recorded
+          );
+          setRevisoes(updatedRevs);
+        } catch (e) {
+          console.warn('Erro ao programar novo ciclo de revisões:', e);
+        }
+      }
+    }
+
+    const [profile, updatedAss, updatedDiscs, updatedStats] = await Promise.all([
       DatabaseService.getUserProfile(user.id),
       DatabaseService.getAssuntos(),
+      DatabaseService.getDisciplinas(),
+      DatabaseService.getEstatisticasProgressoReal(user.id),
     ]);
     refreshProfile(profile);
     setAssuntos(updatedAss);
+    setDisciplinas(updatedDiscs);
+    setStats(updatedStats);
   };
 
   const handleAddRevisao = async (revData: {
     disciplinaId: string;
     assuntoId?: string;
     assuntoName: string;
-    method: RevisionMethod;
+    method: RevisionMethod | string;
     scheduledFor: string;
     notes?: string;
     isAutomatic?: boolean;
     stage?: number;
     intervalDays?: number;
   }) => {
+    const disc = disciplinas.find(d => d.id === revData.disciplinaId);
     const created = await DatabaseService.addRevisao({
       ...revData,
+      disciplinaName: disc?.name || 'Geral',
       userId: user.id,
       status: 'pendente',
     });
@@ -582,14 +726,25 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   };
 
   const handleSaveStudySession = async (session: {
+    concursoId?: string;
     disciplinaId: string;
     assuntoId?: string;
+    disciplinaName?: string;
+    assuntoName?: string;
     durationMinutes: number;
+    durationSeconds?: number;
     plannedMinutes?: number;
     type: StudySessionType;
+    origem?: string;
+    material?: string;
     questionsAttempted?: number;
     questionsCorrect?: number;
     notes?: string;
+    teoriaFinalizada?: boolean;
+    programarRevisoes?: boolean;
+    contabilizarPlanejamento?: boolean;
+    pageIntervals?: any[];
+    videoaulas?: any[];
     completedAt?: string;
   }) => {
     const recorded = await DatabaseService.recordStudySession({
@@ -599,31 +754,74 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     });
     setSessoes(prev => [recorded, ...prev]);
 
-    if (session.assuntoId && (revisionSettings?.autoScheduleOnStudy ?? true)) {
+    const shouldScheduleRevision =
+      session.programarRevisoes !== undefined
+        ? session.programarRevisoes
+        : (revisionSettings?.autoScheduleOnStudy ?? true);
+
+    if (session.assuntoId && shouldScheduleRevision) {
       const top = assuntos.find(a => a.id === session.assuntoId);
       const updatedRevisoes = await DatabaseService.gerarCicloCompletoRevisao(
         user.id, 
         session.disciplinaId, 
         session.assuntoId, 
-        top?.name
+        top?.name || session.assuntoName,
+        recorded
       );
       setRevisoes(updatedRevisoes);
     }
 
-    const [updatedDiscs, updatedAss] = await Promise.all([
+    const [updatedDiscs, updatedAss, updatedStats] = await Promise.all([
       DatabaseService.getDisciplinas(),
       DatabaseService.getAssuntos(),
+      DatabaseService.getEstatisticasProgressoReal(user.id),
     ]);
     setDisciplinas(updatedDiscs);
     setAssuntos(updatedAss);
+    setStats(updatedStats);
 
     const profile = await DatabaseService.getUserProfile(user.id);
     refreshProfile(profile);
   };
 
+  const handleUpdateStudySession = async (sessionId: string, partial: Partial<SessaoEstudo>) => {
+    const updatedItem = await DatabaseService.updateStudySession(sessionId, partial);
+    setSessoes(prev => prev.map(s => (s.id === sessionId ? updatedItem : s)));
+
+    if (partial.programarRevisoes && updatedItem.assuntoId) {
+      const top = assuntos.find(a => a.id === updatedItem.assuntoId);
+      const updatedRevisoes = await DatabaseService.gerarCicloCompletoRevisao(
+        user.id,
+        updatedItem.disciplinaId,
+        updatedItem.assuntoId,
+        top?.name || updatedItem.assuntoName,
+        updatedItem
+      );
+      setRevisoes(updatedRevisoes);
+    }
+
+    const [updatedDiscs, updatedAss, updatedStats] = await Promise.all([
+      DatabaseService.getDisciplinas(),
+      DatabaseService.getAssuntos(),
+      DatabaseService.getEstatisticasProgressoReal(user.id),
+    ]);
+    setDisciplinas(updatedDiscs);
+    setAssuntos(updatedAss);
+    setStats(updatedStats);
+  };
+
   const handleDeleteStudySession = async (sessionId: string) => {
     const updated = await DatabaseService.deleteStudySession(sessionId);
     setSessoes(updated);
+
+    const [updatedDiscs, updatedAss, updatedStats] = await Promise.all([
+      DatabaseService.getDisciplinas(),
+      DatabaseService.getAssuntos(),
+      DatabaseService.getEstatisticasProgressoReal(user.id),
+    ]);
+    setDisciplinas(updatedDiscs);
+    setAssuntos(updatedAss);
+    setStats(updatedStats);
   };
 
   const handleRecordBlocoQuestoes = async (bloco: Omit<RegistroBlocoQuestoes, 'id' | 'createdAt' | 'wrongAnswers' | 'accuracyRate'>) => {
@@ -859,6 +1057,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               onUpdateConcurso={handleUpdateConcurso}
               onDeleteConcurso={handleDeleteConcurso}
               onSetActiveConcurso={handleSetActiveConcurso}
+              onArchiveConcurso={handleArchiveConcurso}
+              onUnarchiveConcurso={handleUnarchiveConcurso}
               onAddProva={handleAddProva}
               onUpdateProva={handleUpdateProva}
               onDeleteProva={handleDeleteProva}
@@ -882,6 +1082,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               concursos={concursos}
               disciplinas={disciplinas}
               assuntos={assuntos}
+              sessoes={sessoes}
               activeConcursoId={activeConcursoId}
               studyMethod={currentTab === 'ciclo' ? 'ciclo' : currentTab === 'cronograma' ? 'cronograma' : studyMethod}
               onNavigateTab={setCurrentTab}
@@ -952,11 +1153,31 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             />
           )}
 
+          {currentTab === 'historico' && (
+            <HistoricoView
+              sessoes={sessoes}
+              disciplinas={disciplinas}
+              assuntos={assuntos}
+              concursos={concursos}
+              activeConcursoId={activeConcursoId}
+              revisoes={revisoes}
+              simulados={simulados}
+              blocosQuestoes={blocosQuestoes}
+              onSaveSession={handleSaveStudySession}
+              onUpdateSession={handleUpdateStudySession}
+              onDeleteSession={handleDeleteStudySession}
+              onUpdateAssunto={handleUpdateAssunto}
+              onUpdateAssuntoStatus={handleUpdateAssuntoStatus}
+              onNavigateTab={setCurrentTab}
+            />
+          )}
+
           {currentTab === 'flashcards' && (
             <FlashcardsView
               disciplinas={disciplinas}
               assuntos={assuntos}
               onNavigateTab={setCurrentTab}
+              onSaveStudySession={handleSaveStudySession}
             />
           )}
 
@@ -1056,6 +1277,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               blocosQuestoes={blocosQuestoes}
               revisoes={revisoes}
               simulados={simulados}
+              concursos={concursos}
+              activeConcursoId={activeConcursoId}
+              user={user}
               stats={stats || {
                 horasHoje: 0,
                 horasSemana: 0,
@@ -1074,13 +1298,13 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
                 streakDias: user?.streakDays || 0,
                 melhorStreakDias: 0,
                 diasAtivosUltimaSemana: [
+                  { data: '', diaSemana: 'Dom', estudou: false, minutos: 0 },
                   { data: '', diaSemana: 'Seg', estudou: false, minutos: 0 },
                   { data: '', diaSemana: 'Ter', estudou: false, minutos: 0 },
                   { data: '', diaSemana: 'Qua', estudou: false, minutos: 0 },
                   { data: '', diaSemana: 'Qui', estudou: false, minutos: 0 },
                   { data: '', diaSemana: 'Sex', estudou: false, minutos: 0 },
                   { data: '', diaSemana: 'Sáb', estudou: false, minutos: 0 },
-                  { data: '', diaSemana: 'Dom', estudou: false, minutos: 0 },
                 ],
                 topicosConcluidos: 0,
                 topicosTotal: 0,
@@ -1118,7 +1342,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             <PerfilView
               user={user}
               concursos={concursos}
+              activeConcursoId={activeConcursoId}
               onUpdateProfile={handleUpdateProfile}
+              onDataSanitized={loadData}
             />
           )}
 

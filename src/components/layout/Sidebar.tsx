@@ -21,7 +21,8 @@ import {
   Shield, 
   Crown,
   BookX,
-  Layers
+  Layers,
+  History
 } from 'lucide-react';
 import { NavigationTab, StudyMethod, Concurso } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -157,13 +158,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
   }, [isDropdownOpen]);
 
-  // Lista efetiva de concursos disponíveis
-  const displayConcursos = localConcursos.length > 0 ? localConcursos : concursos;
+  // Lista efetiva de concursos disponíveis - estritamente ATIVOS para seleção de Foco Atual
+  const allConcursos = localConcursos.length > 0 ? localConcursos : concursos;
+  const displayConcursos = allConcursos.filter(c => c.status !== 'arquivado' && !c.isArquivado);
 
-  // Identificação segura do concurso ativo
+  // Identificação segura do concurso ativo (exclui arquivados)
   const currentActiveId = activeConcursoId || 
-    displayConcursos.find(c => c.active || c.isAtivo)?.id || 
-    user?.targetConcursoId || 
+    displayConcursos.find(c => c.active || c.isAtivo || c.isFocoAtivo)?.id || 
+    displayConcursos.find(c => c.id === user?.targetConcursoId)?.id || 
     displayConcursos[0]?.id || '';
 
   const activeConcurso = displayConcursos.find(c => c.id === currentActiveId) || displayConcursos[0];
@@ -187,6 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'plano', label: 'Plano de Estudos', icon: CalendarClock },
     { id: 'estudos', label: 'Edital Verticalizado', icon: BookOpen },
     { id: 'revisoes', label: 'Revisões', icon: Repeat, badge: revisoesCountHoje > 0 ? `${revisoesCountHoje} hoje` : undefined },
+    { id: 'historico', label: 'Histórico', icon: History },
     { id: 'flashcards', label: 'Flashcards', icon: Layers },
     { id: 'caderno_erros', label: 'Caderno de Erros', icon: BookX },
     { id: 'metas', label: 'Metas & Desempenho', icon: Trophy },

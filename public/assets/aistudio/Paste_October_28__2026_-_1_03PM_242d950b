@@ -1,0 +1,273 @@
+# TAREFA: Implementar o Novo Menu "Histórico" Totalmente Funcional e Integrado no App de Estudos "Gabarita"
+
+Você é um Engenheiro de Software Sênior Front-End/Full-Stack responsável por adicionar o novo menu **"Histórico"** ao aplicativo de estudos **Gabarita**. 
+Sua implementação deve seguir rigorosamente as especificações funcionais, visuais e de arquitetura abaixo, garantindo **ZERO regressão** no código existente.
+
+---
+
+## 1. REGRAS INEGOCIÁVEIS DE PRESERVAÇÃO E BLINDAGEM (ZERO REGRESSÃO)
+
+1. **Proibição de Exclusão ou Alteração Indevida**:
+   - **NÃO exclua, oculte, desative ou renomeie** nenhum menu, sub-rota, botão, modal, card, filtro, gráfico ou funcionalidade já existente no aplicativo.
+   - **NÃO altere nem remova** nenhum **banner ilustrado de cabeçalho** das páginas atuais (`Painel Geral`, `Concursos & Provas`, `Plano de Estudos`, `Edital Verticalizado`, `Revisões`, `Flashcards`, `Caderno de Erros`, `Metas & Desempenho`, `Estatísticas`, `Assistente IA (Gemini)`, `Simulados`, `Planos & Assinatura`, `Perfil & Ajustes`).
+   - **NÃO altere nem remova** o **plano de fundo (background)** padrão do app (textura clara/escura com marcas d'água de elementos de estudo: óculos, livros, notebook, engrenagens, estrelas e post-its).
+   - **NÃO quebre nenhuma ligação (rota/link/estado)** entre componentes, nem resete a estrutura de persistência (`localStorage` / banco de dados / Context API / Zustand / Redux) já utilizada pelos outros menus.
+
+2. **Compatibilidade Total com o Sistema de Temas (5 Cores × 2 Modos)**:
+   - O Gabarita possui **5 temas de cores** (**Verde**, **Azul**, **Rosa**, **Roxo** e **Laranja**) e **2 modos de exibição** (**Claro** e **Escuro**), controlados na barra superior (Topbar).
+   - Todo componente criado para o menu **Histórico** (banner, botões primários, badges, ícones, bordas ativas, barras de progresso, hover states, tabelas e modais) **DEVE** consumir exatamente as mesmas variáveis CSS / tokens / classes dinâmicas de tema e modo (light/dark) que o restante do aplicativo utiliza. Não utilize cores fixas (hardcoded) onde o tema principal deve atuar.
+
+3. **Autenticidade e Identidade Visual Gabarita**:
+   - A estrutura funcional de histórico (listagem cronológica por data, drill-down por disciplina e modal completo de edição de registro) deve ter **100% a identidade visual autêntica do Gabarita**: cards brancos/escuros com cantos arredondados (`border-radius` suave), sombras sutis, tipografia limpa, ícones em caixas arredondadas com fundo translúcido na cor do tema, badges semânticas e banner superior ilustrado no padrão Gabarita.
+
+---
+
+## 2. INSERÇÃO NA SIDEBAR (MENU LATERAL) E TOPBAR
+
+1. **Novo Item na Sidebar Lateral Esquerda**:
+   - Insira o item **`Histórico`** no menu de navegação lateral esquerdo (posicionado estrategicamente logo abaixo de `Revisões` ou ao lado de `Estatísticas`), utilizando um ícone vetorial consistente (ex.: `History` / `ClockRotateLeft` da biblioteca de ícones já usada no projeto, como Lucide Icons).
+   - Quando selecionado, o item `Histórico` deve receber o mesmo destaque de item ativo da Sidebar (preenchimento com a cor do tema ativo, texto branco e ícone destacado).
+   - Mantenha intactos todos os demais elementos da Sidebar: logo `Gabarita PRO`, seletor de `FOCO ATUAL` com badge de `Nível`, todos os 13 menus existentes, o card inferior de ofensiva (`dias seguidos` e `XP acumulados`), o indicador `Armazenamento Seguro` e o rodapé do perfil do aluno.
+
+2. **Conexão de Atalhos Existentes**:
+   - No **`Painel Geral`**, conecte o link/ação `"Ver histórico"` / `"Clique Para Abrir"` (dentro do card de *Constância*) e os atalhos de histórico para navegarem diretamente para a rota/aba do novo menu **`Histórico`**, mantendo também qualquer comportamento de modal caso já exista, sem quebrar nada.
+   - Na **Topbar superior**, quando o menu `Histórico` estiver aberto, exiba o título **`Histórico de Estudos`** e o subtítulo **`Registro detalhado de sessões, questões, páginas, revisões e evolução por disciplina`**, preservando os controles de modo Claro/Escuro, seletor de Tema (Verde, Azul, Rosa, Roxo, Laranja), notificações, avatar e botão `Sair`.
+
+---
+
+## 3. ARQUITETURA DE DADOS E INTEGRAÇÃO BIDIRECIONAL COM TODOS OS MENUS
+
+O menu **Histórico** não é uma tela estática: ele é o **repositório central de registros de estudo (Study Logs)** do usuário, vinculado ao **Concurso / Foco Ativo** selecionado no topo da Sidebar.
+
+### 3.1. Estrutura Padronizada de um Registro de Estudo (`StudyRecord`)
+Cada registro salvo deve conter (mantendo retrocompatibilidade com registros já existentes no sistema):
+- `id`: identificador único (`UUID` ou timestamp).
+- `concursoId`: ID do concurso/foco ativo ao qual o estudo pertence.
+- `data`: data da realização do estudo (`YYYY-MM-DD`, exibida como `DD/MM/AAAA`).
+- `categoria`: modalidade do estudo (`Teoria`, `Questões`, `Revisão`, `Simulado`, `Flashcards`, `Lei Seca`, `Resumo`, `Jurisprudência`, `Videoaula`, `Pomodoro`).
+- `origem`: módulo gerador (`manual`, `painel_geral`, `plano_estudos`, `edital_verticalizado`, `revisoes`, `flashcards`, `simulados`, `caderno_erros`).
+- `disciplinaId` e `disciplinaNome`: matéria correspondente do edital ativo.
+- `topicoId` e `topicoNome`: tópico específico do edital verticalizado.
+- `tempoSegundos` (ou minutos/formato `HH:MM:SS`): tempo líquido dedicado na sessão.
+- `questoesCertas`: número inteiro de acertos (`>= 0`).
+- `questoesErradas`: número inteiro de erros (`>= 0`).
+- `paginas`: lista de intervalos de páginas lidas `[{ inicio: number, fim: number }]` (tratando valores vazios ou nulos para **NUNCA** exibir `null` na tela; se `inicio` não for informado mas `fim` for `46`, exibir `p. 1 ~ 46` ou apenas `46 pág.`, e se não houver páginas, exibir `—`).
+- `videoaulas`: lista opcional `[{ titulo: string, inicio: "HH:MM:SS", fim: "HH:MM:SS" }]`.
+- `material`: string opcional indicando a fonte/material (ex.: `"Aula 02"`, `"PDF Aula 01"`, `"Caderno de Questões"`).
+- `topicoConcluido`: booleano (`true` / `false`) indicando se o aluno marcou `"Sim, concluí"` para o tópico.
+- `programarRevisoes`: booleano (`true` / `false`) indicando se gerou agendamento de revisões espaçadas (24h, 7d, 30d).
+- `contabilizarPlanejamento`: booleano (`true` / `false`) indicando se abate horas/metas no Plano de Estudos e Metas Semanais.
+- `comentarios`: string de observações do aluno (até 500 caracteres).
+- `criadoEm` / `atualizadoEm`: timestamps de auditoria.
+
+### 3.2. Captura Automática de Todos os Outros Menus que Criam Informações
+Garanta que toda ação de estudo realizada nos demais menus crie ou atualize automaticamente um registro correspondente no **Histórico**:
+1. **Painel Geral (`+ Adicionar Estudo` e Cronograma Inteligente / `Iniciar Estudo`)**:
+   - Qualquer estudo adicionado pelo botão `+ Adicionar Estudo` ou finalizado a partir do card `Tópico Atual -> Iniciar Estudo` aparece imediatamente no **Histórico**.
+2. **Plano de Estudos (Ciclo de Estudos / Cronograma Semanal)**:
+   - Ao concluir ou registrar tempo em uma sessão do ciclo ou cronograma, salva automaticamente o registro no **Histórico** com `origem: "plano_estudos"`.
+3. **Edital Verticalizado & Disciplinas**:
+   - Quando o usuário adicionar/atualizar questões resolvidas (certas/erradas) ou marcar um tópico como concluído no `Edital Verticalizado`, o registro é salvo/sincronizado no **Histórico**.
+4. **Revisões Espaçadas (`Revisões`)**:
+   - Quando o usuário concluir uma revisão pendente/hoje/atrasada (ciclos de 24h, 7d, 30d), cria automaticamente um registro no **Histórico** com `categoria: "Revisão"`, disciplina, tópico, data e tempo/desempenho.
+5. **Flashcards & Repetição Espaçada (`Flashcards` SM-2)**:
+   - Ao concluir uma sessão de revisão de Flashcards (usando os botões *Errei, Difícil, Bom, Fácil* com o cronômetro do player), gera automaticamente um registro no **Histórico** com `categoria: "Flashcards"` (ou `"Revisão"`), registrando a disciplina, o baralho/tópico, o tempo decorrido no cronômetro e a proporção de cards lembrados (*Bom/Fácil* vs total revisado).
+6. **Simulados e Concursos & Provas (`Simulados` / `Provas`)**:
+   - Ao finalizar um simulado ou registrar o resultado de uma prova agendada, cria automaticamente um registro no **Histórico** com `categoria: "Simulado"`, identificando o concurso/prova (ex.: `TCDF - Múltipla Escolha`), tempo total gasto e placar de questões (`acertos/total` e `%`).
+7. **Caderno de Erros & Reincidências**:
+   - Ao revisar ou dominar um erro no Caderno de Erros (ou cadastrar erro vinculado a sessão), mantém sincronia com as estatísticas e histórico da disciplina correspondente.
+
+### 3.3. Sincronização Reversa (Criar, Editar ou Excluir no Histórico Atualiza Todo o App)
+Quando o usuário **criar**, **editar** ou **excluir** um registro dentro do menu **Histórico**:
+- **Edital Verticalizado**: recalcula instantaneamente o número de questões (`Certas`, `Erradas`, `Total`, `% Acerto` e cor da faixa de acerto) daquele tópico e daquela disciplina, além de atualizar o checkbox de conclusão do tópico (`Progresso do Edital`) se a opção `"Terminou este tópico? -> Sim, concluí"` for marcada/desmarcada.
+- **Estatísticas & Relatórios**: atualiza imediatamente `Horas Líquidas`, `Taxa de Acerto`, `Páginas Lidas`, `Videoaulas`, `Constância nos Estudos`, `Tempo por Categoria` e `Progresso Geral do Edital`.
+- **Painel Geral**: atualiza `Horas Estudadas`, `Questões & Acertos`, `Constância (Dias Seguidos)`, `Metas de Estudo Semanal`, `Histórico Semanal` e o gráfico `Rendimento & Histórico de Estudos`.
+- **Metas & Desempenho**: atualiza o progresso das `Metas Quantitativas`, `Sequência Semanal`, `Marcos do Edital` e pontuação de `XP`.
+- **Revisões Espaçadas**: se o checkbox `"Programar revisões"` for marcado ao salvar o estudo, agenda automaticamente os ciclos de revisão (24h, 7d, 30d) para aquele tópico no menu `Revisões`.
+
+---
+
+## 4. ESPECIFICAÇÃO DETALHADA DAS 3 TELAS / CAMADAS DO MENU "HISTÓRICO"
+
+O menu **Histórico** deve possuir **3 visões integradas** com navegação fluida sem recarregar a página:
+1. **Visão 1 (Principal)**: Linha do Tempo Geral do Histórico (todos os registros agrupados por data).
+2. **Visão 2 (Drill-down por Disciplina)**: Histórico Detalhado da Matéria + Edital Verticalizado daquela matéria.
+3. **Visão 3 (Modal de Registro de Estudo)**: Modal completo para criar, revisar, editar ou excluir um registro.
+
+---
+
+### VISÃO 1: TELA PRINCIPAL DO MENU "HISTÓRICO" (LINHA DO TEMPO GERAL)
+
+#### A. Banner Superior no Padrão Gabarita
+- Construa um banner horizontal no topo da página seguindo exatamente o padrão estético dos banners de *Estatísticas & Relatórios* e *Caderno de Erros*:
+  - Fundo em gradiente rico na paleta do tema ativo com elementos gráficos/ilustração de alta qualidade à direita (relógio/cronômetro estilizado, linha do tempo, livros e indicadores de desempenho).
+  - Badge superior com ícone + label (ex.: `LINHA DO TEMPO ATIVA`).
+  - Título em destaque: **`Histórico & Registros de Estudo`**.
+  - Subtítulo: **`Acompanhe cada sessão registrada, edite lançamentos e audite sua evolução diária por matéria.`**.
+  - Botão de ação principal dentro/ao lado do banner: **`+ Adicionar Estudo`** (abre o Modal de Registro de Estudo em modo de criação).
+
+#### B. 4 Cards de Resumo (KPIs) no Topo
+Logo abaixo do banner, exiba uma grade responsiva de **4 cards de métricas** (no mesmo estilo visual dos cards de *Estatísticas* e *Painel Geral* do Gabarita):
+1. **TEMPO DE ESTUDO** (ícone de relógio):
+   - Valor principal grande: soma do tempo no período filtrado no formato `XXh YYmin` (ex.: `73h 55min`).
+   - Subtítulo: total de sessões registradas no período (ex.: `42 sessões registradas`).
+2. **DESEMPENHO** (ícone de alvo/check):
+   - Valor principal: percentual geral de acertos + total de questões resolvidas (ex.: `80% (2.919 questões)`).
+   - Subtítulo: detalhamento `X certas • Y erradas` (ex.: `2.323 certas • 596 erradas`).
+3. **PROGRESSO NO EDITAL** (ícone de prancheta/livro):
+   - Valor principal: percentual concluído do edital ativo + fração de tópicos (ex.: `4% (5 de 112)`).
+   - Subtítulo: `X tópicos pendentes` (ex.: `107 tópicos pendentes`).
+4. **PÁGINAS LIDAS** (ícone de livro aberto):
+   - Valor principal: total de páginas lidas + velocidade média (ex.: `378 (30,3 por hora)`).
+   - Subtítulo: `no período filtrado`.
+
+#### C. Barra de Busca e Filtros Retráteis
+- Abaixo dos 4 KPIs, inclua uma barra de controle limpa com:
+  - Input de busca rápida (`"Pesquisar por disciplina, tópico, material ou observação..."`).
+  - Botão **`Filtros`** (com ícone de funil e seta expansível `⌄`) que, ao ser clicado, exibe/oculta seletores para filtrar a lista por:
+    - **Período**: `Todos`, `Hoje`, `Últimos 7 dias`, `Últimos 30 dias`, `Este mês`, ou intervalo personalizado (`Data Inicial` a `Data Final`).
+    - **Disciplina**: `Todas as Disciplinas` ou uma matéria específica do concurso ativo.
+    - **Categoria / Modalidade**: `Todas`, `Teoria`, `Questões`, `Revisão`, `Simulado`, `Flashcards`, `Lei Seca`, `Resumo`, `Jurisprudência`, `Videoaula`, `Pomodoro`.
+    - **Origem**: `Todas as Origens`, `Registro Manual`, `Plano de Estudos`, `Flashcards`, `Revisões`, `Simulados`.
+  - Botão `"Limpar filtros"` quando houver algum filtro ativo.
+
+#### D. Listagem Cronológica Agrupada por Data (Cards de Dias)
+- Os registros devem ser ordenados do mais recente para o mais antigo e agrupados em **Cards Diários** (um card para cada dia em que houve estudo):
+  - **Cabeçalho do Dia**:
+    - À esquerda: Data no formato `DD/MM` em negrito seguida da abreviação do dia da semana em tom suave (ex.: **`25/10`** `Dom`, **`24/10`** `Sáb`, **`23/10`** `Sex`).
+    - À direita: Ícone de relógio + soma total do tempo estudado naquele dia (ex.: `⏱ 1h 26min`, `⏱ 2h 34min`).
+  - **Linhas de Registro do Dia**:
+    - Cada sessão de estudo realizada naquele dia é exibida como uma linha horizontal bem espaçada dentro do card do dia, contendo da esquerda para a direita:
+      1. **Ícone da Disciplina / Categoria**: quadrado de cantos arredondados com cor suave e ícone representativo (balança para Direito, gráfico para Estatística, livro para Língua Portuguesa, troféu/prova para Simulado, etc.).
+      2. **Bloco de Identificação (Clicável)**:
+         - **Linha superior (Título)**: Nome da **Disciplina** em negrito (ex.: `Conhecimentos do Distrito Federal e Política Para Mulheres`, `Administração Geral e Pública`, ou nome do Simulado `TCDF`).
+         - **Linha inferior (Subtítulo)**: Número e nome do **Tópico do Edital** truncado com reticências se for muito longo (ex.: `2. Plano Distrital de Política para Mulheres (2020–2023).`) + ícone de balão de comentário caso o registro possua observações salvas + badge discreta do material se preenchido.
+      3. **Badge da Categoria**: pílula colorida indicando a modalidade, usando cores semânticas suaves:
+         - `Questões` (verde suave)
+         - `Teoria` (azul/roxo suave)
+         - `Revisão` (vermelho/coral suave)
+         - `Simulado` (cinza/azul escuro suave)
+         - `Flashcards` (laranja/âmbar suave)
+         - `Lei Seca` / `Resumo` / `Jurisprudência` / `Videoaula` / `Pomodoro` (cores distintas e harmônicas).
+      4. **Tempo da Sessão**: ex.: `1h 26min`, `35min`, `2h 00min`.
+      5. **Placar de Questões e Percentual**:
+         - Se houver questões registradas na sessão, exibir `Acertos/Total` (ex.: `45/48`, `98/190`, `162/180`) seguido de uma badge com o percentual de acerto colorido conforme a régua oficial do Gabarita:
+           - Verde (`> 75%` Bom/Excelente, ex.: `94%`, `90%`)
+           - Amarelo/Laranja (`51% a 75%` Médio, ex.: `62%`, `70%`)
+           - Vermelho/Rosa (`≤ 50%` Alerta, ou conforme régua de desempenho)
+         - Se não houver questões na sessão (ex.: estudo puramente teórico ou revisão rápida sem questões), exibir `—`.
+      6. **Páginas Lidas**:
+         - Se houver páginas registradas, exibir no formato `p. X ~ Y` (ex.: `p. 1 ~ 46`, `p. 25 ~ 37`). **Importante**: trate valores nulos ou zero no início para nunca mostrar `p. null ~ 46` (se `inicio` for nulo/vazio e `fim` for `46`, normalize para `p. 1 ~ 46`). Se não houver páginas registradas na sessão, exibir `—`.
+      7. **Ações ao Passar o Mouse (Hover Actions)**:
+         - Ao passar o mouse sobre qualquer linha de registro, a linha recebe um destaque suave na cor do tema e exibe à direita os botões de ação:
+           - **Botão Lápis (`Editar`)** com tooltip `"Editar"` / `"Ver histórico da matéria ou editar"`:
+             - Conforme o fluxo desejado pelo usuário:
+               - Clicar sobre a linha/disciplina (ou no botão de abrir histórico da matéria) abre a **Visão 2 (Tela de Histórico Completo daquela Matéria)**, onde constam todos os registros já feitos daquela disciplina e o edital verticalizado dela.
+               - Clicar diretamente no ícone de **Lápis (`Editar`)** abre o **Modal de Revisão e Edição do Registro de Estudo (Visão 3)** já preenchido com todos os dados daquela sessão (e na Visão 1, ofereça também ao lado do lápis um ícone de **Abrir Histórico da Matéria** ou permita que o clique na linha abra a Visão 2 e o clique no lápis abra o Modal de Edição, garantindo que ambos os acessos fiquem a 1 clique de distância!).
+           - **Botão Lixeira (`Excluir`)** com confirmação rápida para excluir o registro.
+
+---
+
+### VISÃO 2: TELA DE HISTÓRICO DETALHADO POR DISCIPLINA (DRILL-DOWN DA MATÉRIA)
+
+Quando o usuário clica em uma disciplina na listagem do Histórico (ou no botão de detalhamento daquela matéria), abre-se a visão dedicada àquela disciplina (dentro do mesmo menu Histórico):
+
+#### A. Cabeçalho da Disciplina
+- Botão `←` (Voltar para a listagem geral do Histórico).
+- Ícone da disciplina + **Nome Completo da Disciplina** em destaque + ícone de lápis para editar nome/meta da disciplina se necessário.
+- Subtítulo: `"Seu resumo desta disciplina no plano [Nome do Concurso/Foco Ativo]"`.
+- À direita: botão **`+ Adicionar Estudo`** (ao clicar, abre o Modal de Registro de Estudo já com esta disciplina pré-selecionada).
+
+#### B. 4 Cards de Resumo (KPIs) Exclusivos da Disciplina
+Exiba os 4 cards focados exclusivamente nos dados acumulados desta disciplina:
+1. **TEMPO DE ESTUDO**: total acumulado na matéria (ex.: `6h 47min`) + rodapé `"Neste mês: 1h 26min"`.
+2. **DESEMPENHO**: taxa de acerto da matéria + total de questões (ex.: `89% (270 questões)`) + rodapé `"Neste mês: 94% (↑ 94 p.p.)"`.
+3. **PROGRESSO NO EDITAL**: percentual de tópicos concluídos nesta matéria (ex.: `0% (0 de 3 tópicos)`) + rodapé `"Neste mês: 1 tópicos"`.
+4. **PÁGINAS LIDAS**: total de páginas lidas na matéria + ritmo por hora (ex.: `85 (30,4 por hora)`) + rodapé `"Neste mês: 47 páginas"`.
+
+#### C. Seção 1: Card "HISTÓRICO DE REGISTROS" da Disciplina
+- Cabeçalho do card: título `HISTÓRICO DE REGISTROS` à esquerda e contador `X registros` à direita.
+- Tabela limpa e responsiva listando todas as sessões registradas naquela matéria:
+  - Colunas:
+    - `DATA` (`DD/MM/AA`)
+    - `CATEGORIA` (badge colorida: `Questões`, `Teoria`, `Revisão`, etc.)
+    - `TÓPICO` (número e nome do tópico estudado + ícone de balão se houver comentário salvo)
+    - `TEMPO` (no formato `HH:MM:SS`, ex.: `01:26:00`, `00:35:00`)
+    - `QUESTÕES` (`Acertos/Total` + badge `%` colorida, ex.: `45/48 94%`)
+    - `PÁGINAS` (`1 ~ 46`, `25 ~ 37`, ou `—`)
+    - `AÇÕES` (visíveis no hover da linha à direita):
+      - Ícone de **Lápis (`Editar`)**: abre o **Modal de Registro de Estudo (Visão 3)** carregado com os dados exatos desta linha para revisão/edição.
+      - Ícone de **Lixeira (`Excluir`)**: exclui o registro após confirmação e atualiza os KPIs imediatamente.
+- Se houver muitos registros, exibir botão centralizado no rodapé da tabela: `"Ver mais ⌄"` / `"Ver menos ⌃"`.
+
+#### D. Seção 2: Card "EDITAL VERTICALIZADO" da Disciplina
+- Logo abaixo da tabela de histórico da matéria, exiba o quadro `EDITAL VERTICALIZADO` específico dos tópicos desta disciplina:
+  - Cabeçalho: `EDITAL VERTICALIZADO` à esquerda; à direita, contador `"X de Y concluídos"` + barra de progresso compacta + percentual `X%`.
+  - Tabela de tópicos da matéria com as colunas:
+    - Checkbox de conclusão (sincronizado em tempo real com o menu `Edital Verticalizado`) + Número e Nome do **`TÓPICO`**.
+    - **`QUESTÕES`**: `Acertos/Total` acumulados no tópico + badge de percentual `%` (e ícone de coroa dourada `👑` quando `>= 90%`).
+    - **`ÚLTIMO ESTUDO`**: data da última sessão registrada neste tópico (`DD/MM/AA` ou `—`).
+    - **`ESTUDO`**: tempo total acumulado no tópico + badge com número de sessões (ex.: `2h 29min 4x`, `3h 01min 4x`).
+    - **`MATERIAL`**: indicador/link dos materiais ou aulas utilizados no tópico.
+
+---
+
+### VISÃO 3: MODAL "REGISTRO DE ESTUDO" (CRIAR, REVISAR, EDITAR E EXCLUIR)
+
+Ao clicar no botão **`+ Adicionar Estudo`** ou ao clicar no ícone de **Lápis (`Editar`)** (tanto na Visão 1 quanto na Visão 2), deve abrir um Modal centralizado com backdrop escurecido/desfocado (`backdrop-blur`), seguindo fielmente a disposição funcional abaixo com a estética do Gabarita:
+
+1. **Cabeçalho do Modal**:
+   - Título: **`Registro de estudo`**
+   - Subtítulo: **`Preencha os detalhes para registrar seu tempo e avanço`**
+   - Botão `✕` no canto superior direito para fechar.
+
+2. **Seletor de Data da Sessão**:
+   - Barra segmentada com ícone de calendário + 3 botões rápidos: **`Hoje`** | **`Ontem`** | **`Outro`** (o botão ativo fica preenchido com a cor do tema do Gabarita).
+   - Ao lado direito, input de data (`DD/MM/AAAA` com seletor de calendário nativo/customizado).
+
+3. **Linha 1 — Categoria, Disciplina e Tempo de Estudo (Grid de 3 Colunas)**:
+   - **Campo `Categoria`**: Select/Dropdown com ícone de pasta/tag contendo todas as categorias do app (`Questões`, `Teoria`, `Revisão`, `Simulado`, `Flashcards`, `Lei Seca`, `Resumo`, `Jurisprudência`, `Videoaula`, `Pomodoro`).
+   - **Campo `Disciplina`**: Select/Dropdown com ícone de camadas listando todas as disciplinas cadastradas no concurso ativo.
+   - **Campo `Tempo de estudo`**: Input de tempo com ícone de relógio no formato `HH:MM:SS` (ex.: `01:26:00`), permitindo digitação fácil e validação.
+
+4. **Linha 2 — Tópico e Material (Grid de 2 Colunas: 65% / 35%)**:
+   - **Campo `Tópico`**: Select/Dropdown com ícone de documento listando os tópicos pertencentes à disciplina selecionada (ex.: `2. Plano Distrital de Política para Mulheres (2020–2023).`).
+   - **Campo `Material (opcional)`**: Input de texto com ícone de livro aberto (ex.: `Aula 02`, `PDF 01`, `Questões QConcursos`).
+
+5. **Faixa de Conclusão do Tópico**:
+   - Caixa horizontal destacada (com fundo suave na cor do tema) contendo à esquerda o ícone `?` + texto **`Terminou este tópico?`** e à direita o botão toggle **`✓ Sim, concluí`** (quando ativo, fica preenchido na cor principal do tema e marca o tópico como concluído no Edital Verticalizado ao salvar).
+
+6. **Linha de Checkboxes de Automação**:
+   - `[ ] Programar revisões`: ao marcar e salvar, cria automaticamente os agendamentos de revisão espaçada (24h, 7d, 30d) para este tópico no menu `Revisões`.
+   - `[ ] Contabilizar no planejamento` (com ícone `?` de tooltip explicando que o tempo estudado será abatido das metas do Plano de Estudos / Cronograma Semanal).
+
+7. **Linha de 3 Cards de Métricas Detalhadas (Lado a Lado)**:
+   - **Card 1: `Questões (opcional)`**
+     - Subtítulo: `Acertos / Erros`
+     - Dois inputs numéricos lado a lado: o primeiro para **Acertos** (com texto/borda em tom verde, ex.: `45`) e o segundo para **Erros** (com texto/borda em tom vermelho, ex.: `3`).
+   - **Card 2: `Páginas (opcional)`** (com botão `+` no canto superior direito do card para adicionar mais intervalos se necessário)
+     - Subtítulo: `Início / Fim`
+     - Dois inputs numéricos lado a lado: `Início` (ex.: `1`) e `Fim` (ex.: `46`).
+   - **Card 3: `Videoaulas (opcional)`** (com botão `+` no canto superior direito do card para adicionar mais linhas de vídeo)
+     - Subtítulo: `Título / Início / Fim`
+     - Três inputs lado a lado: `Título` (ex.: `Vídeo 01`), `Início` (`00:00:00`) e `Fim` (`01:12:00`).
+
+8. **Campo de `Comentários (opcional)`**:
+   - Textarea com placeholder `"Adicione observações sobre o seu estudo..."` e contador de caracteres `0/500` no canto inferior direito.
+
+9. **Rodapé de Ações do Modal**:
+   - **À esquerda**: Botão **`🗑 Excluir registro`** (visível quando estiver editando um registro existente; solicita confirmação e, se confirmado, remove o registro e recalcula todas as métricas do app).
+   - **À direita**:
+     - Botão secundário **`Cancelar`** (fecha o modal sem salvar alterações).
+     - Botão primário **`Salvar estudo`** (preenchido na cor do tema ativo; valida os campos, salva no estado global/persistência, sincroniza com `Edital Verticalizado`, `Estatísticas`, `Painel Geral`, `Metas & Desempenho` e `Revisões`, exibe toast de sucesso e fecha o modal).
+
+---
+
+## 5. CHECKLIST DE VERIFICAÇÃO ANTES DE ENTREGAR O CÓDIGO
+
+Antes de finalizar sua resposta, verifique e garanta que:
+- [ ] O menu **`Histórico`** aparece na Sidebar lateral esquerda e funciona perfeitamente nos **5 temas (Verde, Azul, Rosa, Roxo e Laranja)** e nos **2 modos (Claro e Escuro)**.
+- [ ] **Nenhum** menu, botão, rota, banner ilustrado ou plano de fundo existente foi removido, desconfigurado ou quebrado.
+- [ ] Todos os registros existentes ou criados em `Painel Geral`, `Plano de Estudos`, `Edital Verticalizado`, `Revisões`, `Flashcards`, `Simulados` e `Caderno de Erros` aparecem automaticamente na linha do tempo do menu **`Histórico`**.
+- [ ] Passar o mouse sobre uma linha do Histórico exibe o botão de **Lápis (Editar)**, permitindo tanto abrir a **Visão Detalhada da Disciplina** (com o histórico completo daquela matéria + edital verticalizado da matéria) quanto abrir o **Modal "Registro de estudo"** para revisar, editar ou excluir qualquer informação inserida.
+- [ ] Qualquer criação, edição ou exclusão feita no menu **Histórico** recalcula em tempo real os indicadores de horas, questões, páginas, progresso do edital e metas em todo o aplicativo Gabarita.

@@ -31,7 +31,8 @@ import {
   PlanSessionStatus, 
   StudyCycle, 
   CycleBlock,
-  StudyMethod
+  StudyMethod,
+  SessaoEstudo
 } from '../../types';
 import { Card, CardHeader, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
@@ -64,6 +65,7 @@ interface PlanoViewProps {
   concursos: Concurso[];
   disciplinas: Disciplina[];
   assuntos: Assunto[];
+  sessoes?: SessaoEstudo[];
   activeConcursoId?: string;
   studyMethod?: StudyMethod;
   onNavigateTab?: (tab: any) => void;
@@ -92,6 +94,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
   concursos,
   disciplinas,
   assuntos,
+  sessoes = [],
   activeConcursoId,
   studyMethod = 'ciclo',
   onSwitchMethod,
@@ -842,6 +845,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
             plan={effectivePlan}
             disciplinas={activeDisciplinas}
             assuntos={activeAssuntos}
+            sessoes={sessoes}
             concursos={concursos}
             onRescheduleSession={onRescheduleSession}
             onBatchRescheduleOverdue={onBatchRescheduleOverdue}
@@ -850,8 +854,10 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
             onOpenEditSession={handleOpenEditSession}
             onOpenAddSession={handleOpenAddSession}
             onDeleteSession={onDeleteSession}
+            onUpdateSession={onUpdateSession}
             onSwitchMethod={handleSelectMethod}
             onPlanCreated={handleScheduleCreated}
+            onNavigateTab={onNavigateTab}
           />
         </div>
       )}

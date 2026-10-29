@@ -7,7 +7,8 @@ import {
   HelpCircle, 
   UserCircle, 
   CalendarClock, 
-  PlayCircle 
+  PlayCircle,
+  History
 } from 'lucide-react';
 import { NavigationTab, StudyMethod } from '../../types';
 
@@ -24,6 +25,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentTab, onSelectTab })
     { id: 'plano', label: 'Plano', icon: CalendarClock },
     { id: 'estudos', label: 'Edital', icon: BookOpen },
     { id: 'revisoes', label: 'Revisões', icon: Repeat },
+    { id: 'historico', label: 'Histórico', icon: History },
     { id: 'perfil', label: 'Perfil', icon: UserCircle },
   ];
 

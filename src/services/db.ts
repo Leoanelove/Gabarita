@@ -32,6 +32,8 @@ import {
   SimuladoDesempenhoDisciplina,
   SimuladoDisciplinaConfig,
   SimuladoStatus,
+  SimuladoTipoGabarito,
+  SimuladoVariacaoMultiplaEscolha,
   Conquista,
   MarcoEstudo,
   EstatisticasProgressoReal,
@@ -87,89 +89,280 @@ const STORAGE_KEYS = {
   FLASHCARDS: '@gabarita:flashcards',
 };
 
-// Limpeza automática de dados fictícios legados, disciplinas órfãs ou sem concursoId válido
-function checkLegacyCleanup() {
+function getCurrentUserScopeSync(): string {
   try {
-    const rawConcursos = localStorage.getItem(STORAGE_KEYS.CONCURSOS);
+    const stored = localStorage.getItem(STORAGE_KEYS.USER);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const uid = String(parsed?.id || '').trim();
+      const email = String(parsed?.email || '').trim().toLowerCase();
+      if (uid) return uid;
+      if (email) return email;
+    }
+  } catch {}
+  return '';
+}
+
+function getScopedStorageKey(baseKey: string): string {
+  if (baseKey === STORAGE_KEYS.USER) return baseKey;
+  const scope = getCurrentUserScopeSync();
+  if (!scope) return baseKey;
+  return `${baseKey}__${scope}`;
+}
+
+// Limpeza automática de dados fictícios legados, disciplinas órfãs, sessões órfãs ou sem concursoId válido
+function sanitizeOrphanStorageSync(): { removedCount: number } {
+  let removedCount = 0;
+  try {
     const rawUser = localStorage.getItem(STORAGE_KEYS.USER);
+    const rawConcursosGlobal = localStorage.getItem(STORAGE_KEYS.CONCURSOS);
     if (
-      (rawConcursos && rawConcursos.includes('conc_tcu_2026')) ||
+      (rawConcursosGlobal && rawConcursosGlobal.includes('conc_tcu_2026')) ||
       (rawUser && rawUser.includes('conc_tcu_2026'))
     ) {
-      Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+      Object.values(STORAGE_KEYS).forEach(k => {
+        localStorage.removeItem(k);
+        const scoped = getScopedStorageKey(k);
+        if (scoped !== k) localStorage.removeItem(scoped);
+      });
       localStorage.removeItem('gabarita_active_contest');
-      return;
+      return { removedCount: 1 };
     }
 
-    // Regra estrita de isolamento e higienização:
-    // Remove qualquer matéria de exemplo pré-carregada ou órfã que não pertença a um concurso existente
-    const concursos: Concurso[] = rawConcursos ? JSON.parse(rawConcursos) : [];
+    const scope = getCurrentUserScopeSync();
+
+    // Migração segura de chaves globais legadas para chaves escopadas do usuário atual
+    if (scope) {
+      Object.values(STORAGE_KEYS).forEach(baseKey => {
+        if (baseKey === STORAGE_KEYS.USER) return;
+        const scopedKey = `${baseKey}__${scope}`;
+        const existingScoped = localStorage.getItem(scopedKey);
+        const legacyGlobal = localStorage.getItem(baseKey);
+        if (existingScoped === null && legacyGlobal !== null) {
+          try {
+            const parsed = JSON.parse(legacyGlobal);
+            if (Array.isArray(parsed)) {
+              const filteredByUser = parsed.filter((item: any) => {
+                if (!item || typeof item !== 'object') return false;
+                if (item.userId && item.userId !== scope && item.userId !== 'user_demo_01') {
+                  return false;
+                }
+                return true;
+              });
+              localStorage.setItem(scopedKey, JSON.stringify(filteredByUser));
+            } else if (parsed && typeof parsed === 'object') {
+              if (!parsed.userId || parsed.userId === scope || parsed.userId === 'user_demo_01') {
+                localStorage.setItem(scopedKey, JSON.stringify(parsed));
+              }
+            }
+          } catch {}
+        }
+        // Remove a chave global não-escopada para impedir vazamento entre contas
+        if (legacyGlobal !== null) {
+          localStorage.removeItem(baseKey);
+        }
+      });
+    }
+
+    const readKey = <T>(baseKey: string, fallback: T): T => {
+      try {
+        const k = getScopedStorageKey(baseKey);
+        const raw = localStorage.getItem(k);
+        if (!raw) return fallback;
+        return JSON.parse(raw) as T;
+      } catch {
+        return fallback;
+      }
+    };
+
+    const writeKey = <T>(baseKey: string, val: T): void => {
+      try {
+        const k = getScopedStorageKey(baseKey);
+        localStorage.setItem(k, JSON.stringify(val));
+      } catch {}
+    };
+
+    // 1. Concursos válidos do usuário
+    const rawConcursos = readKey<Concurso[]>(STORAGE_KEYS.CONCURSOS, []);
+    const concursos = Array.isArray(rawConcursos)
+      ? rawConcursos.filter(c => {
+          if (!c || !c.id) return false;
+          if (scope && c.userId && c.userId !== scope && c.userId !== 'user_demo_01') return false;
+          return true;
+        })
+      : [];
+    if (Array.isArray(rawConcursos) && concursos.length !== rawConcursos.length) {
+      removedCount += rawConcursos.length - concursos.length;
+      writeKey(STORAGE_KEYS.CONCURSOS, concursos);
+    }
     const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
 
-    const rawDisciplinas = localStorage.getItem(STORAGE_KEYS.DISCIPLINAS);
-    if (rawDisciplinas) {
-      const disciplinas: Disciplina[] = JSON.parse(rawDisciplinas);
-      // Mantém exclusivamente matérias que possuam concursoId válido pertencente à lista de concursos cadastrados
-      const cleanedDisciplinas = disciplinas.filter(d => Boolean(d.concursoId && validConcursoIds.has(d.concursoId)));
-      
-      if (cleanedDisciplinas.length !== disciplinas.length) {
-        localStorage.setItem(STORAGE_KEYS.DISCIPLINAS, JSON.stringify(cleanedDisciplinas));
-        
-        // Remove também assuntos órfãos de disciplinas que foram excluídas
-        const validDiscIds = new Set(cleanedDisciplinas.map(d => d.id));
-        const rawAssuntos = localStorage.getItem(STORAGE_KEYS.ASSUNTOS);
-        if (rawAssuntos) {
-          const assuntos: Assunto[] = JSON.parse(rawAssuntos);
-          const cleanedAssuntos = assuntos.filter(a => validDiscIds.has(a.disciplinaId));
-          localStorage.setItem(STORAGE_KEYS.ASSUNTOS, JSON.stringify(cleanedAssuntos));
-        }
+    // 2. Disciplinas válidas (obrigatoriamente vinculadas a um concurso válido)
+    const rawDisciplinas = readKey<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, []);
+    const disciplinas = Array.isArray(rawDisciplinas)
+      ? rawDisciplinas.filter(d => Boolean(d && d.id && d.concursoId && validConcursoIds.has(d.concursoId)))
+      : [];
+    if (Array.isArray(rawDisciplinas) && disciplinas.length !== rawDisciplinas.length) {
+      removedCount += rawDisciplinas.length - disciplinas.length;
+    }
+    const validDiscIds = new Set(disciplinas.map(d => d.id));
+    const discToConcurso = new Map(disciplinas.map(d => [d.id, d.concursoId]));
+
+    // 3. Assuntos válidos (obrigatoriamente vinculados a uma disciplina válida)
+    const rawAssuntos = readKey<Assunto[]>(STORAGE_KEYS.ASSUNTOS, []);
+    const assuntos = Array.isArray(rawAssuntos)
+      ? rawAssuntos.filter(a => Boolean(a && a.id && a.disciplinaId && validDiscIds.has(a.disciplinaId)))
+      : [];
+    if (Array.isArray(rawAssuntos) && assuntos.length !== rawAssuntos.length) {
+      removedCount += rawAssuntos.length - assuntos.length;
+    }
+    const validAssuntoIds = new Set(assuntos.map(a => a.id));
+
+    // 4. Sessões de estudo válidas (sem órfãos de concursos, disciplinas ou assuntos excluídos)
+    const rawSessoes = readKey<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+    const sessoes = Array.isArray(rawSessoes)
+      ? rawSessoes
+          .filter(s => {
+            if (!s || !s.id || !s.disciplinaId) return false;
+            if (scope && s.userId && s.userId !== scope && s.userId !== 'user_demo_01') return false;
+            if (!validDiscIds.has(s.disciplinaId)) return false;
+            if (s.concursoId && !validConcursoIds.has(s.concursoId)) return false;
+            if (s.assuntoId && !validAssuntoIds.has(s.assuntoId)) return false;
+            return true;
+          })
+          .map(s => ({
+            ...s,
+            concursoId: s.concursoId || discToConcurso.get(s.disciplinaId),
+          }))
+      : [];
+    if (Array.isArray(rawSessoes) && sessoes.length !== rawSessoes.length) {
+      removedCount += rawSessoes.length - sessoes.length;
+      writeKey(STORAGE_KEYS.SESSOES, sessoes);
+    }
+
+    // Recalcular minutos estudados e contagem de tópicos nas disciplinas com base apenas nas sessões e tópicos válidos
+    const recalcDisciplinas = disciplinas.map(d => {
+      const discSess = sessoes.filter(s => s.disciplinaId === d.id);
+      const calcMins = discSess.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+      const discTopics = assuntos.filter(a => a.disciplinaId === d.id);
+      const completedCount = discTopics.filter(a => a.completed || a.status === 'dominado' || a.status === 'revisado').length;
+      return {
+        ...d,
+        totalStudyMinutes: calcMins,
+        topicsCount: discTopics.length,
+        completedTopicsCount: completedCount,
+      };
+    });
+    writeKey(STORAGE_KEYS.DISCIPLINAS, recalcDisciplinas);
+    writeKey(STORAGE_KEYS.ASSUNTOS, assuntos);
+
+    // 5. Revisões válidas
+    const rawRevisoes = readKey<Revisao[]>(STORAGE_KEYS.REVISOES, []);
+    if (Array.isArray(rawRevisoes)) {
+      const cleanRevisoes = rawRevisoes.filter(r => {
+        if (!r || !r.id || !r.disciplinaId) return false;
+        if (scope && r.userId && r.userId !== scope && r.userId !== 'user_demo_01') return false;
+        if (!validDiscIds.has(r.disciplinaId)) return false;
+        if (r.assuntoId && !validAssuntoIds.has(r.assuntoId)) return false;
+        return true;
+      });
+      if (cleanRevisoes.length !== rawRevisoes.length) {
+        removedCount += rawRevisoes.length - cleanRevisoes.length;
+        writeKey(STORAGE_KEYS.REVISOES, cleanRevisoes);
       }
     }
 
-    // Limpeza de Flashcards e Baralhos fictícios de demonstração
+    // 6. Blocos de questões válidos
+    const rawBlocos = readKey<RegistroBlocoQuestoes[]>(STORAGE_KEYS.BLOCOS_QUESTOES, []);
+    if (Array.isArray(rawBlocos)) {
+      const cleanBlocos = rawBlocos.filter(b => {
+        if (!b || !b.id || !b.disciplinaId) return false;
+        if (scope && b.userId && b.userId !== scope && b.userId !== 'user_demo_01') return false;
+        if (!validDiscIds.has(b.disciplinaId)) return false;
+        if (b.assuntoId && !validAssuntoIds.has(b.assuntoId)) return false;
+        return true;
+      });
+      if (cleanBlocos.length !== rawBlocos.length) {
+        removedCount += rawBlocos.length - cleanBlocos.length;
+        writeKey(STORAGE_KEYS.BLOCOS_QUESTOES, cleanBlocos);
+      }
+    }
+
+    // 7. Caderno de erros válido
+    const rawErros = readKey<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, []);
+    if (Array.isArray(rawErros)) {
+      const cleanErros = rawErros.filter(e => {
+        if (!e || !e.id || !e.disciplinaId) return false;
+        if (scope && e.userId && e.userId !== scope && e.userId !== 'user_demo_01') return false;
+        if (!validDiscIds.has(e.disciplinaId)) return false;
+        if (e.assuntoId && !validAssuntoIds.has(e.assuntoId)) return false;
+        return true;
+      });
+      if (cleanErros.length !== rawErros.length) {
+        removedCount += rawErros.length - cleanErros.length;
+        writeKey(STORAGE_KEYS.CADERNO_ERROS, cleanErros);
+      }
+    }
+
+    // 8. Simulados válidos
+    const rawSimulados = readKey<Simulado[]>(STORAGE_KEYS.SIMULADOS, []);
+    if (Array.isArray(rawSimulados)) {
+      const cleanSimulados = rawSimulados.filter(sim => {
+        if (!sim || !sim.id) return false;
+        if (validConcursoIds.size === 0) return false;
+        if (scope && sim.userId && sim.userId !== scope && sim.userId !== 'user_demo_01') return false;
+        if (sim.concursoId && !validConcursoIds.has(sim.concursoId)) return false;
+        return true;
+      });
+      if (cleanSimulados.length !== rawSimulados.length) {
+        removedCount += rawSimulados.length - cleanSimulados.length;
+        writeKey(STORAGE_KEYS.SIMULADOS, cleanSimulados);
+      }
+    }
+
+    // 9. Provas válidas
+    const rawProvas = readKey<Prova[]>(STORAGE_KEYS.PROVAS, []);
+    if (Array.isArray(rawProvas)) {
+      const cleanProvas = rawProvas.filter(p => {
+        if (!p || !p.id) return false;
+        if (p.id === 'prova_tcego_2026' || p.id === 'prova_pf_2026' || p.id === 'prova_inss_2025') return false;
+        if (validConcursoIds.size === 0) return false;
+        if (p.concursoId && !validConcursoIds.has(p.concursoId)) return false;
+        return true;
+      });
+      if (cleanProvas.length !== rawProvas.length) {
+        removedCount += rawProvas.length - cleanProvas.length;
+        writeKey(STORAGE_KEYS.PROVAS, cleanProvas);
+      }
+    }
+
+    // 10. Limpeza de Flashcards e Baralhos fictícios ou órfãos
     const mockCardIds = new Set(['card-1', 'card-2', 'card-3', 'card-4']);
     const mockDeckIds = new Set(['deck-1', 'deck-2', 'deck-3']);
-    const rawFlashcards = localStorage.getItem('@gabarita:flashcards');
-    if (rawFlashcards) {
-      try {
-        const cards = JSON.parse(rawFlashcards);
-        if (Array.isArray(cards)) {
-          const cleaned = cards.filter((c: any) => !mockCardIds.has(c.id));
-          if (cleaned.length !== cards.length) {
-            localStorage.setItem('@gabarita:flashcards', JSON.stringify(cleaned));
-          }
-        }
-      } catch {
-        localStorage.removeItem('@gabarita:flashcards');
+    const rawDecks = readKey<any[]>(STORAGE_KEYS.DECKS, []);
+    if (Array.isArray(rawDecks)) {
+      const cleanDecks = rawDecks.filter(d => d && !mockDeckIds.has(d.id) && (!d.concursoId || validConcursoIds.has(d.concursoId)));
+      if (cleanDecks.length !== rawDecks.length) {
+        removedCount += rawDecks.length - cleanDecks.length;
+        writeKey(STORAGE_KEYS.DECKS, cleanDecks);
       }
     }
-    const rawDecks = localStorage.getItem('@gabarita:decks');
-    if (rawDecks) {
-      try {
-        const decks = JSON.parse(rawDecks);
-        if (Array.isArray(decks)) {
-          const cleaned = decks.filter((d: any) => !mockDeckIds.has(d.id));
-          if (cleaned.length !== decks.length) {
-            localStorage.setItem('@gabarita:decks', JSON.stringify(cleaned));
-          }
-        }
-      } catch {
-        localStorage.removeItem('@gabarita:decks');
+    const rawCards = readKey<any[]>(STORAGE_KEYS.FLASHCARDS, []);
+    if (Array.isArray(rawCards)) {
+      const cleanCards = rawCards.filter(c => c && !mockCardIds.has(c.id));
+      if (cleanCards.length !== rawCards.length) {
+        removedCount += rawCards.length - cleanCards.length;
+        writeKey(STORAGE_KEYS.FLASHCARDS, cleanCards);
       }
     }
-    // Limpeza de provas de demonstração antigas
-    const rawProvas = localStorage.getItem(STORAGE_KEYS.PROVAS);
-    if (rawProvas && (rawProvas.includes('prova_tcego_2026') || rawProvas.includes('prova_pf_2026') || rawProvas.includes('prova_inss_2025'))) {
-      localStorage.removeItem(STORAGE_KEYS.PROVAS);
-      localStorage.removeItem('@gabarita:provas_seeded_v2');
-    }
-    // Remove qualquer resquício de sessão mock legada
+
     localStorage.removeItem('gabarita_auth_session_v2');
   } catch (err) {
-    console.warn('Gabarita: Falha na limpeza de dados legados:', err);
+    console.warn('Gabarita: Falha na sanitização automática de dados órfãos:', err);
   }
+  return { removedCount };
 }
-checkLegacyCleanup();
+sanitizeOrphanStorageSync();
 
 async function getCurrentUserId(): Promise<string> {
   try {
@@ -189,10 +382,13 @@ async function getCurrentUserId(): Promise<string> {
 }
 
 function mapConcursoFromDb(row: any): Concurso {
-  const organ = (row.organ || row.orgao || row.nome || '').trim();
+  const organ = (row.organ || row.orgao || row.nome || row.nomeOrgao || '').trim();
+  const role = row.role || row.cargo || '';
   const title = (row.title && row.title.length === 1 && organ.length > 1)
-    ? (row.role ? `${organ} - ${row.role}` : organ)
+    ? (role ? `${organ} - ${role}` : organ)
     : (row.title || row.titulo || organ);
+  const isArquivado = row.status === 'arquivado' || Boolean(row.is_arquivado) || Boolean(row.isArquivado);
+  const isActive = !isArquivado && Boolean(row.active);
   return {
     id: row.id,
     userId: row.user_id,
@@ -201,21 +397,30 @@ function mapConcursoFromDb(row: any): Concurso {
     organ: organ || row.organ,
     orgao: organ || row.orgao,
     nome: organ || row.nome,
-    role: row.role || '',
+    nomeOrgao: organ,
+    cargo: role,
+    role,
     banca: row.banca || 'FGV',
     sphere: row.sphere || 'federal',
+    esfera: row.sphere || 'federal',
     remuneration: Number(row.remuneration || 0),
     vacantPositions: Number(row.vacant_positions || 0),
     status: row.status || 'autorizado',
+    isArquivado,
+    arquivadoEm: row.arquivado_em || row.arquivadoEm || undefined,
+    previousStatus: row.previous_status || row.previousStatus || undefined,
     examDate: row.exam_date || undefined,
+    dataProva: row.exam_date || undefined,
     registrationStartDate: row.registration_start_date || undefined,
     registrationEndDate: row.registration_end_date || undefined,
     editalUrl: row.edital_url || undefined,
-    active: Boolean(row.active),
-    isAtivo: Boolean(row.active),
-    is_ativo: Boolean(row.active),
+    active: isActive,
+    isAtivo: isActive,
+    is_ativo: isActive,
+    isFocoAtivo: isActive,
     notes: row.notes || undefined,
     createdAt: row.created_at || new Date().toISOString(),
+    criadoEm: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
   };
 }
@@ -283,22 +488,77 @@ function mapSessaoFromDb(row: any): SessaoEstudo {
   return {
     id: row.id,
     userId: row.user_id,
+    concursoId: row.concurso_id || undefined,
     disciplinaId: row.disciplina_id,
     assuntoId: row.assunto_id || undefined,
     disciplinaName: row.disciplina_name,
     assuntoName: row.assunto_name,
     durationMinutes: Number(row.duration_minutes),
+    durationSeconds: row.duration_seconds !== undefined && row.duration_seconds !== null ? Number(row.duration_seconds) : undefined,
     plannedMinutes: row.planned_minutes ? Number(row.planned_minutes) : undefined,
     type: row.type || 'teoria',
+    origem: row.origem || undefined,
+    material: row.material || undefined,
     questionsAttempted: row.questions_attempted !== null ? Number(row.questions_attempted) : undefined,
     questionsCorrect: row.questions_correct !== null ? Number(row.questions_correct) : undefined,
     accuracyRate: row.accuracy_rate !== null ? Number(row.accuracy_rate) : undefined,
     notes: row.notes || undefined,
     teoriaFinalizada: Boolean(row.teoria_finalizada),
+    programarRevisoes: row.programar_revisoes !== undefined ? Boolean(row.programar_revisoes) : undefined,
+    contabilizarPlanejamento: row.contabilizar_planejamento !== undefined ? Boolean(row.contabilizar_planejamento) : undefined,
     pageIntervals: Array.isArray(row.page_intervals) ? row.page_intervals : undefined,
     videoaulas: Array.isArray(row.videoaulas) ? row.videoaulas : undefined,
     completedAt: row.completed_at || new Date().toISOString(),
     createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || undefined,
+  };
+}
+
+function formatStudyCategoryLabel(type?: string): string | undefined {
+  if (!type) return undefined;
+  const map: Record<string, string> = {
+    teoria: 'Teoria',
+    questoes: 'Questões',
+    revisao: 'Revisão',
+    lei_seca: 'Lei Seca',
+    resumo: 'Resumo',
+    jurisprudencia: 'Jurisprudência',
+    simulado: 'Simulado',
+    pomodoro: 'Pomodoro',
+  };
+  return map[type.toLowerCase()] || (type.charAt(0).toUpperCase() + type.slice(1));
+}
+
+function extractOriginalSessionMeta(s?: SessaoEstudo): Partial<Revisao> {
+  if (!s) return {};
+  const studyDate = s.completedAt ? (s.completedAt.includes('T') ? s.completedAt.split('T')[0] : s.completedAt) : undefined;
+  let pagesStr: string | undefined = undefined;
+  if (Array.isArray(s.pageIntervals) && s.pageIntervals.length > 0) {
+    const validIntervals = s.pageIntervals
+      .filter(p => (p.inicio !== '' && p.inicio !== null && p.inicio !== undefined) || (p.fim !== '' && p.fim !== null && p.fim !== undefined))
+      .map(p => {
+        const ini = p.inicio !== '' && p.inicio !== null && p.inicio !== undefined ? p.inicio : 1;
+        const fim = p.fim !== '' && p.fim !== null && p.fim !== undefined ? p.fim : ini;
+        return `${ini} ~ ${fim}`;
+      });
+    if (validIntervals.length > 0) {
+      pagesStr = `p. ${validIntervals.join(', ')}`;
+    }
+  }
+  const matStr = s.material?.trim() || (Array.isArray(s.videoaulas) && s.videoaulas[0]?.titulo ? s.videoaulas[0].titulo : undefined);
+  const qAtt = s.questionsAttempted && s.questionsAttempted > 0 ? s.questionsAttempted : undefined;
+  const qCorr = qAtt !== undefined ? (s.questionsCorrect ?? 0) : undefined;
+  const acc = qAtt !== undefined && qCorr !== undefined ? (s.accuracyRate ?? Math.round((qCorr / qAtt) * 100)) : undefined;
+
+  return {
+    originalStudyDate: studyDate,
+    originalCategory: formatStudyCategoryLabel(s.type),
+    originalDurationMinutes: s.durationMinutes > 0 ? s.durationMinutes : undefined,
+    originalQuestionsAttempted: qAtt,
+    originalQuestionsCorrect: qCorr,
+    originalAccuracyRate: acc,
+    originalPages: pagesStr,
+    originalMaterial: matStr,
   };
 }
 
@@ -308,8 +568,8 @@ function mapRevisaoFromDb(row: any): Revisao {
     userId: row.user_id,
     disciplinaId: row.disciplina_id,
     assuntoId: row.assunto_id || undefined,
-    disciplinaName: row.disciplina_name,
-    assuntoName: row.assunto_name,
+    disciplinaName: row.disciplina_name || 'Geral',
+    assuntoName: row.assunto_name || 'Revisão Geral',
     method: row.method || 'intervalada',
     stage: row.stage ? Number(row.stage) : 1,
     totalStages: row.total_stages ? Number(row.total_stages) : 5,
@@ -318,14 +578,22 @@ function mapRevisaoFromDb(row: any): Revisao {
     completedAt: row.completed_at || undefined,
     status: row.status || 'pendente',
     rating: row.rating || undefined,
-    accuracyRate: row.accuracy_rate !== null ? Number(row.accuracy_rate) : undefined,
-    questionsAttempted: row.questions_attempted !== null ? Number(row.questions_attempted) : undefined,
-    questionsCorrect: row.questions_correct !== null ? Number(row.questions_correct) : undefined,
+    accuracyRate: row.accuracy_rate !== null && row.accuracy_rate !== undefined ? Number(row.accuracy_rate) : undefined,
+    questionsAttempted: row.questions_attempted !== null && row.questions_attempted !== undefined ? Number(row.questions_attempted) : undefined,
+    questionsCorrect: row.questions_correct !== null && row.questions_correct !== undefined ? Number(row.questions_correct) : undefined,
     notes: row.notes || undefined,
     isAutomatic: Boolean(row.is_automatic),
     nextRevisionId: row.next_revision_id || undefined,
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || undefined,
+    originalStudyDate: row.original_study_date || undefined,
+    originalCategory: row.original_category || undefined,
+    originalDurationMinutes: row.original_duration_minutes ? Number(row.original_duration_minutes) : undefined,
+    originalQuestionsAttempted: row.original_questions_attempted ? Number(row.original_questions_attempted) : undefined,
+    originalQuestionsCorrect: row.original_questions_correct !== null && row.original_questions_correct !== undefined ? Number(row.original_questions_correct) : undefined,
+    originalAccuracyRate: row.original_accuracy_rate !== null && row.original_accuracy_rate !== undefined ? Number(row.original_accuracy_rate) : undefined,
+    originalPages: row.original_pages || undefined,
+    originalMaterial: row.original_material || undefined,
   };
 }
 
@@ -492,12 +760,36 @@ function mapStudyCycleFromDb(row: any): StudyCycle {
 
 function loadStored<T>(key: string, defaultValue: T): T {
   try {
-    const item = localStorage.getItem(key);
-    if (!item) {
-      localStorage.setItem(key, JSON.stringify(defaultValue));
-      return defaultValue;
+    const scopedKey = getScopedStorageKey(key);
+    const item = localStorage.getItem(scopedKey);
+    if (item !== null) {
+      return JSON.parse(item) as T;
     }
-    return JSON.parse(item) as T;
+    // Se ainda não existir na chave escopada, verifica migração única da chave legada
+    if (scopedKey !== key) {
+      const legacyItem = localStorage.getItem(key);
+      if (legacyItem !== null) {
+        const parsed = JSON.parse(legacyItem);
+        const scope = getCurrentUserScopeSync();
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((el: any) => {
+            if (!el || typeof el !== 'object') return false;
+            if (scope && el.userId && el.userId !== scope && el.userId !== 'user_demo_01') {
+              return false;
+            }
+            return true;
+          });
+          localStorage.setItem(scopedKey, JSON.stringify(filtered));
+          localStorage.removeItem(key);
+          return filtered as unknown as T;
+        }
+        localStorage.setItem(scopedKey, JSON.stringify(parsed));
+        localStorage.removeItem(key);
+        return parsed as T;
+      }
+    }
+    localStorage.setItem(scopedKey, JSON.stringify(defaultValue));
+    return defaultValue;
   } catch {
     return defaultValue;
   }
@@ -505,13 +797,301 @@ function loadStored<T>(key: string, defaultValue: T): T {
 
 function saveStored<T>(key: string, data: T): void {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    const scopedKey = getScopedStorageKey(key);
+    localStorage.setItem(scopedKey, JSON.stringify(data));
+    if (scopedKey !== key) {
+      localStorage.removeItem(key);
+    }
   } catch (err) {
     console.warn(`Gabarita: Erro ao persistir dados locais para a chave ${key}`, err);
   }
 }
 
 export class DatabaseService {
+  // --- SELF-HEALING & ORPHAN DATA SANITIZATION ---
+  static async sanitizeOrphanData(): Promise<{ removedCount: number }> {
+    const syncResult = sanitizeOrphanStorageSync();
+    let totalRemoved = syncResult.removedCount;
+
+    try {
+      const uid = await getCurrentUserId();
+      const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, []);
+      const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+      const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, []);
+      const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+      const assuntos = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, []);
+      const validAssuntoIds = new Set(assuntos.map(a => a.id).filter(Boolean));
+
+      if (uid && uid !== 'user_demo_01') {
+        // Verifica e remove disciplinas órfãs no Supabase
+        const { data: remoteDiscs } = await supabase
+          .from('disciplinas')
+          .select('id, concurso_id')
+          .eq('user_id', uid);
+        if (Array.isArray(remoteDiscs)) {
+          const orphanDiscIds = remoteDiscs
+            .filter(d => !d.concurso_id || !validConcursoIds.has(d.concurso_id))
+            .map(d => d.id);
+          if (orphanDiscIds.length > 0) {
+            totalRemoved += orphanDiscIds.length;
+            await supabase.from('disciplinas').delete().in('id', orphanDiscIds);
+          }
+        }
+
+        // Verifica e remove assuntos órfãos no Supabase
+        const { data: remoteAssuntos } = await supabase
+          .from('assuntos')
+          .select('id, disciplina_id')
+          .eq('user_id', uid);
+        if (Array.isArray(remoteAssuntos)) {
+          const orphanAssIds = remoteAssuntos
+            .filter(a => !a.disciplina_id || !validDiscIds.has(a.disciplina_id))
+            .map(a => a.id);
+          if (orphanAssIds.length > 0) {
+            totalRemoved += orphanAssIds.length;
+            await supabase.from('assuntos').delete().in('id', orphanAssIds);
+          }
+        }
+
+        // Verifica e remove sessões órfãs no Supabase
+        const { data: remoteSessoes } = await supabase
+          .from('sessoes_estudo')
+          .select('id, disciplina_id, assunto_id')
+          .eq('user_id', uid);
+        if (Array.isArray(remoteSessoes)) {
+          const orphanSessIds = remoteSessoes
+            .filter(s => !s.disciplina_id || !validDiscIds.has(s.disciplina_id) || (s.assunto_id && !validAssuntoIds.has(s.assunto_id)))
+            .map(s => s.id);
+          if (orphanSessIds.length > 0) {
+            totalRemoved += orphanSessIds.length;
+            await supabase.from('sessoes_estudo').delete().in('id', orphanSessIds);
+          }
+        }
+
+        // Verifica e remove revisões órfãs no Supabase
+        const { data: remoteRevisoes } = await supabase
+          .from('revisoes')
+          .select('id, disciplina_id, assunto_id')
+          .eq('user_id', uid);
+        if (Array.isArray(remoteRevisoes)) {
+          const orphanRevIds = remoteRevisoes
+            .filter(r => !r.disciplina_id || !validDiscIds.has(r.disciplina_id) || (r.assunto_id && !validAssuntoIds.has(r.assunto_id)))
+            .map(r => r.id);
+          if (orphanRevIds.length > 0) {
+            totalRemoved += orphanRevIds.length;
+            await supabase.from('revisoes').delete().in('id', orphanRevIds);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Gabarita: Aviso ao limpar registros órfãos na nuvem:', err);
+    }
+
+    await this.purgeDuplicateGhostSessions();
+    await this.syncActiveContestStorage();
+    return { removedCount: totalRemoved };
+  }
+
+  /**
+   * Purgar sessões duplicadas fantasmas geradas indevidamente pelo avanço de ciclo/planner.
+   * Remove registros vazios de 'Teoria' criados no mesmo dia com a mesma duração do estudo real,
+   * recalcula o total de horas das disciplinas e limpa o Supabase.
+   */
+  static async purgeDuplicateGhostSessions(): Promise<{ removedCount: number; purgedIds: string[] }> {
+    const sessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+    if (!sessoes || sessoes.length === 0) {
+      return { removedCount: 0, purgedIds: [] };
+    }
+
+    const getDateKey = (dateStr?: string) => {
+      if (!dateStr) return '';
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr).slice(0, 10);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      } catch {
+        return String(dateStr).slice(0, 10);
+      }
+    };
+
+    const ghostIdSet = new Set<string>();
+
+    // 1. Identificar registros com anotações automáticas do ciclo
+    for (const s of sessoes) {
+      const note = s.notes || '';
+      if (
+        note.startsWith('Bloco do Ciclo concluído:') ||
+        note.startsWith('Tempo de estudo no Ciclo:') ||
+        note.includes('Bloco do Ciclo concluído') ||
+        note.includes('Tempo de estudo no Ciclo')
+      ) {
+        ghostIdSet.add(s.id);
+      }
+    }
+
+    // 2. Agrupar por data para detectar duplicatas com a mesma duração
+    const sessionsByDate: Record<string, SessaoEstudo[]> = {};
+    for (const s of sessoes) {
+      const dKey = getDateKey(s.completedAt || s.createdAt);
+      if (!sessionsByDate[dKey]) sessionsByDate[dKey] = [];
+      sessionsByDate[dKey].push(s);
+    }
+
+    for (const [_dateKey, daySessions] of Object.entries(sessionsByDate)) {
+      const byDuration: Record<number, SessaoEstudo[]> = {};
+      for (const s of daySessions) {
+        const dur = s.durationMinutes || 0;
+        if (!byDuration[dur]) byDuration[dur] = [];
+        byDuration[dur].push(s);
+      }
+
+      for (const [_durStr, group] of Object.entries(byDuration)) {
+        if (group.length > 1) {
+          // Filtrar sessões legítimas que possuem questões, páginas, vídeos ou tipo específico
+          const legitimate = group.filter(s => {
+            const hasQuestions = typeof s.questionsAttempted === 'number' && s.questionsAttempted > 0;
+            const hasPages = Array.isArray(s.pageIntervals) && s.pageIntervals.length > 0;
+            const hasVideos = Array.isArray(s.videoaulas) && s.videoaulas.length > 0;
+            const isNonTeoria = s.type !== 'teoria';
+            const hasUserNotes = s.notes && !s.notes.includes('Bloco do Ciclo') && !s.notes.includes('Tempo de estudo no Ciclo') && s.notes.trim().length > 0;
+            return hasQuestions || hasPages || hasVideos || (hasUserNotes && isNonTeoria) || isNonTeoria;
+          });
+
+          // Filtrar candidatas a fantasma: Teoria, sem questões, sem páginas, sem vídeos
+          const candidatesGhost = group.filter(s => {
+            const noQuestions = !s.questionsAttempted || s.questionsAttempted === 0;
+            const noPages = !s.pageIntervals || s.pageIntervals.length === 0;
+            const noVideos = !s.videoaulas || s.videoaulas.length === 0;
+            const isTeoria = s.type === 'teoria';
+            return isTeoria && noQuestions && noPages && noVideos;
+          });
+
+          if (legitimate.length > 0 && candidatesGhost.length > 0) {
+            for (const ghost of candidatesGhost) {
+              if (!legitimate.some(l => l.id === ghost.id)) {
+                ghostIdSet.add(ghost.id);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (ghostIdSet.size === 0) {
+      return { removedCount: 0, purgedIds: [] };
+    }
+
+    const remainingSessions = sessoes.filter(s => !ghostIdSet.has(s.id));
+    const removedCount = sessoes.length - remainingSessions.length;
+    const purgedIds = Array.from(ghostIdSet);
+
+    // Salvar sessões higienizadas no localStorage
+    saveStored(STORAGE_KEYS.SESSOES, remainingSessions);
+
+    // Remover também do Supabase caso exista conexão
+    try {
+      const uid = await getCurrentUserId();
+      if (uid && purgedIds.length > 0) {
+        await supabase.from('sessoes_estudo').delete().in('id', purgedIds);
+      }
+    } catch (e) {
+      console.warn('Gabarita: Erro ao purgar sessões duplicadas no Supabase:', e);
+    }
+
+    // Recalcular totalStudyMinutes nas disciplinas
+    try {
+      const disciplinas = await this.getDisciplinas();
+      const discMapMinutes: Record<string, number> = {};
+      for (const s of remainingSessions) {
+        if (s.disciplinaId) {
+          discMapMinutes[s.disciplinaId] = (discMapMinutes[s.disciplinaId] || 0) + (s.durationMinutes || 0);
+        }
+      }
+
+      const updatedDiscs = disciplinas.map(d => ({
+        ...d,
+        totalStudyMinutes: discMapMinutes[d.id] || 0,
+      }));
+      saveStored(STORAGE_KEYS.DISCIPLINAS, updatedDiscs);
+    } catch (e) {
+      console.warn('Gabarita: Erro ao recalcular totalStudyMinutes após purga:', e);
+    }
+
+    console.info(`[Gabarita] Purga concluída: ${removedCount} sessões fantasmas duplicadas removidas.`);
+    return { removedCount, purgedIds };
+  }
+
+  static async resetConcursoHistory(concursoId: string): Promise<{ removedCount: number }> {
+    if (!concursoId) return { removedCount: 0 };
+    const disciplinas = await this.getDisciplinas();
+    const targetDiscIds = new Set(disciplinas.filter(d => d.concursoId === concursoId).map(d => d.id));
+    const assuntos = await this.getAssuntos();
+    const targetAssuntoIds = new Set(assuntos.filter(a => targetDiscIds.has(a.disciplinaId)).map(a => a.id));
+
+    const sessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+    const sessoesToDelete = sessoes.filter(
+      s => s.concursoId === concursoId || targetDiscIds.has(s.disciplinaId) || (s.assuntoId && targetAssuntoIds.has(s.assuntoId))
+    );
+    const remainingSessoes = sessoes.filter(
+      s => s.concursoId !== concursoId && !targetDiscIds.has(s.disciplinaId) && (!s.assuntoId || !targetAssuntoIds.has(s.assuntoId))
+    );
+    saveStored(STORAGE_KEYS.SESSOES, remainingSessoes);
+
+    const revisoes = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, []);
+    const revisoesToDelete = revisoes.filter(
+      r => targetDiscIds.has(r.disciplinaId) || (r.assuntoId && targetAssuntoIds.has(r.assuntoId))
+    );
+    const remainingRevisoes = revisoes.filter(
+      r => !targetDiscIds.has(r.disciplinaId) && (!r.assuntoId || !targetAssuntoIds.has(r.assuntoId))
+    );
+    saveStored(STORAGE_KEYS.REVISOES, remainingRevisoes);
+
+    // Zerar tempo de estudo acumulado nas disciplinas deste concurso
+    const updatedDisciplinas = disciplinas.map(d => {
+      if (d.concursoId === concursoId) {
+        this.updateDisciplina(d.id, { totalStudyMinutes: 0 });
+        return { ...d, totalStudyMinutes: 0 };
+      }
+      return d;
+    });
+    saveStored(STORAGE_KEYS.DISCIPLINAS, updatedDisciplinas);
+
+    // Zerar contadores de questões e último estudo nos tópicos deste concurso
+    const updatedAssuntos = assuntos.map(a => {
+      if (targetDiscIds.has(a.disciplinaId)) {
+        return {
+          ...a,
+          totalQuestionsSolved: 0,
+          correctQuestionsSolved: 0,
+          accuracyRate: 0,
+          lastStudiedAt: undefined,
+        };
+      }
+      return a;
+    });
+    saveStored(STORAGE_KEYS.ASSUNTOS, updatedAssuntos);
+
+    // Remover sessões e revisões do Supabase
+    try {
+      const sessIds = sessoesToDelete.map(s => s.id);
+      if (sessIds.length > 0) {
+        await supabase.from('sessoes_estudo').delete().in('id', sessIds);
+      }
+      const revIds = revisoesToDelete.map(r => r.id);
+      if (revIds.length > 0) {
+        await supabase.from('revisoes').delete().in('id', revIds);
+      }
+    } catch (err) {
+      console.warn('Gabarita: Aviso ao resetar histórico no Supabase:', err);
+    }
+
+    await this.syncActiveContestStorage();
+    return { removedCount: sessoesToDelete.length + revisoesToDelete.length };
+  }
+
   // --- USER PROFILE & DATA ISOLATION ---
   static async getUserProfile(userId?: string): Promise<UserProfile> {
     const current = loadStored<UserProfile>(STORAGE_KEYS.USER, INITIAL_USER);
@@ -645,20 +1225,28 @@ export class DatabaseService {
   static async getConcursos(): Promise<Concurso[]> {
     const rawStored = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
     try {
-      const { data, error } = await supabase
+      const uid = await getCurrentUserId();
+      let query = supabase
         .from('concursos')
         .select('*')
         .order('created_at', { ascending: false });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
+      const { data, error } = await query;
 
-      if (!error && Array.isArray(data) && data.length > 0) {
+      if (!error && Array.isArray(data)) {
         const remoteList = data.map(mapConcursoFromDb);
         const remoteIds = new Set(remoteList.map(r => String(r.id)));
-        const unsynced = rawStored.filter(item => !remoteIds.has(String(item.id)));
+        const unsynced = rawStored.filter(
+          item => !remoteIds.has(String(item.id)) && (!uid || !item.userId || item.userId === uid)
+        );
         const merged = [...remoteList, ...unsynced];
 
         let foundActive = false;
         const normalized = merged.map(c => {
-          const isCand = Boolean(c.active || c.isAtivo || c.is_ativo);
+          const isArchived = c.status === 'arquivado' || Boolean(c.isArquivado);
+          const isCand = !isArchived && Boolean(c.active || c.isAtivo || c.is_ativo || c.isFocoAtivo);
           const isActive = isCand && !foundActive;
           if (isActive) foundActive = true;
           return {
@@ -666,6 +1254,9 @@ export class DatabaseService {
             active: isActive,
             isAtivo: isActive,
             is_ativo: isActive,
+            isFocoAtivo: isActive,
+            isArquivado: isArchived,
+            status: isArchived ? ('arquivado' as const) : (c.status === 'arquivado' ? 'previsto' : c.status),
           };
         });
         saveStored(STORAGE_KEYS.CONCURSOS, normalized);
@@ -677,11 +1268,13 @@ export class DatabaseService {
 
     let foundActive = false;
     return rawStored.map(c => {
-      const organ = (c.organ || c.orgao || c.nome || '').trim();
+      const organ = (c.organ || c.orgao || c.nome || c.nomeOrgao || '').trim();
+      const role = c.role || c.cargo || '';
       const title = (c.title && c.title.length === 1 && organ.length > 1)
-        ? (c.role ? `${organ} - ${c.role}` : organ)
+        ? (role ? `${organ} - ${role}` : organ)
         : (c.title || c.titulo || organ);
-      const isCandidateActive = Boolean(c.active || c.isAtivo || c.is_ativo);
+      const isArchived = c.status === 'arquivado' || Boolean(c.isArquivado);
+      const isCandidateActive = !isArchived && Boolean(c.active || c.isAtivo || c.is_ativo || c.isFocoAtivo);
       const isActive = isCandidateActive && !foundActive;
       if (isActive) foundActive = true;
       return {
@@ -689,9 +1282,15 @@ export class DatabaseService {
         active: isActive,
         isAtivo: isActive,
         is_ativo: isActive,
+        isFocoAtivo: isActive,
+        isArquivado: isArchived,
+        status: isArchived ? ('arquivado' as const) : (c.status === 'arquivado' ? 'previsto' : c.status),
         organ: organ || c.organ,
         orgao: organ || c.orgao,
         nome: organ || c.nome,
+        nomeOrgao: organ,
+        cargo: role,
+        role,
         title: title || c.title,
         titulo: title || c.titulo,
       };
@@ -953,26 +1552,180 @@ export class DatabaseService {
 
   static async deleteConcurso(id: string): Promise<Concurso[]> {
     const list = await this.getConcursos();
-    const updatedList = list.filter(c => c.id !== id);
+    const deletedWasActive = list.some(c => c.id === id && (c.active || c.isAtivo));
+    let updatedList = list.filter(c => c.id !== id);
+
+    // Se o concurso excluído era o ativo e ainda restam concursos, ativa automaticamente o próximo disponível
+    if (deletedWasActive && updatedList.length > 0) {
+      updatedList = updatedList.map((c, idx) => ({
+        ...c,
+        active: idx === 0,
+        isAtivo: idx === 0,
+        is_ativo: idx === 0,
+      }));
+    }
     saveStored(STORAGE_KEYS.CONCURSOS, updatedList);
 
-    supabase.from('concursos').delete().eq('id', id).then(({ error }) => {
-      if (error) console.warn('Gabarita: Erro ao remover concurso no Supabase:', error.message);
-    });
-
-    const provas = await this.getProvas();
-    const updatedProvas = provas.filter(p => p.concursoId !== id);
-    saveStored(STORAGE_KEYS.PROVAS, updatedProvas);
-
-    // Limpeza estrita em cascata: remove todas as disciplinas e tópicos associados a este concurso
-    const disciplinas = await this.getDisciplinas();
+    // 1. Identificar todas as disciplinas e assuntos vinculados a este concurso
+    const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, []);
     const discIdsToDelete = new Set(disciplinas.filter(d => d.concursoId === id).map(d => d.id));
     const updatedDisciplinas = disciplinas.filter(d => d.concursoId !== id);
     saveStored(STORAGE_KEYS.DISCIPLINAS, updatedDisciplinas);
 
-    const assuntos = await this.getAssuntos();
+    const assuntos = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, []);
+    const assuntoIdsToDelete = new Set(
+      assuntos.filter(a => discIdsToDelete.has(a.disciplinaId)).map(a => a.id)
+    );
     const updatedAssuntos = assuntos.filter(a => !discIdsToDelete.has(a.disciplinaId));
     saveStored(STORAGE_KEYS.ASSUNTOS, updatedAssuntos);
+
+    // 2. Excluir em cascata todas as sessões de estudo (Histórico) vinculadas ao concurso, suas disciplinas ou tópicos
+    const sessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+    const sessIdsToDelete = sessoes
+      .filter(
+        s =>
+          s.concursoId === id ||
+          discIdsToDelete.has(s.disciplinaId) ||
+          (s.assuntoId && assuntoIdsToDelete.has(s.assuntoId))
+      )
+      .map(s => s.id);
+    const updatedSessoes = sessoes.filter(
+      s =>
+        s.concursoId !== id &&
+        !discIdsToDelete.has(s.disciplinaId) &&
+        (!s.assuntoId || !assuntoIdsToDelete.has(s.assuntoId))
+    );
+    saveStored(STORAGE_KEYS.SESSOES, updatedSessoes);
+
+    // 3. Excluir em cascata todas as revisões vinculadas às disciplinas/tópicos do concurso
+    const revisoes = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, []);
+    const revIdsToDelete = revisoes
+      .filter(
+        r =>
+          discIdsToDelete.has(r.disciplinaId) ||
+          (r.assuntoId && assuntoIdsToDelete.has(r.assuntoId))
+      )
+      .map(r => r.id);
+    const updatedRevisoes = revisoes.filter(
+      r =>
+        !discIdsToDelete.has(r.disciplinaId) &&
+        (!r.assuntoId || !assuntoIdsToDelete.has(r.assuntoId))
+    );
+    saveStored(STORAGE_KEYS.REVISOES, updatedRevisoes);
+
+    // 4. Excluir em cascata blocos de questões, caderno de erros, simulados e provas do concurso
+    const blocos = loadStored<RegistroBlocoQuestoes[]>(STORAGE_KEYS.BLOCOS_QUESTOES, []);
+    const blocoIdsToDelete = blocos
+      .filter(
+        b =>
+          discIdsToDelete.has(b.disciplinaId) ||
+          (b.assuntoId && assuntoIdsToDelete.has(b.assuntoId))
+      )
+      .map(b => b.id);
+    saveStored(
+      STORAGE_KEYS.BLOCOS_QUESTOES,
+      blocos.filter(
+        b =>
+          !discIdsToDelete.has(b.disciplinaId) &&
+          (!b.assuntoId || !assuntoIdsToDelete.has(b.assuntoId))
+      )
+    );
+
+    const erros = loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, []);
+    const erroIdsToDelete = erros
+      .filter(
+        e =>
+          discIdsToDelete.has(e.disciplinaId) ||
+          (e.assuntoId && assuntoIdsToDelete.has(e.assuntoId))
+      )
+      .map(e => e.id);
+    saveStored(
+      STORAGE_KEYS.CADERNO_ERROS,
+      erros.filter(
+        e =>
+          !discIdsToDelete.has(e.disciplinaId) &&
+          (!e.assuntoId || !assuntoIdsToDelete.has(e.assuntoId))
+      )
+    );
+
+    const simulados = loadStored<Simulado[]>(STORAGE_KEYS.SIMULADOS, []);
+    const simIdsToDelete = simulados.filter(sim => sim.concursoId === id).map(sim => sim.id);
+    saveStored(
+      STORAGE_KEYS.SIMULADOS,
+      simulados.filter(sim => sim.concursoId !== id)
+    );
+
+    const provas = loadStored<Prova[]>(STORAGE_KEYS.PROVAS, []);
+    saveStored(
+      STORAGE_KEYS.PROVAS,
+      provas.filter(p => p.concursoId !== id)
+    );
+
+    // 5. Limpar baralhos e flashcards vinculados ao concurso
+    const decks = loadStored<Deck[]>(STORAGE_KEYS.DECKS, []);
+    const deckIdsToDelete = new Set(
+      decks
+        .filter((d: any) => d.concursoId === id || (d.disciplinaId && discIdsToDelete.has(d.disciplinaId)))
+        .map(d => d.id)
+    );
+    if (deckIdsToDelete.size > 0) {
+      saveStored(
+        STORAGE_KEYS.DECKS,
+        decks.filter(d => !deckIdsToDelete.has(d.id))
+      );
+      const flashcards = loadStored<Flashcard[]>(STORAGE_KEYS.FLASHCARDS, []);
+      saveStored(
+        STORAGE_KEYS.FLASHCARDS,
+        flashcards.filter(c => !deckIdsToDelete.has(c.deckId))
+      );
+    }
+
+    // 6. Limpar metas semanais, plano de estudos e ciclo de estudos deste concurso
+    try {
+      localStorage.removeItem(`gabarita_metas_semanais_${id}`);
+      localStorage.removeItem(`${STORAGE_KEYS.STUDY_PLAN}_${id}`);
+      localStorage.removeItem(`${STORAGE_KEYS.STUDY_CYCLE}_${id}`);
+      localStorage.removeItem(getScopedStorageKey(`${STORAGE_KEYS.STUDY_PLAN}_${id}`));
+      localStorage.removeItem(getScopedStorageKey(`${STORAGE_KEYS.STUDY_CYCLE}_${id}`));
+    } catch {}
+
+    // 7. Atualizar perfil com novo concurso ativo (ou vazio se não restar nenhum)
+    const nextActive = updatedList.find(c => c.active || c.isAtivo) || updatedList[0] || null;
+    await this.updateUserProfile({
+      targetConcursoId: nextActive ? nextActive.id : '',
+      targetConcursoTitle: nextActive ? `${nextActive.organ} - ${nextActive.role}` : '',
+    });
+
+    // 8. Disparar deleções em cascata no Supabase
+    Promise.resolve().then(async () => {
+      try {
+        if (sessIdsToDelete.length > 0) {
+          await supabase.from('sessoes_estudo').delete().in('id', sessIdsToDelete);
+        }
+        if (revIdsToDelete.length > 0) {
+          await supabase.from('revisoes').delete().in('id', revIdsToDelete);
+        }
+        if (blocoIdsToDelete.length > 0) {
+          await supabase.from('blocos_questoes').delete().in('id', blocoIdsToDelete);
+        }
+        if (erroIdsToDelete.length > 0) {
+          await supabase.from('caderno_erros').delete().in('id', erroIdsToDelete);
+        }
+        if (simIdsToDelete.length > 0) {
+          await supabase.from('simulados').delete().in('id', simIdsToDelete);
+        }
+        if (assuntoIdsToDelete.size > 0) {
+          await supabase.from('assuntos').delete().in('id', Array.from(assuntoIdsToDelete));
+        }
+        if (discIdsToDelete.size > 0) {
+          await supabase.from('disciplinas').delete().in('id', Array.from(discIdsToDelete));
+        }
+        await supabase.from('provas').delete().eq('concurso_id', id);
+        await supabase.from('concursos').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Gabarita: Aviso ao excluir concurso em cascata no Supabase:', err);
+      }
+    });
 
     await this.syncActiveContestStorage();
     return updatedList;
@@ -1059,6 +1812,133 @@ export class DatabaseService {
     }
 
     return { concursos: updatedList, activeConcurso };
+  }
+
+  static async archiveConcurso(id: string): Promise<{ concursos: Concurso[]; nextActiveConcurso: Concurso | null }> {
+    const list = await this.getConcursos();
+    const target = list.find(c => String(c.id) === String(id));
+    if (!target) throw new Error('Concurso não encontrado para arquivamento.');
+
+    const wasActive = Boolean(target.active || target.isAtivo || target.is_ativo || target.isFocoAtivo);
+    const nowIso = new Date().toISOString();
+
+    // Encontra o próximo concurso ativo (não arquivado) para assumir o foco caso o arquivado fosse o foco atual
+    const remainingActive = list.filter(c => String(c.id) !== String(id) && c.status !== 'arquivado' && !c.isArquivado);
+    let nextActive: Concurso | null = null;
+    if (wasActive && remainingActive.length > 0) {
+      nextActive = {
+        ...remainingActive[0],
+        active: true,
+        isAtivo: true,
+        is_ativo: true,
+        isFocoAtivo: true,
+        updatedAt: nowIso,
+      };
+    }
+
+    const previousStatus = target.status !== 'arquivado' ? target.status : (target.previousStatus || 'previsto');
+
+    const updatedList = list.map(c => {
+      if (String(c.id) === String(id)) {
+        return {
+          ...c,
+          status: 'arquivado' as const,
+          previousStatus,
+          isArquivado: true,
+          arquivadoEm: nowIso,
+          active: false,
+          isAtivo: false,
+          is_ativo: false,
+          isFocoAtivo: false,
+          updatedAt: nowIso,
+        };
+      }
+      if (nextActive && String(c.id) === String(nextActive.id)) {
+        return nextActive;
+      }
+      return c;
+    });
+
+    saveStored(STORAGE_KEYS.CONCURSOS, updatedList);
+
+    await this.updateUserProfile({
+      targetConcursoId: nextActive ? nextActive.id : '',
+      targetConcursoTitle: nextActive ? `${nextActive.organ} - ${nextActive.role}` : '',
+    });
+
+    await this.syncActiveContestStorage();
+
+    // Sincroniza Supabase
+    const uid = await getCurrentUserId();
+    if (uid) {
+      try {
+        await supabase.from('concursos').update({
+          status: 'arquivado',
+          active: false,
+          updated_at: nowIso,
+        }).eq('id', id);
+
+        if (nextActive) {
+          await supabase.from('concursos').update({
+            active: true,
+            updated_at: nowIso,
+          }).eq('id', nextActive.id);
+        }
+      } catch (e) {
+        console.warn('Gabarita: Erro ao sincronizar arquivamento no Supabase:', e);
+      }
+    }
+
+    return { concursos: updatedList, nextActiveConcurso: nextActive };
+  }
+
+  static async unarchiveConcurso(id: string): Promise<{ concursos: Concurso[]; unarchived: Concurso }> {
+    const list = await this.getConcursos();
+    const target = list.find(c => String(c.id) === String(id));
+    if (!target) throw new Error('Concurso não encontrado para desarquivamento.');
+
+    const activeConcursos = list.filter(c => c.status !== 'arquivado' && !c.isArquivado);
+    if (activeConcursos.length >= 3) {
+      throw new Error('LIMIT_REACHED');
+    }
+
+    const nowIso = new Date().toISOString();
+    const restoredStatus = (target.previousStatus && target.previousStatus !== 'arquivado')
+      ? target.previousStatus
+      : 'previsto';
+
+    let unarchived: Concurso | null = null;
+    const updatedList = list.map(c => {
+      if (String(c.id) === String(id)) {
+        unarchived = {
+          ...c,
+          status: restoredStatus,
+          isArquivado: false,
+          arquivadoEm: undefined,
+          updatedAt: nowIso,
+        };
+        return unarchived;
+      }
+      return c;
+    });
+
+    if (!unarchived) throw new Error('Falha ao processar desarquivamento.');
+
+    saveStored(STORAGE_KEYS.CONCURSOS, updatedList);
+
+    const uid = await getCurrentUserId();
+    if (uid) {
+      try {
+        await supabase.from('concursos').update({
+          status: restoredStatus,
+          updated_at: nowIso,
+        }).eq('id', id);
+      } catch (e) {
+        console.warn('Gabarita: Erro ao sincronizar desarquivamento no Supabase:', e);
+      }
+    }
+
+    return { concursos: updatedList, unarchived };
   }
 
   // --- SINGLE SOURCE OF TRUTH (gabarita_active_contest) ---
@@ -1317,22 +2197,35 @@ export class DatabaseService {
 
   // --- DISCIPLINAS & ASSUNTOS ---
   static async getDisciplinas(concursoId?: string): Promise<Disciplina[]> {
+    const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+
     try {
+      const uid = await getCurrentUserId();
       let query = supabase.from('disciplinas').select('*').order('order', { ascending: true });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
       if (concursoId) {
         query = query.eq('concurso_id', concursoId);
       }
       const { data, error } = await query;
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapDisciplinaFromDb);
-        saveStored(STORAGE_KEYS.DISCIPLINAS, list);
-        return list;
+        const mapped = data
+          .map(mapDisciplinaFromDb)
+          .filter(d => Boolean(d.concursoId && (validConcursoIds.size === 0 || validConcursoIds.has(d.concursoId))));
+        if (!concursoId) {
+          saveStored(STORAGE_KEYS.DISCIPLINAS, mapped);
+        }
+        return mapped;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar disciplinas do Supabase:', e);
     }
 
-    const list = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS);
+    const list = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS).filter(
+      d => Boolean(d.concursoId && validConcursoIds.has(d.concursoId))
+    );
     if (concursoId) {
       return list.filter(d => d.concursoId === concursoId);
     }
@@ -1516,13 +2409,60 @@ export class DatabaseService {
     const updated = list.filter(d => d.id !== id);
     saveStored(STORAGE_KEYS.DISCIPLINAS, updated);
 
-    supabase.from('disciplinas').delete().eq('id', id).then(({ error }) => {
-      if (error) console.warn('Gabarita: Erro ao remover disciplina no Supabase:', error.message);
-    });
-
-    const assuntos = await this.getAssuntos();
+    const assuntos = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, []);
+    const assuntoIdsToDelete = new Set(assuntos.filter(a => a.disciplinaId === id).map(a => a.id));
     const updatedAssuntos = assuntos.filter(a => a.disciplinaId !== id);
     saveStored(STORAGE_KEYS.ASSUNTOS, updatedAssuntos);
+
+    // Excluir em cascata todas as sessões de estudo (Histórico) vinculadas a esta disciplina ou seus tópicos
+    const sessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+    const sessIdsToDelete = sessoes
+      .filter(s => s.disciplinaId === id || (s.assuntoId && assuntoIdsToDelete.has(s.assuntoId)))
+      .map(s => s.id);
+    saveStored(
+      STORAGE_KEYS.SESSOES,
+      sessoes.filter(s => s.disciplinaId !== id && (!s.assuntoId || !assuntoIdsToDelete.has(s.assuntoId)))
+    );
+
+    // Excluir em cascata revisões, blocos de questões e caderno de erros vinculados a esta disciplina
+    const revisoes = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, []);
+    const revIdsToDelete = revisoes
+      .filter(r => r.disciplinaId === id || (r.assuntoId && assuntoIdsToDelete.has(r.assuntoId)))
+      .map(r => r.id);
+    saveStored(
+      STORAGE_KEYS.REVISOES,
+      revisoes.filter(r => r.disciplinaId !== id && (!r.assuntoId || !assuntoIdsToDelete.has(r.assuntoId)))
+    );
+
+    const blocos = loadStored<RegistroBlocoQuestoes[]>(STORAGE_KEYS.BLOCOS_QUESTOES, []);
+    saveStored(
+      STORAGE_KEYS.BLOCOS_QUESTOES,
+      blocos.filter(b => b.disciplinaId !== id && (!b.assuntoId || !assuntoIdsToDelete.has(b.assuntoId)))
+    );
+
+    const erros = loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, []);
+    saveStored(
+      STORAGE_KEYS.CADERNO_ERROS,
+      erros.filter(e => e.disciplinaId !== id && (!e.assuntoId || !assuntoIdsToDelete.has(e.assuntoId)))
+    );
+
+    Promise.resolve().then(async () => {
+      try {
+        if (sessIdsToDelete.length > 0) {
+          await supabase.from('sessoes_estudo').delete().in('id', sessIdsToDelete);
+        }
+        if (revIdsToDelete.length > 0) {
+          await supabase.from('revisoes').delete().in('id', revIdsToDelete);
+        }
+        if (assuntoIdsToDelete.size > 0) {
+          await supabase.from('assuntos').delete().in('id', Array.from(assuntoIdsToDelete));
+        }
+        await supabase.from('disciplinas').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Gabarita: Erro ao remover disciplina em cascata no Supabase:', err);
+      }
+    });
+
     await this.syncActiveContestStorage();
     return updated;
   }
@@ -1558,33 +2498,39 @@ export class DatabaseService {
   }
 
   static async getAssuntos(disciplinaId?: string): Promise<Assunto[]> {
+    const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS);
+    const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+
     try {
+      const uid = await getCurrentUserId();
       let query = supabase.from('assuntos').select('*').order('order', { ascending: true });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
       if (disciplinaId) {
         query = query.eq('disciplina_id', disciplinaId);
       }
       const { data, error } = await query;
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapAssuntoFromDb);
-        saveStored(STORAGE_KEYS.ASSUNTOS, list);
+        const list = data
+          .map(mapAssuntoFromDb)
+          .filter(a => Boolean(a.disciplinaId && (validDiscIds.size === 0 || validDiscIds.has(a.disciplinaId))));
+        if (!disciplinaId) {
+          saveStored(STORAGE_KEYS.ASSUNTOS, list);
+        }
         return list;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar assuntos do Supabase:', e);
     }
 
-    const list = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, INITIAL_ASSUNTOS);
-    const seedMap = new Map(INITIAL_ASSUNTOS.filter(a => a.link).map(a => [a.id, a.link]));
-    const hydrated = list.map(a => {
-      if (a.link === undefined && seedMap.has(a.id)) {
-        return { ...a, link: seedMap.get(a.id) };
-      }
-      return a;
-    });
+    const list = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, INITIAL_ASSUNTOS).filter(
+      a => Boolean(a.disciplinaId && validDiscIds.has(a.disciplinaId))
+    );
     if (disciplinaId) {
-      return hydrated.filter(a => a.disciplinaId === disciplinaId).sort((a, b) => a.order - b.order);
+      return list.filter(a => a.disciplinaId === disciplinaId).sort((a, b) => a.order - b.order);
     }
-    return hydrated.sort((a, b) => a.order - b.order);
+    return list.sort((a, b) => a.order - b.order);
   }
 
   static async addAssunto(assunto: Omit<Assunto, 'id' | 'createdAt' | 'masteryLevel' | 'totalQuestionsSolved' | 'correctQuestionsSolved' | 'accuracyRate'>): Promise<Assunto> {
@@ -1683,19 +2629,59 @@ export class DatabaseService {
     const updated = list.filter(a => a.id !== id);
     saveStored(STORAGE_KEYS.ASSUNTOS, updated);
 
-    supabase.from('assuntos').delete().eq('id', id).then(({ error }) => {
-      if (error) console.warn('Gabarita: Erro ao remover assunto no Supabase:', error.message);
+    // Excluir em cascata sessões de estudo, revisões, blocos de questões e caderno de erros vinculados a este tópico
+    const sessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+    const sessIdsToDelete = sessoes.filter(s => s.assuntoId === id).map(s => s.id);
+    const remainingSessoes = sessoes.filter(s => s.assuntoId !== id);
+    saveStored(STORAGE_KEYS.SESSOES, remainingSessoes);
+
+    const revisoes = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, []);
+    const revIdsToDelete = revisoes.filter(r => r.assuntoId === id).map(r => r.id);
+    saveStored(
+      STORAGE_KEYS.REVISOES,
+      revisoes.filter(r => r.assuntoId !== id)
+    );
+
+    const blocos = loadStored<RegistroBlocoQuestoes[]>(STORAGE_KEYS.BLOCOS_QUESTOES, []);
+    saveStored(
+      STORAGE_KEYS.BLOCOS_QUESTOES,
+      blocos.filter(b => b.assuntoId !== id)
+    );
+
+    const erros = loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, []);
+    saveStored(
+      STORAGE_KEYS.CADERNO_ERROS,
+      erros.filter(e => e.assuntoId !== id)
+    );
+
+    Promise.resolve().then(async () => {
+      try {
+        if (sessIdsToDelete.length > 0) {
+          await supabase.from('sessoes_estudo').delete().in('id', sessIdsToDelete);
+        }
+        if (revIdsToDelete.length > 0) {
+          await supabase.from('revisoes').delete().in('id', revIdsToDelete);
+        }
+        await supabase.from('assuntos').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Gabarita: Erro ao remover assunto em cascata no Supabase:', err);
+      }
     });
+
     if (target) {
       const discList = await this.getDisciplinas();
       const discAssuntos = updated.filter(a => a.disciplinaId === target.disciplinaId);
       const dominados = discAssuntos.filter(a => a.completed || a.status === 'dominado' || a.status === 'revisado').length;
+      const discRemainingMinutes = remainingSessoes
+        .filter(s => s.disciplinaId === target.disciplinaId)
+        .reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
       const updatedDisc = discList.map(d => {
         if (d.id === target.disciplinaId) {
           return {
             ...d,
             topicsCount: discAssuntos.length,
             completedTopicsCount: dominados,
+            totalStudyMinutes: discRemainingMinutes,
           };
         }
         return d;
@@ -1932,21 +2918,62 @@ export class DatabaseService {
 
   // --- SESSÕES DE ESTUDO ---
   static async getSessoes(): Promise<SessaoEstudo[]> {
+    const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+    const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS).filter(
+      d => Boolean(d.concursoId && validConcursoIds.has(d.concursoId))
+    );
+    const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+    const discToConcurso = new Map(disciplinas.map(d => [d.id, d.concursoId]));
+    const assuntos = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, INITIAL_ASSUNTOS).filter(
+      a => Boolean(a.disciplinaId && validDiscIds.has(a.disciplinaId))
+    );
+    const validAssuntoIds = new Set(assuntos.map(a => a.id).filter(Boolean));
+
+    const filterValidSessoes = (rawList: SessaoEstudo[], uid?: string): SessaoEstudo[] => {
+      if (validConcursoIds.size === 0 || validDiscIds.size === 0) return [];
+      return rawList
+        .filter(s => {
+          if (!s || !s.id || !s.disciplinaId) return false;
+          if (uid && uid !== 'user_demo_01' && s.userId && s.userId !== uid) return false;
+          if (!validDiscIds.has(s.disciplinaId)) return false;
+          if (s.concursoId && !validConcursoIds.has(s.concursoId)) return false;
+          if (s.assuntoId && !validAssuntoIds.has(s.assuntoId)) return false;
+          return true;
+        })
+        .map(s => ({
+          ...s,
+          concursoId: s.concursoId || discToConcurso.get(s.disciplinaId),
+        }));
+    };
+
     try {
-      const { data, error } = await supabase
+      const uid = await getCurrentUserId();
+      let query = supabase
         .from('sessoes_estudo')
         .select('*')
         .order('completed_at', { ascending: false });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
+      const { data, error } = await query;
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapSessaoFromDb);
-        saveStored(STORAGE_KEYS.SESSOES, list);
-        return list;
+        const mapped = data.map(mapSessaoFromDb);
+        const validList = filterValidSessoes(mapped, uid);
+        saveStored(STORAGE_KEYS.SESSOES, validList);
+        return validList;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar sessoes do Supabase:', e);
     }
-    return loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, INITIAL_SESSOES);
+
+    const stored = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, INITIAL_SESSOES);
+    const validStored = filterValidSessoes(stored);
+    if (validStored.length !== stored.length) {
+      saveStored(STORAGE_KEYS.SESSOES, validStored);
+    }
+    return validStored;
   }
 
   static async recordStudySession(session: Omit<SessaoEstudo, 'id' | 'createdAt'>): Promise<SessaoEstudo> {
@@ -1962,8 +2989,10 @@ export class DatabaseService {
 
     const newSession: SessaoEstudo = {
       ...session,
+      concursoId: session.concursoId || disc?.concursoId,
       disciplinaName: session.disciplinaName || disc?.name || 'Geral',
       assuntoName: session.assuntoName || assunto?.name || 'Estudo Dirigido',
+      durationSeconds: session.durationSeconds ?? Math.max(0, Math.round((session.durationMinutes || 0) * 60)),
       accuracyRate: accuracyRate ?? session.accuracyRate,
       id: `sess_${Date.now()}`,
       createdAt: new Date().toISOString(),
@@ -2022,15 +3051,23 @@ export class DatabaseService {
           const newTotalQ = (a.totalQuestionsSolved || 0) + (session.questionsAttempted || 0);
           const newCorrectQ = (a.correctQuestionsSolved || 0) + (session.questionsCorrect || 0);
           const newAcc = newTotalQ > 0 ? Math.round((newCorrectQ / newTotalQ) * 100) : a.accuracyRate || 0;
+          const isNowCompleted = session.teoriaFinalizada ? true : a.completed;
+          const nextStatus = session.teoriaFinalizada
+            ? ('dominado' as const)
+            : a.status === 'nao_iniciado'
+            ? ('em_estudo' as const)
+            : a.status;
           const upd = {
             ...a,
-            lastStudiedAt: new Date().toISOString(),
-            status: a.status === 'nao_iniciado' ? ('em_estudo' as const) : a.status,
+            completed: isNowCompleted,
+            lastStudiedAt: newSession.completedAt || new Date().toISOString(),
+            status: nextStatus,
             totalQuestionsSolved: newTotalQ,
             correctQuestionsSolved: newCorrectQ,
             accuracyRate: newAcc,
           };
           this.updateAssunto(a.id, {
+            completed: upd.completed,
             lastStudiedAt: upd.lastStudiedAt,
             status: upd.status,
             totalQuestionsSolved: newTotalQ,
@@ -2057,8 +3094,56 @@ export class DatabaseService {
 
   static async deleteStudySession(sessionId: string): Promise<SessaoEstudo[]> {
     const list = await this.getSessoes();
+    const target = list.find(s => s.id === sessionId);
     const updated = list.filter(s => s.id !== sessionId);
     saveStored(STORAGE_KEYS.SESSOES, updated);
+
+    if (target) {
+      const [disciplinas, assuntos] = await Promise.all([
+        this.getDisciplinas(),
+        this.getAssuntos(),
+      ]);
+
+      if (target.disciplinaId) {
+        const updatedDisciplinas = disciplinas.map(d => {
+          if (d.id === target.disciplinaId) {
+            const newTotalMinutes = Math.max(0, (d.totalStudyMinutes || 0) - (target.durationMinutes || 0));
+            this.updateDisciplina(d.id, { totalStudyMinutes: newTotalMinutes });
+            return { ...d, totalStudyMinutes: newTotalMinutes };
+          }
+          return d;
+        });
+        saveStored(STORAGE_KEYS.DISCIPLINAS, updatedDisciplinas);
+      }
+
+      if (target.assuntoId) {
+        const remainingTopicSessions = updated.filter(s => s.assuntoId === target.assuntoId);
+        const latestSession = remainingTopicSessions[0];
+        const updatedAssuntos = assuntos.map(a => {
+          if (a.id === target.assuntoId) {
+            const newTotalQ = Math.max(0, (a.totalQuestionsSolved || 0) - (target.questionsAttempted || 0));
+            const newCorrectQ = Math.max(0, (a.correctQuestionsSolved || 0) - (target.questionsCorrect || 0));
+            const newAcc = newTotalQ > 0 ? Math.round((newCorrectQ / newTotalQ) * 100) : 0;
+            const upd = {
+              ...a,
+              totalQuestionsSolved: newTotalQ,
+              correctQuestionsSolved: newCorrectQ,
+              accuracyRate: newAcc,
+              lastStudiedAt: latestSession ? latestSession.completedAt : undefined,
+            };
+            this.updateAssunto(a.id, {
+              totalQuestionsSolved: newTotalQ,
+              correctQuestionsSolved: newCorrectQ,
+              accuracyRate: newAcc,
+              lastStudiedAt: upd.lastStudiedAt,
+            });
+            return upd;
+          }
+          return a;
+        });
+        saveStored(STORAGE_KEYS.ASSUNTOS, updatedAssuntos);
+      }
+    }
 
     supabase.from('sessoes_estudo').delete().eq('id', sessionId).then(({ error }) => {
       if (error) console.warn('Gabarita: Erro ao remover sessão de estudo no Supabase:', error.message);
@@ -2069,24 +3154,127 @@ export class DatabaseService {
 
   static async updateStudySession(sessionId: string, partial: Partial<SessaoEstudo>): Promise<SessaoEstudo> {
     const list = await this.getSessoes();
-    let updatedItem: SessaoEstudo | null = null;
-    const updated = list.map(s => {
-      if (s.id === sessionId) {
-        updatedItem = { ...s, ...partial };
-        return updatedItem;
-      }
-      return s;
-    });
-    if (!updatedItem) throw new Error('Sessão não encontrada.');
+    const prevSession = list.find(s => s.id === sessionId);
+    if (!prevSession) throw new Error('Sessão não encontrada.');
+
+    const [disciplinas, assuntos] = await Promise.all([
+      this.getDisciplinas(),
+      this.getAssuntos(),
+    ]);
+
+    const nextDiscId = partial.disciplinaId ?? prevSession.disciplinaId;
+    const nextAssuntoId = partial.assuntoId !== undefined ? partial.assuntoId : prevSession.assuntoId;
+    const nextDisc = disciplinas.find(d => d.id === nextDiscId);
+    const nextAssunto = assuntos.find(a => a.id === nextAssuntoId);
+
+    const nextQAttempted = partial.questionsAttempted !== undefined ? partial.questionsAttempted : prevSession.questionsAttempted;
+    const nextQCorrect = partial.questionsCorrect !== undefined ? partial.questionsCorrect : prevSession.questionsCorrect;
+    const nextAcc = (nextQAttempted && nextQAttempted > 0 && typeof nextQCorrect === 'number')
+      ? Math.round((nextQCorrect / nextQAttempted) * 100)
+      : partial.accuracyRate !== undefined
+      ? partial.accuracyRate
+      : undefined;
+
+    const updatedItem: SessaoEstudo = {
+      ...prevSession,
+      ...partial,
+      disciplinaId: nextDiscId,
+      assuntoId: nextAssuntoId,
+      disciplinaName: partial.disciplinaName || nextDisc?.name || prevSession.disciplinaName,
+      assuntoName: partial.assuntoName || nextAssunto?.name || (nextAssuntoId ? prevSession.assuntoName : 'Estudo Dirigido'),
+      accuracyRate: nextAcc,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updated = list.map(s => (s.id === sessionId ? updatedItem : s));
     saveStored(STORAGE_KEYS.SESSOES, updated);
 
+    // Recalculate discipline minutes
+    const updatedDisciplinas = disciplinas.map(d => {
+      let totalMins = d.totalStudyMinutes || 0;
+      if (d.id === prevSession.disciplinaId) {
+        totalMins = Math.max(0, totalMins - (prevSession.durationMinutes || 0));
+      }
+      if (d.id === updatedItem.disciplinaId) {
+        totalMins = totalMins + (updatedItem.durationMinutes || 0);
+      }
+      if (d.id === prevSession.disciplinaId || d.id === updatedItem.disciplinaId) {
+        this.updateDisciplina(d.id, { totalStudyMinutes: totalMins });
+        return { ...d, totalStudyMinutes: totalMins };
+      }
+      return d;
+    });
+    saveStored(STORAGE_KEYS.DISCIPLINAS, updatedDisciplinas);
+
+    // Recalculate topic stats
+    const updatedAssuntos = assuntos.map(a => {
+      let totalQ = a.totalQuestionsSolved || 0;
+      let correctQ = a.correctQuestionsSolved || 0;
+      let changed = false;
+
+      if (a.id === prevSession.assuntoId) {
+        totalQ = Math.max(0, totalQ - (prevSession.questionsAttempted || 0));
+        correctQ = Math.max(0, correctQ - (prevSession.questionsCorrect || 0));
+        changed = true;
+      }
+      if (a.id === updatedItem.assuntoId) {
+        totalQ = totalQ + (updatedItem.questionsAttempted || 0);
+        correctQ = correctQ + (updatedItem.questionsCorrect || 0);
+        changed = true;
+      }
+
+      if (changed) {
+        const acc = totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : 0;
+        const isTargetTopic = a.id === updatedItem.assuntoId;
+        const completed = isTargetTopic && partial.teoriaFinalizada !== undefined
+          ? Boolean(partial.teoriaFinalizada)
+          : a.completed;
+        const status = completed
+          ? ('dominado' as const)
+          : a.status === 'dominado' && isTargetTopic && partial.teoriaFinalizada === false
+          ? ('em_estudo' as const)
+          : a.status === 'nao_iniciado' && isTargetTopic
+          ? ('em_estudo' as const)
+          : a.status;
+        const lastStudiedAt = isTargetTopic ? updatedItem.completedAt : a.lastStudiedAt;
+
+        this.updateAssunto(a.id, {
+          totalQuestionsSolved: totalQ,
+          correctQuestionsSolved: correctQ,
+          accuracyRate: acc,
+          completed,
+          status,
+          lastStudiedAt,
+        });
+
+        return {
+          ...a,
+          totalQuestionsSolved: totalQ,
+          correctQuestionsSolved: correctQ,
+          accuracyRate: acc,
+          completed,
+          status,
+          lastStudiedAt,
+        };
+      }
+      return a;
+    });
+    saveStored(STORAGE_KEYS.ASSUNTOS, updatedAssuntos);
+
     const snakeObj: any = {};
+    if (partial.disciplinaId !== undefined) snakeObj.disciplina_id = updatedItem.disciplinaId;
+    if (partial.assuntoId !== undefined) snakeObj.assunto_id = updatedItem.assuntoId || null;
+    if (updatedItem.disciplinaName !== undefined) snakeObj.disciplina_name = updatedItem.disciplinaName;
+    if (updatedItem.assuntoName !== undefined) snakeObj.assunto_name = updatedItem.assuntoName;
     if (partial.durationMinutes !== undefined) snakeObj.duration_minutes = partial.durationMinutes;
     if (partial.type !== undefined) snakeObj.type = partial.type;
     if (partial.questionsAttempted !== undefined) snakeObj.questions_attempted = partial.questionsAttempted;
     if (partial.questionsCorrect !== undefined) snakeObj.questions_correct = partial.questionsCorrect;
-    if (partial.accuracyRate !== undefined) snakeObj.accuracy_rate = partial.accuracyRate;
+    if (updatedItem.accuracyRate !== undefined) snakeObj.accuracy_rate = updatedItem.accuracyRate;
     if (partial.notes !== undefined) snakeObj.notes = partial.notes;
+    if (partial.teoriaFinalizada !== undefined) snakeObj.teoria_finalizada = partial.teoriaFinalizada;
+    if (partial.pageIntervals !== undefined) snakeObj.page_intervals = partial.pageIntervals;
+    if (partial.videoaulas !== undefined) snakeObj.videoaulas = partial.videoaulas;
     if (partial.completedAt !== undefined) snakeObj.completed_at = partial.completedAt;
 
     supabase.from('sessoes_estudo').update(snakeObj).eq('id', sessionId).then(({ error }) => {
@@ -2127,14 +3315,79 @@ export class DatabaseService {
   }
 
   static async getRevisoes(): Promise<Revisao[]> {
+    const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+    const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS).filter(
+      d => Boolean(d.concursoId && validConcursoIds.has(d.concursoId))
+    );
+    const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+    const assuntos = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, INITIAL_ASSUNTOS).filter(
+      a => Boolean(a.disciplinaId && validDiscIds.has(a.disciplinaId))
+    );
+    const validAssuntoIds = new Set(assuntos.map(a => a.id).filter(Boolean));
+
+    const storedSessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, INITIAL_SESSOES);
+
+    const enrichWithSessionMeta = (rev: Revisao): Revisao => {
+      if (rev.originalStudyDate && rev.originalCategory) return rev;
+      const matchingSession = storedSessoes.find(s =>
+        s.disciplinaId === rev.disciplinaId &&
+        s.origem !== 'revisoes' &&
+        ((rev.assuntoId && s.assuntoId === rev.assuntoId) ||
+          (rev.assuntoName && s.assuntoName && s.assuntoName.toLowerCase() === rev.assuntoName.toLowerCase()))
+      ) || storedSessoes.find(s =>
+        s.disciplinaId === rev.disciplinaId &&
+        ((rev.assuntoId && s.assuntoId === rev.assuntoId) ||
+          (rev.assuntoName && s.assuntoName && s.assuntoName.toLowerCase() === rev.assuntoName.toLowerCase()))
+      );
+      if (!matchingSession) return rev;
+      const meta = extractOriginalSessionMeta(matchingSession);
+      return {
+        ...meta,
+        ...rev,
+        originalStudyDate: rev.originalStudyDate || meta.originalStudyDate,
+        originalCategory: rev.originalCategory || meta.originalCategory,
+        originalDurationMinutes: rev.originalDurationMinutes ?? meta.originalDurationMinutes,
+        originalQuestionsAttempted: rev.originalQuestionsAttempted ?? meta.originalQuestionsAttempted,
+        originalQuestionsCorrect: rev.originalQuestionsCorrect ?? meta.originalQuestionsCorrect,
+        originalAccuracyRate: rev.originalAccuracyRate ?? meta.originalAccuracyRate,
+        originalPages: rev.originalPages || meta.originalPages,
+        originalMaterial: rev.originalMaterial || meta.originalMaterial,
+      };
+    };
+
+    const filterValidRevisoes = (rawList: Revisao[], uid?: string): Revisao[] => {
+      if (validConcursoIds.size === 0 || validDiscIds.size === 0) return [];
+      return rawList
+        .filter(r => {
+          if (!r || !r.id || !r.disciplinaId) return false;
+          if (uid && uid !== 'user_demo_01' && r.userId && r.userId !== uid) return false;
+          if (!validDiscIds.has(r.disciplinaId)) return false;
+          if (r.assuntoId && !validAssuntoIds.has(r.assuntoId)) return false;
+          return true;
+        })
+        .map(enrichWithSessionMeta);
+    };
+
     try {
-      const { data, error } = await supabase
+      const uid = await getCurrentUserId();
+      let query = supabase
         .from('revisoes')
         .select('*')
         .order('scheduled_for', { ascending: true });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
+      const { data, error } = await query;
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapRevisaoFromDb);
+        const localMap = new Map(loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, []).map(r => [r.id, r]));
+        const mergedFromDb = data.map(row => {
+          const dbRev = mapRevisaoFromDb(row);
+          const localRev = localMap.get(dbRev.id);
+          return localRev ? { ...localRev, ...dbRev, status: localRev.status === 'ignorada' ? 'ignorada' : dbRev.status } : dbRev;
+        });
+        const list = filterValidRevisoes(mergedFromDb, uid);
         saveStored(STORAGE_KEYS.REVISOES, list);
         return list;
       }
@@ -2142,9 +3395,10 @@ export class DatabaseService {
       console.warn('Gabarita: Falha ao buscar revisões do Supabase:', e);
     }
 
-    const list = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, INITIAL_REVISOES);
+    const rawList = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, INITIAL_REVISOES);
+    const list = filterValidRevisoes(rawList);
     const todayStr = PlannerService.formatLocalDate(new Date());
-    let changed = false;
+    let changed = list.length !== rawList.length;
     const updatedList = list.map(r => {
       const scheduledDateStr = r.scheduledFor.includes('T') ? r.scheduledFor.split('T')[0] : r.scheduledFor;
       if (r.status === 'pendente' && scheduledDateStr < todayStr) {
@@ -2313,7 +3567,7 @@ export class DatabaseService {
         disciplinaName: target.disciplinaName,
         assuntoId: target.assuntoId,
         assuntoName: target.assuntoName,
-        method: nextDays <= 1 ? '24h' : nextDays <= 7 ? '7d' : nextDays <= 15 ? '15d' : nextDays <= 30 ? '30d' : '60d',
+        method: nextDays <= 1 ? '24h' : `${nextDays}d`,
         stage: nextStage,
         totalStages,
         intervalDays: nextDays,
@@ -2322,6 +3576,14 @@ export class DatabaseService {
         isAutomatic: true,
         notes: `SRS Etapa ${nextStage}/${totalStages} (${nextDays}d após rating ${rating.toUpperCase()}).`,
         createdAt: nowIso,
+        originalStudyDate: target.originalStudyDate,
+        originalCategory: target.originalCategory,
+        originalDurationMinutes: target.originalDurationMinutes,
+        originalQuestionsAttempted: target.originalQuestionsAttempted,
+        originalQuestionsCorrect: target.originalQuestionsCorrect,
+        originalAccuracyRate: target.originalAccuracyRate,
+        originalPages: target.originalPages,
+        originalMaterial: target.originalMaterial,
       };
       completedRev.nextRevisionId = nextRevision.id;
     }
@@ -2387,7 +3649,8 @@ export class DatabaseService {
     userId: string,
     disciplinaId: string,
     assuntoId?: string,
-    assuntoName?: string
+    assuntoName?: string,
+    sourceSession?: SessaoEstudo
   ): Promise<Revisao[]> {
     const list = await this.getRevisoes();
     const settings = await this.getRevisionSettings();
@@ -2396,27 +3659,42 @@ export class DatabaseService {
     const intervals = settings.intervalDays && settings.intervalDays.length > 0 
       ? settings.intervalDays 
       : [1, 7, 15, 30, 60];
-    const firstDays = intervals[0] || 1;
-    const firstDate = new Date(Date.now() + firstDays * 86400000);
-    const firstDateStr = PlannerService.formatLocalDate(firstDate);
-    const firstRev: Revisao = {
-      id: `rev_srs_${Date.now()}`,
-      userId,
-      disciplinaId,
-      disciplinaName: disc?.name || 'Geral',
-      assuntoId,
-      assuntoName: assuntoName || 'Geral',
-      method: firstDays <= 1 ? '24h' : '7d',
-      stage: 1,
-      totalStages: intervals.length,
-      intervalDays: firstDays,
-      scheduledFor: firstDateStr,
-      status: 'pendente',
-      isAutomatic: true,
-      notes: `SRS Ciclo Inicial 24h para fixação de ${assuntoName || 'conteúdo'}.`,
-      createdAt: new Date().toISOString(),
-    };
-    const updated = [firstRev, ...list];
+
+    let sessionToUse = sourceSession;
+    if (!sessionToUse) {
+      const storedSessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+      sessionToUse = storedSessoes.find(s =>
+        s.disciplinaId === disciplinaId &&
+        (!assuntoId || s.assuntoId === assuntoId)
+      );
+    }
+    const meta = extractOriginalSessionMeta(sessionToUse);
+    const baseStudyTime = sessionToUse?.completedAt ? new Date(sessionToUse.completedAt).getTime() : Date.now();
+
+    const newRevs: Revisao[] = intervals.map((days, idx) => {
+      const targetDate = new Date(baseStudyTime + days * 86400000);
+      const targetDateStr = PlannerService.formatLocalDate(targetDate);
+      return {
+        id: `rev_srs_${Date.now()}_${idx}`,
+        userId,
+        disciplinaId,
+        disciplinaName: disc?.name || 'Geral',
+        assuntoId,
+        assuntoName: assuntoName || sessionToUse?.assuntoName || 'Geral',
+        method: days === 1 ? '24h' : `${days}d`,
+        stage: idx + 1,
+        totalStages: intervals.length,
+        intervalDays: days,
+        scheduledFor: targetDateStr,
+        status: 'pendente',
+        isAutomatic: true,
+        notes: `SRS Ciclo de ${days} ${days === 1 ? 'dia' : 'dias'} para fixação de ${assuntoName || 'conteúdo'}.`,
+        createdAt: new Date().toISOString(),
+        ...meta,
+      };
+    });
+
+    const updated = [...newRevs, ...list];
     saveStored(STORAGE_KEYS.REVISOES, updated);
     return updated;
   }
@@ -2493,21 +3771,47 @@ export class DatabaseService {
   }
 
   static async getBlocosQuestoes(): Promise<RegistroBlocoQuestoes[]> {
+    const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+    const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS).filter(
+      d => Boolean(d.concursoId && validConcursoIds.has(d.concursoId))
+    );
+    const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+
+    const filterValid = (rawList: RegistroBlocoQuestoes[], uid?: string): RegistroBlocoQuestoes[] => {
+      if (validConcursoIds.size === 0 || validDiscIds.size === 0) return [];
+      return rawList.filter(b => {
+        if (!b || !b.id || !b.disciplinaId) return false;
+        if (uid && uid !== 'user_demo_01' && b.userId && b.userId !== uid) return false;
+        return validDiscIds.has(b.disciplinaId);
+      });
+    };
+
     try {
-      const { data, error } = await supabase
+      const uid = await getCurrentUserId();
+      let query = supabase
         .from('blocos_questoes')
         .select('*')
         .order('created_at', { ascending: false });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
+      const { data, error } = await query;
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapBlocoFromDb);
+        const list = filterValid(data.map(mapBlocoFromDb), uid);
         saveStored(STORAGE_KEYS.BLOCOS_QUESTOES, list);
         return list;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar blocos de questoes do Supabase:', e);
     }
-    return loadStored<RegistroBlocoQuestoes[]>(STORAGE_KEYS.BLOCOS_QUESTOES, INITIAL_BLOCOS_QUESTOES);
+    const stored = loadStored<RegistroBlocoQuestoes[]>(STORAGE_KEYS.BLOCOS_QUESTOES, INITIAL_BLOCOS_QUESTOES);
+    const valid = filterValid(stored);
+    if (valid.length !== stored.length) {
+      saveStored(STORAGE_KEYS.BLOCOS_QUESTOES, valid);
+    }
+    return valid;
   }
 
   static async recordBlocoQuestoes(
@@ -2645,21 +3949,47 @@ export class DatabaseService {
 
   // --- CADERNO DE ERROS ---
   static async getCadernoErros(): Promise<ItemCadernoErros[]> {
+    const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+    const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS).filter(
+      d => Boolean(d.concursoId && validConcursoIds.has(d.concursoId))
+    );
+    const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+
+    const filterValid = (rawList: ItemCadernoErros[], uid?: string): ItemCadernoErros[] => {
+      if (validConcursoIds.size === 0 || validDiscIds.size === 0) return [];
+      return rawList.filter(e => {
+        if (!e || !e.id || !e.disciplinaId) return false;
+        if (uid && uid !== 'user_demo_01' && e.userId && e.userId !== uid) return false;
+        return validDiscIds.has(e.disciplinaId);
+      });
+    };
+
     try {
-      const { data, error } = await supabase
+      const uid = await getCurrentUserId();
+      let query = supabase
         .from('caderno_erros')
         .select('*')
         .order('created_at', { ascending: false });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
+      const { data, error } = await query;
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapCadernoFromDb);
+        const list = filterValid(data.map(mapCadernoFromDb), uid);
         saveStored(STORAGE_KEYS.CADERNO_ERROS, list);
         return list;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar caderno de erros do Supabase:', e);
     }
-    return loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, INITIAL_CADERNO_ERROS);
+    const stored = loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, INITIAL_CADERNO_ERROS);
+    const valid = filterValid(stored);
+    if (valid.length !== stored.length) {
+      saveStored(STORAGE_KEYS.CADERNO_ERROS, valid);
+    }
+    return valid;
   }
 
   static async addCadernoErro(
@@ -3140,7 +4470,20 @@ export class DatabaseService {
       if (simDate >= firstDayMonthStr) questoesMes += tot;
     });
 
-    const taxaAcertoGeral = questoesTotal > 0 ? Math.round((acertosTotal / questoesTotal) * 100) : 80;
+    sessoes.forEach((s: SessaoEstudo) => {
+      const sDate = s.completedAt ? s.completedAt.split('T')[0] : (s.createdAt ? s.createdAt.split('T')[0] : '');
+      const tot = s.questionsAttempted || 0;
+      const cor = s.questionsCorrect || 0;
+      if (tot > 0) {
+        questoesTotal += tot;
+        acertosTotal += cor;
+        if (sDate === todayStr) questoesHoje += tot;
+        if (sDate >= mondayStr) questoesSemana += tot;
+        if (sDate >= firstDayMonthStr) questoesMes += tot;
+      }
+    });
+
+    const taxaAcertoGeral = questoesTotal > 0 ? Math.round((acertosTotal / questoesTotal) * 100) : 0;
 
     let revisoesHoje = 0;
     let revisoesSemana = 0;
@@ -3189,7 +4532,7 @@ export class DatabaseService {
       }
     }
     if (hasToday && streakCount === 0) streakCount = 1;
-    const finalStreak = Math.max(streakCount, user.streakDays || 1);
+    const finalStreak = Math.max(streakCount, user.streakDays || 0);
 
     const diasSemanaNomes = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const diasAtivosUltimaSemana = [];
@@ -3209,11 +4552,11 @@ export class DatabaseService {
       });
     }
 
-    const totalTopicos = assuntos.length || 1;
-    const topicosConcluidos = assuntos.filter((a: Assunto) => a.status === 'dominado' || a.status === 'revisado').length;
-    const percentualEdital = Math.round((topicosConcluidos / totalTopicos) * 100);
+    const totalTopicos = assuntos.length;
+    const topicosConcluidos = assuntos.filter((a: Assunto) => a.completed || a.status === 'dominado' || a.status === 'revisado').length;
+    const percentualEdital = totalTopicos > 0 ? Math.round((topicosConcluidos / totalTopicos) * 100) : 0;
 
-    const xpTotal = user.xp || 3420;
+    const xpTotal = user.xp || 0;
     const nivelAtual = Math.floor(xpTotal / 1000) + 1;
     const xpNivelAtual = xpTotal % 1000;
     const xpProximoNivel = 1000;
@@ -3244,7 +4587,7 @@ export class DatabaseService {
       revisoesMes,
       revisoesTotal,
       streakDias: finalStreak,
-      melhorStreakDias: Math.max(finalStreak, 21),
+      melhorStreakDias: finalStreak,
       diasAtivosUltimaSemana,
       topicosConcluidos,
       topicosTotal: totalTopicos,
@@ -3260,14 +4603,32 @@ export class DatabaseService {
 
   // --- SIMULADOS ---
   static async getSimulados(): Promise<Simulado[]> {
+    const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+
+    const filterValid = (rawList: Simulado[], uid?: string): Simulado[] => {
+      if (validConcursoIds.size === 0) return [];
+      return rawList.filter(s => {
+        if (!s || !s.id) return false;
+        if (uid && uid !== 'user_demo_01' && s.userId && s.userId !== uid) return false;
+        if (s.concursoId && !validConcursoIds.has(s.concursoId)) return false;
+        return true;
+      });
+    };
+
     try {
-      const { data, error } = await supabase
+      const uid = await getCurrentUserId();
+      let query = supabase
         .from('simulados')
         .select('*')
         .order('created_at', { ascending: false });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
+      const { data, error } = await query;
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapSimuladoFromDb);
+        const list = filterValid(data.map(mapSimuladoFromDb), uid);
         saveStored(STORAGE_KEYS.SIMULADOS, list);
         return list;
       }
@@ -3276,7 +4637,11 @@ export class DatabaseService {
     }
 
     const list = loadStored<Simulado[]>(STORAGE_KEYS.SIMULADOS, INITIAL_SIMULADOS);
-    return list;
+    const valid = filterValid(list);
+    if (valid.length !== list.length) {
+      saveStored(STORAGE_KEYS.SIMULADOS, valid);
+    }
+    return valid;
   }
 
   static async getSimuladoById(id: string): Promise<Simulado | null> {
@@ -3292,8 +4657,11 @@ export class DatabaseService {
     description?: string;
     banca?: string;
     modalidade?: 'multipla_escolha' | 'certo_errado';
+    tipoGabarito?: SimuladoTipoGabarito;
+    variacaoMultiplaEscolha?: SimuladoVariacaoMultiplaEscolha;
     cebraspePenalty?: boolean;
     durationMinutes: number;
+    elapsedSeconds?: number;
     disciplinasConfig?: SimuladoDisciplinaConfig[];
     status?: SimuladoStatus;
     customQuestoes?: SimuladoQuestao[];
@@ -3309,7 +4677,7 @@ export class DatabaseService {
     createdAt?: string;
   }): Promise<Simulado> {
     const list = await this.getSimulados();
-    const modalidade = data.modalidade || 'multipla_escolha';
+    const modalidade = data.modalidade || (data.tipoGabarito === 'CERTO_ERRADO' ? 'certo_errado' : 'multipla_escolha');
     const createdAt = data.createdAt || new Date().toISOString();
     const finishedAt = data.finishedAt || (data.status === 'finalizado' ? createdAt : undefined);
 
@@ -3333,10 +4701,12 @@ export class DatabaseService {
         description: data.description || '',
         banca: data.banca || 'FGV',
         modalidade,
+        tipoGabarito: data.tipoGabarito,
+        variacaoMultiplaEscolha: data.variacaoMultiplaEscolha,
         cebraspePenalty: data.cebraspePenalty || false,
         questionsCount,
         durationMinutes: data.durationMinutes || 180,
-        elapsedSeconds: (data.durationMinutes || 180) * 60,
+        elapsedSeconds: data.elapsedSeconds ?? ((data.durationMinutes || 180) * 60),
         score,
         maxScore: data.maxScore || questionsCount,
         accuracyRate,
@@ -3496,14 +4866,22 @@ export class DatabaseService {
       description: data.description || '',
       banca: data.banca || 'FGV',
       modalidade,
+      tipoGabarito: data.tipoGabarito,
+      variacaoMultiplaEscolha: data.variacaoMultiplaEscolha,
       cebraspePenalty: data.cebraspePenalty || false,
       questionsCount,
       durationMinutes: data.durationMinutes || 120,
       timeRemainingSeconds: (data.durationMinutes || 120) * 60,
-      elapsedSeconds: 0,
+      elapsedSeconds: data.elapsedSeconds ?? 0,
       disciplinasConfig: data.disciplinasConfig,
       questoes,
-      maxScore: questionsCount,
+      score: data.score,
+      maxScore: data.maxScore !== undefined ? data.maxScore : questionsCount,
+      accuracyRate: data.accuracyRate,
+      totalCorrect: data.totalCorrect,
+      totalWrong: data.totalWrong,
+      totalBlank: data.totalBlank,
+      desempenhoPorDisciplina: data.desempenhoPorDisciplina,
       status: data.status || 'agendado',
       createdAt,
       finishedAt,
@@ -4268,19 +5646,9 @@ export class DatabaseService {
 
   static async advanceStudyCycle(minutesStudied?: number): Promise<StudyCycle> {
     const cycle = await this.getStudyCycle();
-    const currBlock = cycle.blocks[cycle.currentBlockIndex];
     const advanced = CycleService.advanceBlock(cycle, minutesStudied);
-    if (currBlock && minutesStudied && minutesStudied > 0) {
-      await this.recordStudySession({
-        userId: cycle.userId,
-        disciplinaId: currBlock.disciplinaId,
-        assuntoId: currBlock.assuntoSugeridoId,
-        durationMinutes: minutesStudied,
-        type: 'teoria',
-        notes: `Bloco do Ciclo concluído: ${currBlock.disciplinaName} (${minutesStudied} min)`,
-        completedAt: new Date().toISOString(),
-      });
-    }
+    // Desvinculado: o avanço do ciclo atualiza exclusivamente o ponteiro e progresso do ciclo/planner,
+    // sem disparar inserção no histórico de sessões (evita duplicação com o modal de registro de estudo).
     return this.saveStudyCycle(advanced);
   }
 
@@ -4293,18 +5661,7 @@ export class DatabaseService {
   static async recordCycleProgress(additionalMinutes: number): Promise<StudyCycle> {
     const cycle = await this.getStudyCycle();
     const updated = CycleService.recordBlockProgress(cycle, additionalMinutes);
-    const currBlock = cycle.blocks[cycle.currentBlockIndex];
-    if (currBlock && additionalMinutes > 0) {
-      await this.recordStudySession({
-        userId: cycle.userId,
-        disciplinaId: currBlock.disciplinaId,
-        assuntoId: currBlock.assuntoSugeridoId,
-        durationMinutes: additionalMinutes,
-        type: 'teoria',
-        notes: `Tempo de estudo no Ciclo: ${currBlock.disciplinaName} (+${additionalMinutes} min)`,
-        completedAt: new Date().toISOString(),
-      });
-    }
+    // Desvinculado: atualiza apenas a minutagem interna do bloco sem gerar sessão fantasma no histórico.
     return this.saveStudyCycle(updated);
   }
 

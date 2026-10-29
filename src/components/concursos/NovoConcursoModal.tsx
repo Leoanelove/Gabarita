@@ -366,6 +366,68 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Função dedicada para reset completo do estado do Wizard
+  const resetWizard = () => {
+    // 1. Força o retorno imediato para a etapa 1
+    setStep(1);
+
+    // 2. Limpa a busca e a seleção de editais pré-carregados
+    setSelectedEditalId(null);
+    setSearchEditalQuery('');
+    setIsEditalDropdownOpen(false);
+
+    // 3. Reseta todos os inputs de texto e seletores
+    setOrgan('');
+    setRole('');
+    setTitle('');
+    setBanca('Vunesp');
+    setSphere('federal');
+    setRemuneration('');
+    setVacantPositions('1');
+    setStatus('autorizado');
+    setExamDate('');
+    setEditalUrl('');
+    setNotes('');
+
+    // 4. Limpa conteúdo programático e extrações
+    setContentMode('ai');
+    setPastedText('');
+    setUploadedFileName(null);
+    setPdfBase64(null);
+    setIsParsingAi(false);
+    setExtractionSource('gemini-ai');
+
+    // 5. Limpa a lista de disciplinas e tópicos importados
+    setDisciplinas([]);
+    setExpandedDisciplines({});
+    setEditingDisciplineIndex(null);
+    setEditingDisciplineName('');
+    setEditingTopicKey(null);
+    setEditingTopicName('');
+
+    // 6. Limpa inputs manuais rápidos
+    setManualDiscName('');
+    setManualDiscWeight('2.0');
+    setManualDiscColor('#10b981');
+    setManualTopicsText('');
+
+    // 7. Restaura flags de submissão e eventuais mensagens de erro
+    setIsSaving(false);
+    setErrorMessage(null);
+  };
+
+  const handleClose = () => {
+    resetWizard();
+    onClose();
+  };
+
+  // Garante que o Wizard sempre abra limpo na Etapa 1
+  useEffect(() => {
+    if (isOpen) {
+      resetWizard();
+    }
+  }, [isOpen]);
+
   // Auto-gerar título e sincronizar com Órgão e Cargo
   const handleOrganOrRoleChange = (newOrgan: string, newRole: string) => {
     setOrgan(newOrgan);
@@ -795,6 +857,7 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
         },
         disciplinas
       );
+      resetWizard();
       onClose();
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Falha ao salvar concurso e disciplinas.');
@@ -808,7 +871,7 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={
         step === 1 ? "Cadastro do Concurso Foco" :
         step === 2 ? "Extração de Matérias & Edital" :
@@ -1212,7 +1275,7 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-              <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+              <Button type="button" variant="outline" onClick={handleClose}>Cancelar</Button>
               <Button
                 type="button"
                 variant="primary"

@@ -26,18 +26,21 @@ import {
   Disciplina, 
   Assunto,
   Concurso,
-  StudyMethod
+  StudyMethod,
+  SessaoEstudo
 } from '../../types';
 import { Badge } from '../../design-system/Badge';
 import { Button } from '../../design-system/Button';
 import { Modal } from '../../design-system/Modal';
 import { PlannerService } from '../../services/plannerService';
 import { DatabaseService } from '../../services/db';
+import { SessionActionModal } from './SessionActionModal';
 
 interface CalendarViewProps {
   plan: StudyPlan;
   disciplinas: Disciplina[];
   assuntos: Assunto[];
+  sessoes?: SessaoEstudo[];
   concursos?: Concurso[];
   onRescheduleSession: (sessionId: string, newDate: string, reason?: string) => Promise<void>;
   onBatchRescheduleOverdue: (targetDate?: string, mode?: 'today' | 'spread') => Promise<void>;
@@ -46,8 +49,10 @@ interface CalendarViewProps {
   onOpenEditSession: (session: PlannedSession) => void;
   onOpenAddSession: (presetDate?: string) => void;
   onDeleteSession: (sessionId: string) => Promise<void>;
+  onUpdateSession?: (sessionId: string, partial: Partial<PlannedSession>) => Promise<void>;
   onPlanCreated?: (newPlan: StudyPlan) => Promise<void>;
   onSwitchMethod?: (method: StudyMethod) => Promise<void> | void;
+  onNavigateTab?: (tab: any) => void;
 }
 
 export type CalendarViewMode = 'diario' | 'semanal' | 'mensal';
@@ -56,6 +61,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   plan,
   disciplinas,
   assuntos,
+  sessoes = [],
   concursos = [],
   onRescheduleSession,
   onBatchRescheduleOverdue,
@@ -64,14 +70,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onOpenEditSession,
   onOpenAddSession,
   onDeleteSession,
+  onUpdateSession,
   onPlanCreated,
   onSwitchMethod,
+  onNavigateTab,
 }) => {
   const [viewMode, setViewMode] = useState<CalendarViewMode>('semanal');
   const todayStr = useMemo(() => PlannerService.formatLocalDate(new Date()), []);
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
   const [draggedSessionId, setDraggedSessionId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+
+  // Estado da sessão selecionada para abrir o Modal Intermediário (SessionActionModal)
+  const [selectedSessionForAction, setSelectedSessionForAction] = useState<PlannedSession | null>(null);
 
   const [reschedulingSession, setReschedulingSession] = useState<PlannedSession | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState<string>(todayStr);
@@ -86,6 +97,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const showFeedback = (msg: string) => {
     setFeedback(msg);
     setTimeout(() => setFeedback(null), 4000);
+  };
+
+  const handleSessionClick = (session: PlannedSession) => {
+    setSelectedSessionForAction(session);
   };
 
   const overdueSessions = useMemo(() => {
@@ -270,7 +285,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       {overdueSessions.length > 0 && (
         <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-xs">
           <span>{overdueSessions.length} sessão(ões) atrasada(s).</span>
-          <Button size="sm" variant="primary" onClick={() => onBatchRescheduleOverdue(todayStr, 'spread')} className="bg-rose-600">
+          <Button size="sm" variant="primary" onClick={() => onBatchRescheduleOverdue(todayStr, 'spread')} className="bg-rose-600 cursor-pointer font-bold">
             Redistribuir Atrasadas
           </Button>
         </div>
@@ -279,9 +294,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5">
-            <button onClick={handlePrev} className="p-1.5"><ChevronLeft className="w-4 h-4" /></button>
-            <button onClick={() => setSelectedDateStr(todayStr)} className="px-2.5 py-1 text-xs font-bold">Hoje</button>
-            <button onClick={handleNext} className="p-1.5"><ChevronRight className="w-4 h-4" /></button>
+            <button onClick={handlePrev} className="p-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /></button>
+            <button onClick={() => setSelectedDateStr(todayStr)} className="px-2.5 py-1 text-xs font-bold cursor-pointer">Hoje</button>
+            <button onClick={handleNext} className="p-1.5 cursor-pointer"><ChevronRight className="w-4 h-4" /></button>
           </div>
           <span className="font-extrabold text-sm capitalize">
             {viewMode === 'diario' && selectedDateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
@@ -321,7 +336,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 variant="outline"
                 onClick={() => onOpenAddSession(selectedDateStr)}
                 leftIcon={<Plus className="w-3.5 h-3.5" />}
-                className="cursor-pointer"
+                className="cursor-pointer font-bold"
               >
                 Adicionar Sessão
               </Button>
@@ -336,7 +351,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               return (
                 <div
                   key={session.id}
-                  className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 ${
+                  onClick={() => handleSessionClick(session)}
+                  className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 cursor-pointer ${
                     isDone 
                       ? 'border-[var(--primary-light-border)] bg-[var(--primary-light)]/40'
                       : isOverdue 
@@ -345,7 +361,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   }`}
                   style={{ borderLeftWidth: '5px', borderLeftColor: session.disciplinaColor || '#0ea5e9' }}
                 >
-                  <div className="space-y-1.5 flex-1">
+                  <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-xs font-bold text-slate-500 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -356,9 +372,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         style={{ backgroundColor: session.disciplinaColor || '#0ea5e9' }}
                       >
                         {session.disciplinaName}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                        {session.type}
                       </span>
                       {isDone && (
                         <Badge variant="primary" size="sm">Concluída</Badge>
@@ -371,39 +384,32 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       )}
                     </div>
 
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
                       {session.assuntoName}
                     </h4>
 
                     {session.notes && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
                         {session.notes}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+                  <div 
+                    className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800 ml-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button
                       size="sm"
                       variant={isDone ? "outline" : "primary"}
-                      onClick={() => onOpenStudyTimer(session.disciplinaId, session.assuntoId, session.durationMinutes)}
+                      onClick={() => handleSessionClick(session)}
                       leftIcon={<Play className="w-3.5 h-3.5 fill-current" />}
-                      className="cursor-pointer"
+                      className="cursor-pointer font-bold"
                     >
                       Estudar
                     </Button>
                     <button
-                      onClick={() => onToggleSessionStatus(session.id, isDone ? 'pendente' : 'concluida')}
-                      className={`p-2 rounded-xl border transition-colors cursor-pointer ${
-                        isDone 
-                          ? 'border-[var(--primary-color)] theme-btn-primary' 
-                          : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-[var(--primary-color)]'
-                      }`}
-                      title={isDone ? "Marcar como pendente" : "Marcar como concluída"}
-                    >
-                      <Check className="w-4 h-4 stroke-[3]" />
-                    </button>
-                    <button
+                      type="button"
                       onClick={() => onOpenEditSession(session)}
                       className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                       title="Editar sessão"
@@ -411,6 +417,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => onDeleteSession(session.id)}
                       className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 cursor-pointer"
                       title="Excluir sessão"
@@ -449,11 +456,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       key={session.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, session.id)}
-                      className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1 cursor-grab"
+                      onClick={() => handleSessionClick(session)}
+                      className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-2xs"
                       style={{ borderLeftWidth: '4px', borderLeftColor: session.disciplinaColor || '#10b981' }}
                     >
                       <span className="font-bold block truncate" style={{ color: session.disciplinaColor }}>{session.disciplinaName}</span>
-                      <p className="text-[11px] truncate">{session.assuntoName}</p>
+                      <p className="text-[11px] truncate text-slate-700 dark:text-slate-300 font-medium">{session.assuntoName}</p>
+                      <div className="flex items-center text-[10px] text-slate-500 dark:text-slate-400 font-mono pt-0.5">
+                        <span>⏱ {session.durationMinutes}min</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -525,7 +536,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       {daySessions.slice(0, 2).map((s) => (
                         <div
                           key={s.id}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white truncate shadow-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSessionClick(s);
+                          }}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white truncate shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
                           style={{ backgroundColor: s.disciplinaColor || '#0ea5e9' }}
                           title={`${s.startTime || ''} - ${s.disciplinaName}: ${s.assuntoName}`}
                         >
@@ -545,6 +560,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal Intermediário: Detalhes da Sessão Planejada */}
+      <SessionActionModal
+        session={selectedSessionForAction}
+        isOpen={!!selectedSessionForAction}
+        onClose={() => setSelectedSessionForAction(null)}
+        disciplinas={disciplinas}
+        assuntos={assuntos}
+        sessoes={sessoes}
+        onRescheduleSession={onRescheduleSession}
+        onOpenEditSession={onOpenEditSession}
+        onDeleteSession={onDeleteSession}
+        onUpdateSession={onUpdateSession}
+        onNavigateTab={onNavigateTab}
+        showFeedback={showFeedback}
+      />
     </div>
   );
 };
+

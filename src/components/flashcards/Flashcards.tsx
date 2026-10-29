@@ -49,6 +49,7 @@ export interface FlashcardsProps {
   disciplinas?: Disciplina[];
   assuntos?: Assunto[];
   onNavigateTab?: (tab: NavigationTab) => void;
+  onSaveStudySession?: (session: any) => Promise<void> | void;
 }
 
 const STORAGE_KEY_FLASHCARDS = '@gabarita:flashcards';
@@ -79,6 +80,7 @@ const getDisciplinaIcon = (disciplinaNome: string) => {
 export const Flashcards: React.FC<FlashcardsProps> = ({
   disciplinas = [],
   assuntos = [],
+  onSaveStudySession,
 }) => {
   const { colorSkin, palette } = useTheme();
   const currentTheme = (
@@ -410,6 +412,37 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
 
   // Callback de finalização da sessão no FlashcardPlayer
   const handleFinishReviewSession = (sessionStats: ReviewSessionStats) => {
+    const reviewedDeck = decks.find(d => d.id === reviewDeckId) || activeDeck;
+    const discName = reviewedDeck?.disciplina || cardsParaRevisar[0]?.disciplina || availableDisciplinasList[0] || 'Geral';
+    const matchedDisc = disciplinas.find(
+      d => d.name.trim().toLowerCase() === discName.trim().toLowerCase()
+    ) || disciplinas[0];
+    const topicName = cardsParaRevisar[0]?.topico || reviewedDeck?.nome || 'Revisão de Flashcards';
+    const matchedAssunto = assuntos.find(
+      a => a.disciplinaId === matchedDisc?.id && a.name.trim().toLowerCase() === topicName.trim().toLowerCase()
+    );
+
+    if (onSaveStudySession && sessionStats.totalReviewed > 0) {
+      const durationMins = Math.max(1, Math.round((sessionStats.timeSpentSeconds || 60) / 60));
+      const correctCount = (sessionStats.countBom || 0) + (sessionStats.countFacil || 0);
+      Promise.resolve(
+        onSaveStudySession({
+          disciplinaId: matchedDisc?.id || 'disc_flashcards',
+          assuntoId: matchedAssunto?.id,
+          disciplinaName: matchedDisc?.name || discName,
+          assuntoName: matchedAssunto?.name || topicName,
+          durationMinutes: durationMins,
+          durationSeconds: sessionStats.timeSpentSeconds || 60,
+          type: 'flashcards',
+          origem: 'flashcards',
+          questionsAttempted: sessionStats.totalReviewed,
+          questionsCorrect: correctCount,
+          notes: `Sessão de Flashcards (${reviewedDeck?.nome || 'Revisão Diária'}): ${sessionStats.totalReviewed} cartões revisados.`,
+          completedAt: new Date().toISOString(),
+        })
+      ).catch(err => console.warn('Erro ao salvar sessão de flashcards no histórico:', err));
+    }
+
     setIsReviewSessionActive(false);
     setReviewDeckId(null);
 

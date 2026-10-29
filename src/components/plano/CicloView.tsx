@@ -17,7 +17,9 @@ import {
   Plus,
   Sliders,
   Scale,
-  BookOpen
+  BookOpen,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { StudyCycle, CycleBlock, Disciplina, Assunto, StudyMethod, Concurso } from '../../types';
 import { Button } from '../../design-system/Button';
@@ -195,6 +197,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState(true);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   const [selectedBlock, setSelectedBlock] = useState<CycleBlock | null>(null);
@@ -223,17 +226,59 @@ export const CicloView: React.FC<CicloViewProps> = ({
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const hasBlocks = activeCycle && activeCycle.blocks && activeCycle.blocks.length > 0;
+  const hasBlocks = Boolean(activeCycle && Array.isArray(activeCycle.blocks) && activeCycle.blocks.length > 0);
   const currentBlockIndex = activeCycle?.currentBlockIndex || 0;
-  const currentBlock = hasBlocks ? (activeCycle.blocks[currentBlockIndex] || activeCycle.blocks[0]) : null;
+
+  // Separação Reativa dos Blocos: Pendentes (a concluir) vs Concluídos
+  const { pendingBlocks, completedBlocks } = useMemo(() => {
+    if (!activeCycle || !Array.isArray(activeCycle.blocks)) {
+      return { pendingBlocks: [], completedBlocks: [] };
+    }
+
+    const pending: Array<{ block: CycleBlock; originalIndex: number; percent: number }> = [];
+    const completed: Array<{ block: CycleBlock; originalIndex: number; percent: number }> = [];
+
+    activeCycle.blocks.forEach((block, idx) => {
+      const elapsed = block.elapsedMinutes || 0;
+      const calculatedPercent =
+        typeof block.progressPercent === 'number'
+          ? Math.min(100, Math.round(block.progressPercent))
+          : block.durationMinutes > 0 && elapsed > 0
+          ? Math.min(100, Math.round((elapsed / block.durationMinutes) * 100))
+          : 0;
+
+      // Critério de conclusão: status 'concluido', flag completed, progresso >= 100% ou índice anterior ao ponteiro atual da volta
+      const isDone = Boolean(
+        block.completed === true ||
+        block.status === 'concluido' ||
+        calculatedPercent >= 100 ||
+        idx < (activeCycle.currentBlockIndex || 0)
+      );
+
+      if (isDone) {
+        completed.push({ block, originalIndex: idx, percent: 100 });
+      } else {
+        pending.push({ block, originalIndex: idx, percent: calculatedPercent });
+      }
+    });
+
+    return { pendingBlocks: pending, completedBlocks: completed };
+  }, [activeCycle]);
+
+  const currentBlock = useMemo(() => {
+    if (!hasBlocks) return null;
+    if (pendingBlocks.length > 0) {
+      const activeMatch = pendingBlocks.find(item => item.originalIndex === currentBlockIndex);
+      return activeMatch ? activeMatch.block : pendingBlocks[0].block;
+    }
+    return activeCycle.blocks[currentBlockIndex] || activeCycle.blocks[0] || null;
+  }, [hasBlocks, activeCycle, currentBlockIndex, pendingBlocks]);
 
   // Cálculos de Métricas
   const totalBlocks = hasBlocks ? activeCycle.blocks.length : 0;
-  const completedBlocks = hasBlocks 
-    ? activeCycle.blocks.filter(b => b.status === 'concluido').length 
-    : 0;
+  const completedBlocksCount = completedBlocks.length;
   const progressPercent = totalBlocks > 0 
-    ? Math.round((completedBlocks / totalBlocks) * 100) 
+    ? Math.round((completedBlocksCount / totalBlocks) * 100) 
     : 0;
 
   // Tempo total planejado do ciclo
@@ -243,7 +288,14 @@ export const CicloView: React.FC<CicloViewProps> = ({
 
   // Tempo total estudado (acumulado nos blocos + voltas já concluídas)
   const totalElapsedInCurrentLap = hasBlocks
-    ? activeCycle.blocks.reduce((acc, b) => acc + (b.elapsedMinutes || (b.status === 'concluido' ? b.durationMinutes : 0)), 0)
+    ? activeCycle.blocks.reduce((acc, b, idx) => {
+        const isBlockDone =
+          b.completed === true ||
+          b.status === 'concluido' ||
+          (typeof b.progressPercent === 'number' && b.progressPercent >= 100) ||
+          idx < (activeCycle.currentBlockIndex || 0);
+        return acc + (b.elapsedMinutes || (isBlockDone ? b.durationMinutes : 0));
+      }, 0)
     : 0;
   const totalAccumulatedMinutes = totalElapsedInCurrentLap + ((activeCycle?.completedCyclesCount || 0) * totalPlannedMinutes);
 
@@ -269,14 +321,13 @@ export const CicloView: React.FC<CicloViewProps> = ({
     return `${hours}:${mins}`;
   }, []);
 
-  // Lista de blocos a serem exibidos (com expansão)
-  const displayBlocks = useMemo(() => {
-    if (!hasBlocks) return [];
-    if (isExpanded || activeCycle.blocks.length <= 6) {
-      return activeCycle.blocks;
+  // Lista de blocos pendentes a serem exibidos (com opção de ver mais se > 8)
+  const displayPendingBlocks = useMemo(() => {
+    if (isExpanded || pendingBlocks.length <= 8) {
+      return pendingBlocks;
     }
-    return activeCycle.blocks.slice(0, 6);
-  }, [hasBlocks, activeCycle.blocks, isExpanded]);
+    return pendingBlocks.slice(0, 8);
+  }, [pendingBlocks, isExpanded]);
 
   // Ação: Concluir bloco individual
   const handleCompleteBlock = async (blockId: string, durationMinutes: number) => {
@@ -660,7 +711,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
           </div>
           <div>
             <div className="text-sm font-bold text-slate-900 dark:text-white">
-              {completedBlocks} de {totalBlocks}
+              {completedBlocksCount} de {totalBlocks}
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
               {progressPercent}% do ciclo
@@ -687,7 +738,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
       {/* =========================================================================
           3. CARD BANNER "PRÓXIMA SESSÃO" (DESTAQUE CENTRAL)
           ========================================================================= */}
-      {currentBlock && (
+      {currentBlock && pendingBlocks.length > 0 && (
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Camada de gradiente sutil no canto direito com a cor do tema ativo */}
           <div 
@@ -765,176 +816,300 @@ export const CicloView: React.FC<CicloViewProps> = ({
       )}
 
       {/* =========================================================================
-          4. SEÇÃO "Disciplinas do ciclo" (LISTAGEM EM LINHAS)
+          4. SEÇÃO PRINCIPAL: BLOCOS A CONCLUIR (PENDENTES) & BLOCOS CONCLUÍDOS
           ========================================================================= */}
-      <div className="space-y-3.5">
-        {/* Cabeçalho da Seção */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Disciplinas do ciclo
-          </h3>
-          <button
-            type="button"
-            onClick={() => setIsCreateCycleModalOpen(true)}
-            className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            <span>Editar ciclo</span>
-          </button>
-        </div>
-
-        {/* Lista de Linhas */}
-        <div className="space-y-2.5">
-          {displayBlocks.map((block, idx) => {
-            const isDone = block.status === 'concluido';
-            const isCurrent = idx === currentBlockIndex;
-            const elapsed = block.elapsedMinutes || 0;
-            const percent = isDone 
-              ? 100 
-              : block.durationMinutes > 0 && elapsed > 0
-              ? Math.min(100, Math.round((elapsed / block.durationMinutes) * 100))
-              : 0;
-
-            return (
-              <div
-                key={block.id}
-                className="border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900/70 hover:border-slate-300 dark:hover:border-slate-700/80 rounded-xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 transition-all shadow-xs"
+      <div className="space-y-6">
+        {/* SEÇÃO 4.1: BLOCOS PENDENTES / A CONCLUIR */}
+        <div className="space-y-3.5">
+          {/* Cabeçalho da Seção */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span>Disciplinas do ciclo</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80 font-mono">
+                {pendingBlocks.length}
+              </span>
+            </h3>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsReorderModalOpen(true)}
+                className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600"
               >
-                {/* Coluna 1 & Coluna 2 */}
-                <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                  {/* Coluna 1: Marcador circular da ordem */}
-                  {isDone ? (
-                    <div 
-                      className="w-8 h-8 rounded-full border flex items-center justify-center shrink-0"
-                      style={{
-                        backgroundColor: `${palette.primary}18`,
-                        borderColor: `${palette.primary}45`,
-                        color: palette.primary,
-                      }}
-                    >
-                      <Check className="w-4 h-4 stroke-[3]" />
-                    </div>
-                  ) : isCurrent ? (
-                    <div 
-                      className="w-8 h-8 rounded-full border font-bold font-mono text-xs flex items-center justify-center shrink-0"
-                      style={{
-                        backgroundColor: `${palette.primary}18`,
-                        borderColor: `${palette.primary}45`,
-                        color: palette.primary,
-                      }}
-                    >
-                      {idx + 1}
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-bold font-mono text-xs flex items-center justify-center shrink-0">
-                      {idx + 1}
-                    </div>
-                  )}
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                <span>Reordenar ciclo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsCreateCycleModalOpen(true)}
+                className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                <span>Editar ciclo</span>
+              </button>
+            </div>
+          </div>
 
-                  {/* Coluna 2: Ícone colorido da disciplina + Nome + Assunto */}
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <SubjectIcon subjectName={block.disciplinaName} />
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-slate-900 dark:text-white truncate flex items-center gap-2">
-                        <span>{block.disciplinaName}</span>
-                        {isCurrent && (
-                          <span 
-                            className="text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 shadow-2xs"
-                            style={{
-                              backgroundColor: `${palette.primary}20`,
-                              color: palette.primary,
-                            }}
-                          >
-                            Atual
-                          </span>
-                        )}
+          {/* Lista de Blocos Pendentes ou Estado de Volta Concluída */}
+          {pendingBlocks.length === 0 ? (
+            <div className="p-8 text-center rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/20">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+              <h4 className="font-bold text-sm text-slate-800 dark:text-white">
+                Parabéns! Você completou todos os blocos desta volta do ciclo.
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Reinicie a volta para recomeçar o ciclo com suas disciplinas organizadas.
+              </p>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={async () => {
+                  await onResetCycleLap();
+                  const reset = await DatabaseService.resetStudyCycle(false);
+                  setActiveCycle(reset);
+                  showFeedback('Nova volta iniciada com sucesso!');
+                }}
+                className="mt-3 cursor-pointer font-semibold"
+              >
+                Iniciar Próxima Volta
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {displayPendingBlocks.map(({ block, originalIndex, percent }, listIdx) => {
+                const isCurrent = originalIndex === currentBlockIndex || (listIdx === 0 && !pendingBlocks.some(p => p.originalIndex === currentBlockIndex));
+
+                return (
+                  <div
+                    key={block.id || `pending_${originalIndex}`}
+                    style={
+                      isCurrent
+                        ? {
+                            borderColor: `${palette.primary}66`,
+                            boxShadow: `0 2px 12px ${palette.primary}14`,
+                          }
+                        : undefined
+                    }
+                    className={`border rounded-xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 transition-all shadow-xs ${
+                      isCurrent
+                        ? 'bg-white dark:bg-slate-900/70'
+                        : 'border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900/70 hover:border-slate-300 dark:hover:border-slate-700/80'
+                    }`}
+                  >
+                    {/* Coluna 1 & Coluna 2 */}
+                    <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                      {/* Coluna 1: Marcador circular da ordem original */}
+                      {isCurrent ? (
+                        <div 
+                          className="w-8 h-8 rounded-full border font-bold font-mono text-xs flex items-center justify-center shrink-0"
+                          style={{
+                            backgroundColor: `${palette.primary}18`,
+                            borderColor: `${palette.primary}55`,
+                            color: palette.primary,
+                          }}
+                        >
+                          {originalIndex + 1}
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-slate-700 font-bold font-mono text-xs flex items-center justify-center shrink-0">
+                          {originalIndex + 1}
+                        </div>
+                      )}
+
+                      {/* Coluna 2: Ícone colorido da disciplina + Nome + Assunto */}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <SubjectIcon subjectName={block.disciplinaName} />
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-slate-900 dark:text-white truncate flex items-center gap-2">
+                            <span>{block.disciplinaName}</span>
+                            {isCurrent && (
+                              <span 
+                                className="text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 shadow-2xs"
+                                style={{
+                                  backgroundColor: `${palette.primary}20`,
+                                  color: palette.primary,
+                                }}
+                              >
+                                Atual
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {block.assuntoSugeridoName || 'Princípios Fundamentais'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {block.assuntoSugeridoName || 'Princípios Fundamentais'}
+                    </div>
+
+                    {/* Coluna 3: Duração do bloco em texto médio centralizado */}
+                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 min-w-[75px] text-left lg:text-center shrink-0">
+                      {formatDuration(block.durationMinutes)}
+                    </div>
+
+                    {/* Coluna 4: Barra de progresso com a porcentagem ao lado */}
+                    <div className="flex items-center gap-2.5 min-w-[130px] max-w-xs flex-1 shrink-0">
+                      <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${percent}%`,
+                            backgroundColor: isCurrent || percent > 0 ? palette.primary : '#94a3b8',
+                          }}
+                        />
                       </div>
+                      <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 shrink-0 w-9 text-right">
+                        {percent}%
+                      </span>
+                    </div>
+
+                    {/* Coluna 5: Ações alinhadas à direita */}
+                    <div className="flex items-center justify-end gap-2 shrink-0 self-end lg:self-center lg:ml-auto">
+                      {/* Botão Editar */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditBlock(block)}
+                        className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600"
+                      >
+                        <Edit3 className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                        <span>Editar</span>
+                      </button>
+
+                      {/* Botão Play (Estudar Bloco) com Cor do Tema Ativo */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const assuntoId = block.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === block.disciplinaId)?.id;
+                          onOpenStudyTimer(block.disciplinaId, assuntoId, block.durationMinutes);
+                        }}
+                        style={{ backgroundColor: palette.primary }}
+                        className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm hover:brightness-110 active:scale-95"
+                        title={`Iniciar Sessão de Estudo: ${block.disciplinaName}${block.assuntoSugeridoName ? ` - ${block.assuntoSugeridoName}` : ''} (${formatDuration(block.durationMinutes)})`}
+                        aria-label={`Iniciar estudo de ${block.disciplinaName}`}
+                      >
+                        <Play className="w-3 h-3 fill-current text-white" />
+                        <span className="text-white font-semibold">Estudar</span>
+                      </button>
                     </div>
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          )}
 
-                {/* Coluna 3: Duração do bloco em texto médio centralizado */}
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 min-w-[75px] text-left lg:text-center shrink-0">
-                  {formatDuration(block.durationMinutes)}
-                </div>
-
-                {/* Coluna 4: Barra de progresso com a porcentagem ao lado */}
-                <div className="flex items-center gap-2.5 min-w-[130px] max-w-xs flex-1 shrink-0">
-                  <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${percent}%`,
-                        backgroundColor: isDone ? palette.primary : isCurrent ? palette.primary : '#94a3b8',
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 shrink-0 w-9 text-right">
-                    {percent}%
-                  </span>
-                </div>
-
-                {/* Coluna 5: Ações alinhadas à direita */}
-                <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
-                  {/* Botão Editar */}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditBlock(block)}
-                    className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600"
-                  >
-                    <Edit3 className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-                    <span>Editar</span>
-                  </button>
-
-                  {/* Botão Concluir */}
-                  <button
-                    type="button"
-                    onClick={() => handleCompleteBlock(block.id, block.durationMinutes)}
-                    style={{
-                      backgroundColor: `${palette.primary}18`,
-                      borderColor: `${palette.primary}45`,
-                      borderWidth: '1px',
-                      color: palette.primary,
-                    }}
-                    className="text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer shadow-xs hover:brightness-110 active:scale-95"
-                  >
-                    <Check className="w-3 h-3 stroke-[3]" />
-                    <span>Concluir</span>
-                  </button>
-
-                  {/* Botão Play (Estudar Bloco) com Cor do Tema Ativo */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const assuntoId = block.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === block.disciplinaId)?.id;
-                      onOpenStudyTimer(block.disciplinaId, assuntoId, block.durationMinutes);
-                    }}
-                    style={{ backgroundColor: palette.primary }}
-                    className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm hover:brightness-110 active:scale-95"
-                    title={`Iniciar Sessão de Estudo: ${block.disciplinaName}${block.assuntoSugeridoName ? ` - ${block.assuntoSugeridoName}` : ''} (${formatDuration(block.durationMinutes)})`}
-                    aria-label={`Iniciar estudo de ${block.disciplinaName}`}
-                  >
-                    <Play className="w-3 h-3 fill-current text-white" />
-                    <span className="text-white font-semibold">Estudar</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {/* Rodapé da lista de pendentes: Ver mais disciplinas */}
+          {pendingBlocks.length > 8 && (
+            <div className="text-center pt-2">
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+              >
+                <span>{isExpanded ? 'Ver menos disciplinas ∧' : `Ver mais disciplinas (${pendingBlocks.length - 8}) ∨`}</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Rodapé da lista: Ver mais disciplinas */}
-        {activeCycle.blocks.length > 6 && (
-          <div className="text-center pt-2">
+        {/* SEÇÃO 4.2: BLOCOS CONCLUÍDOS (SEPARADOS E RETRÁTEIS) */}
+        {completedBlocks.length > 0 && (
+          <div className="pt-5 border-t border-slate-200 dark:border-slate-800">
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+              type="button"
+              onClick={() => setIsCompletedExpanded(prev => !prev)}
+              className="w-full flex items-center justify-between cursor-pointer py-2 px-1 select-none group rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
             >
-              <span>{isExpanded ? 'Ver menos disciplinas ∧' : 'Ver mais disciplinas ∨'}</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </span>
+                <span className="text-xs font-extrabold tracking-wider text-slate-700 dark:text-slate-300 uppercase">
+                  Concluídos ({completedBlocks.length})
+                </span>
+              </div>
+              <span className="text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+                {isCompletedExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </span>
             </button>
+
+            {isCompletedExpanded && (
+              <div className="space-y-2.5 mt-3">
+                {completedBlocks.map(({ block, originalIndex }) => (
+                  <div
+                    key={block.id || `completed_${originalIndex}`}
+                    className="border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-900/60 rounded-xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 transition-all opacity-90"
+                  >
+                    {/* Coluna 1 & Coluna 2 */}
+                    <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                      {/* Ícone de Check Verde no lugar do número do bloco */}
+                      <div
+                        className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"
+                        title={`Bloco #${originalIndex + 1} concluído`}
+                      >
+                        <Check className="w-4 h-4 stroke-[3]" />
+                      </div>
+
+                      {/* Ícone da disciplina + Nome + Badge CONCLUÍDO + Tópico */}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <SubjectIcon subjectName={block.disciplinaName} />
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate flex items-center gap-2">
+                            <span>{block.disciplinaName}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                              Concluído
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            #{originalIndex + 1} • {block.assuntoSugeridoName || 'Princípios Fundamentais'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Coluna 3: Duração do bloco */}
+                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 min-w-[75px] text-left lg:text-center shrink-0">
+                      {formatDuration(block.durationMinutes)}
+                    </div>
+
+                    {/* Coluna 4: Barra de progresso em verde preenchida em 100% */}
+                    <div className="flex items-center gap-2.5 min-w-[130px] max-w-xs flex-1 shrink-0">
+                      <div className="w-full h-1.5 rounded-full bg-slate-200/70 dark:bg-slate-800 overflow-hidden">
+                        <div className="h-full w-full rounded-full bg-emerald-500 transition-all duration-300" />
+                      </div>
+                      <span className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 shrink-0 w-9 text-right">
+                        100%
+                      </span>
+                    </div>
+
+                    {/* Coluna 5: Ações alinhadas à direita (Editar e Revisar/Estudar novamente) */}
+                    <div className="flex items-center justify-end gap-2 shrink-0 self-end lg:self-center lg:ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditBlock(block)}
+                        className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                      >
+                        <Edit3 className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                        <span>Editar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const assuntoId = block.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === block.disciplinaId)?.id;
+                          onOpenStudyTimer(block.disciplinaId, assuntoId, block.durationMinutes);
+                        }}
+                        className="text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                        title={`Revisar / Estudar novamente: ${block.disciplinaName}`}
+                      >
+                        <RotateCcw className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        <span>Revisar</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

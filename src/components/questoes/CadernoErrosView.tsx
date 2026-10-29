@@ -894,11 +894,11 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       )}
 
       {/* Barra de Controle & Filtros Combinados */}
-      <Card>
-        <CardBody className="p-4 sm:p-5 space-y-4">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardBody className="p-4 sm:p-5 space-y-4 w-full max-w-full">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 w-full max-w-full min-w-0">
             {/* Campo de Busca em Tempo Real */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
@@ -921,7 +921,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
             </div>
 
             {/* Filtros em Dropdown */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
               {/* Disciplina */}
               <select
                 value={filterDisciplina}
@@ -929,14 +929,15 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                   setFilterDisciplina(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full sm:w-auto max-w-full sm:max-w-[200px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
               >
                 <option value="todas">Todas as Disciplinas</option>
                 {disciplinas.map(d => {
                   const cnt = cadernoErros.filter(e => e.disciplinaId === d.id).length;
+                  const shortName = d.name.length > 42 ? `${d.name.slice(0, 42)}...` : d.name;
                   return (
-                    <option key={d.id} value={d.id}>
-                      {d.name} {cnt > 0 ? `(${cnt})` : ''}
+                    <option key={d.id} value={d.id} title={d.name}>
+                      {shortName} {cnt > 0 ? `(${cnt})` : ''}
                     </option>
                   );
                 })}
@@ -949,7 +950,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                   setFilterMotivo(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full sm:w-auto max-w-full sm:max-w-[180px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
               >
                 <option value="todos">Todos os Motivos</option>
                 {(Object.entries(MOTIVOS_CONFIG) as [MotivoErro, typeof MOTIVOS_CONFIG[MotivoErro]][]).map(([key, cfg]) => (
@@ -967,7 +968,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                     setFilterBanca(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                  className="w-full sm:w-auto max-w-full sm:max-w-[160px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="todas">Todas as Bancas</option>
                   {availableBancas.map(b => (
@@ -980,7 +981,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortField)}
-                className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full sm:w-auto max-w-full sm:max-w-[170px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
               >
                 <option value="recentes">Mais Recentes</option>
                 <option value="reincidentes">Mais Reincidentes</option>
