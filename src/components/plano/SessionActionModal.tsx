@@ -234,7 +234,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
               {formatFullDateBR(session.date)}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Grade semanal • Bloco programado às {session.startTime || '08:00'}
+              Grade semanal • {session.durationMinutes} min de meta
             </p>
           </div>
 
@@ -315,7 +315,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
                   <div className="pt-1.5 flex items-center gap-2 flex-wrap">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 shadow-2xs">
                       <Clock className="w-3.5 h-3.5" style={{ color: palette.primary }} />
-                      <span>⏱ {session.durationMinutes} min</span>
+                      <span>{session.durationMinutes} min</span>
                     </span>
                   </div>
                 </div>
@@ -340,7 +340,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
                       className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-2.5 cursor-pointer font-medium rounded-xl transition-colors"
                     >
                       <FileEdit className="w-4 h-4 text-emerald-500" />
-                      <span>📝 Registrar manualmente</span>
+                      <span>Registrar Manualmente</span>
                     </button>
                   </div>
                 )}
@@ -356,7 +356,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
                 className="w-full py-3 px-5 rounded-2xl text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-md hover:brightness-110 active:scale-98 transition-all cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current text-white" />
-                <span>▶ Iniciar estudo agora</span>
+                <span> Iniciar estudo agora</span>
               </button>
             </div>
           </div>
@@ -419,7 +419,8 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
                 onClick={() => handlePostponeDays(1)}
                 className="flex-1 py-2.5 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
               >
-                <span>Adiar 1 dia</span>
+                <ArrowRight className="w-4 h-4 text-amber-500" />
+                <span> Adiar 1 dia</span>
               </button>
 
               {/* Botão Escolher outro dia */}
@@ -469,7 +470,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
               className="py-2 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <Edit2 className="w-3.5 h-3.5 text-slate-500" />
-              <span>✏️ Editar evento</span>
+              <span>Editar Estudo</span>
             </button>
 
             <button
@@ -482,7 +483,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
               className="py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/70 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-              <span>🗑 Excluir</span>
+              <span> Excluir</span>
             </button>
           </div>
 

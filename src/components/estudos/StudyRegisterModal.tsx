@@ -719,8 +719,8 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         
         {/* CABEÇALHO */}
         <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md shrink-0 space-y-3 sm:space-y-3.5">
-          {/* Linha Superior: Ícone, Título, Subtítulo e Botão Fechar (X) */}
-          <div className="flex items-center justify-between gap-3">
+          {/* Linha Superior: Ícone, Título, Subtítulo, Seletor de Data no Canto Superior Direito e Botão Fechar (X) */}
+          <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-3">
               <div 
                 className="w-10 h-10 rounded-full border flex items-center justify-center shrink-0"
@@ -749,86 +749,87 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
               </div>
             </div>
 
-            {/* Botão Fechar (X) no topo direito */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-9 w-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-              title="Fechar janela"
-              aria-label="Fechar janela"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+            {/* Canto Superior Direito: Seletor de Data de Registro + Botão Fechar (X) */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto sm:ml-0">
+              {/* Seletor de Data de Registro: [Hoje | Ontem | Outro] */}
+              <div className="flex items-center gap-2 shrink-0">
+                <CalendarCheck className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 hidden xs:block" />
+                <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 h-9 shadow-xs">
+                  {(['hoje', 'ontem', 'outro'] as const).map((opt) => {
+                    const isSelected = dateMode === opt;
+                    const label = opt === 'hoje' ? 'Hoje' : opt === 'ontem' ? 'Ontem' : 'Outro';
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setDateMode(opt)}
+                        className={`h-7 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none flex items-center justify-center ${
+                          isSelected
+                            ? 'text-white font-bold shadow-xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                        style={isSelected ? { backgroundColor: palette.primary } : undefined}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
 
-          {/* Linha Abaixo do Texto: Os 3 botões selecionados lado a lado na mesma linha */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap w-full">
-            {/* 1. Seletor de Data de Registro: [Hoje | Ontem | Outro] */}
-            <div className="flex items-center gap-2 shrink-0">
-              <CalendarCheck className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 hidden xs:block" />
-              <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 h-9 sm:h-10 shadow-xs">
-                {(['hoje', 'ontem', 'outro'] as const).map((opt) => {
-                  const isSelected = dateMode === opt;
-                  const label = opt === 'hoje' ? 'Hoje' : opt === 'ontem' ? 'Ontem' : 'Outro';
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setDateMode(opt)}
-                      className={`h-7 sm:h-8 px-3 sm:px-3.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none flex items-center justify-center ${
-                        isSelected
-                          ? 'text-white font-bold shadow-xs'
-                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                      style={isSelected ? { backgroundColor: palette.primary } : undefined}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+                {dateMode === 'outro' && (
+                  <div className="relative flex items-center animate-in fade-in duration-150">
+                    <input
+                      type="date"
+                      value={customDate}
+                      max={getTodayYMD()}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      className="h-9 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 shadow-2xs cursor-pointer"
+                    />
+                  </div>
+                )}
               </div>
 
-              {dateMode === 'outro' && (
-                <div className="relative flex items-center animate-in fade-in duration-150">
-                  <input
-                    type="date"
-                    value={customDate}
-                    max={getTodayYMD()}
-                    onChange={(e) => setCustomDate(e.target.value)}
-                    className="h-9 sm:h-10 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 shadow-2xs cursor-pointer"
-                  />
-                </div>
-              )}
+              {/* Botão Fechar (X) */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-9 w-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                title="Fechar janela"
+                aria-label="Fechar janela"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+          </div>
 
-            {/* 2. Badge do Tempo Líquido Capturado / Editado */}
-            {modo === 'cronometro' && (
+          {/* Segunda Linha (se houver elementos do modo cronômetro): Tempo Líquido / Voltar ao Timer */}
+          {modo === 'cronometro' && (
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap w-full pt-1">
               <span 
-                className="h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-2 whitespace-nowrap border shrink-0"
+                className="h-9 px-3.5 rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-2 whitespace-nowrap border shrink-0"
                 style={{
                   backgroundColor: `${palette.primary}15`,
                   borderColor: `${palette.primary}40`,
                   color: palette.primary,
                 }}
               >
-                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" style={{ color: palette.primary }} />
+                <Clock className="w-3.5 h-3.5 shrink-0" style={{ color: palette.primary }} />
                 <span>Tempo Líquido: {activeDurationMinutes} min ({formattedTimeHHMMSS})</span>
               </span>
-            )}
 
-            {/* 3. Botão Voltar ao Timer */}
-            {modo !== 'manual' && onBackToTimer && (
-              <button
-                type="button"
-                onClick={onBackToTimer}
-                className="h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-2 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-xs cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
-                title="Voltar ao Cronômetro"
-              >
-                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                <span>Voltar ao Timer</span>
-              </button>
-            )}
-          </div>
+              {onBackToTimer && (
+                <button
+                  type="button"
+                  onClick={onBackToTimer}
+                  className="h-9 px-3.5 rounded-xl text-xs font-semibold inline-flex items-center gap-2 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-xs cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
+                  title="Voltar ao Cronômetro"
+                >
+                  <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <span>Voltar ao Timer</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Mensagem de Erro de Validação */}
@@ -1139,7 +1140,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                       <GraduationCap className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span>🎓 Teoria Finalizada</span>
+                      <span>Concluiu Tópico?</span>
                     </span>
                     <span className="study-modal-theme-badge px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-700/60">
                       Edital Verticalizado
@@ -1169,7 +1170,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                       <CalendarClock className="w-4 h-4 text-purple-500 shrink-0" />
-                      <span>📅 Programar Revisões</span>
+                      <span> Programar Revisões</span>
                     </span>
                     <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-300/60 dark:border-purple-700/60">
                       SRS Ativo
@@ -1273,7 +1274,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-bold text-xs text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
                     <HelpCircle className="w-4 h-4 text-sky-500 shrink-0" />
-                    <span>❓ Questões</span>
+                    <span>Questões</span>
                   </span>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${

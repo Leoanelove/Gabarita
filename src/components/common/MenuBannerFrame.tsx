@@ -111,10 +111,45 @@ export const MenuBannerFrame: React.FC<MenuBannerFrameProps> = ({
     Object.values(bannerThemes)[0] ||
     '';
 
+  const bannerThemeGlowShadow = React.useMemo(() => {
+    switch (normalizedSkin) {
+      case 'roxo':
+        return {
+          boxShadow: '0 20px 40px -12px rgba(139, 92, 246, 0.45), 0 0 25px -5px rgba(167, 139, 250, 0.35)',
+          borderColor: 'rgba(139, 92, 246, 0.4)',
+        };
+      case 'laranja':
+        return {
+          boxShadow: '0 20px 40px -12px rgba(249, 115, 22, 0.45), 0 0 25px -5px rgba(251, 146, 60, 0.35)',
+          borderColor: 'rgba(249, 115, 22, 0.4)',
+        };
+      case 'azul':
+        return {
+          boxShadow: '0 20px 40px -12px rgba(59, 130, 246, 0.45), 0 0 25px -5px rgba(96, 165, 250, 0.35)',
+          borderColor: 'rgba(59, 130, 246, 0.4)',
+        };
+      case 'rosa':
+        return {
+          boxShadow: '0 20px 40px -12px rgba(236, 72, 153, 0.45), 0 0 25px -5px rgba(244, 114, 182, 0.35)',
+          borderColor: 'rgba(236, 72, 153, 0.4)',
+        };
+      case 'verde':
+      default:
+        return {
+          boxShadow: '0 20px 40px -12px rgba(16, 185, 129, 0.45), 0 0 25px -5px rgba(52, 211, 153, 0.35)',
+          borderColor: 'rgba(16, 185, 129, 0.4)',
+        };
+    }
+  }, [normalizedSkin]);
+
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl md:rounded-3xl bg-slate-900 dark:bg-slate-950 ${minHeight} ${className}`.trim()}
-      style={style}
+      className={`relative overflow-hidden rounded-2xl md:rounded-3xl border bg-slate-900 dark:bg-slate-950 transition-all duration-300 ${minHeight} ${className}`.trim()}
+      style={{
+        boxShadow: bannerThemeGlowShadow.boxShadow,
+        borderColor: bannerThemeGlowShadow.borderColor,
+        ...style,
+      }}
     >
       {/* Camada absoluta blindada do background */}
       <div className={bgWrapperClassName}>

@@ -13,11 +13,15 @@ import {
   ArrowRight,
   Maximize2,
   Minimize2,
-  BookOpen
+  BookOpen,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { Flashcard, Deck } from '../../types';
 import { Button } from '../../design-system/Button';
 import { DatabaseService } from '../../services/db';
+import { useTimerAlarm } from '../../hooks/useTimerAlarm';
+import { RingtoneSelectorButton, SoundVolumeControlButton } from '../estudos/RingtoneSelectorModal';
 
 export interface FlashcardPlayerProps {
   cards: Flashcard[];
@@ -44,6 +48,8 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
   onFinish,
   onClose,
 }) => {
+  const { isSoundOn, toggleSound, isAlarmRinging, unlockAudio, triggerAlarm, stopAlarm } = useTimerAlarm();
+
   // Fila de cartões ativos (permite que 'Errei' adicione o cartão no final da fila da sessão atual)
   const [queue, setQueue] = useState<Flashcard[]>(() => [...cards]);
   const [initialCount] = useState<number>(cards.length);
@@ -115,6 +121,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
   // Ação ao avaliar o cartão
   const handleRate = (rating: 'errei' | 'dificil' | 'bom' | 'facil') => {
     if (!currentCard) return;
+    unlockAudio();
 
     // 1. Atualizar estatísticas locais
     setStats((prev) => ({
@@ -205,6 +212,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
   // Concluir e pontuar XP
   const completeSession = async () => {
     setIsSessionFinished(true);
+    triggerAlarm('session');
 
     const totalAnswered = stats.totalAnswers + 1;
     const xp = Math.max(10, totalAnswered * 5 + 15); // Ex: 5 cards = 40 XP
@@ -226,6 +234,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
   };
 
   const handleFinishAndExit = () => {
+    stopAlarm();
     const totalAnswered = stats.totalAnswers;
     const xp = Math.max(10, totalAnswered * 5 + 15);
 
@@ -293,6 +302,16 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
             <span>{formatTime(secondsElapsed)}</span>
           </div>
 
+          <SoundVolumeControlButton
+            buttonClassName="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            iconClassName="w-4 h-4"
+          />
+
+          <RingtoneSelectorButton
+            buttonClassName="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            iconClassName="w-4 h-4 text-[#10b981]"
+          />
+
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             title={isFullscreen ? 'Reduzir tela' : 'Tela cheia'}
@@ -302,7 +321,10 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
           </button>
 
           <button
-            onClick={onClose}
+            onClick={() => {
+              stopAlarm();
+              onClose();
+            }}
             title="Sair da sessão"
             className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
           >
@@ -535,15 +557,26 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
             </div>
 
             {/* Ação de Conclusão */}
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleFinishAndExit}
-              className="w-full justify-center font-black py-3.5 rounded-2xl shadow-lg hover:scale-[1.01] transition-transform text-sm tracking-wide"
-              rightIcon={<ArrowRight className="w-4 h-4" />}
-            >
-              Concluir e Voltar aos Baralhos
-            </Button>
+            <div className="space-y-2.5">
+              {isAlarmRinging && (
+                <button
+                  type="button"
+                  onClick={stopAlarm}
+                  className="w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black text-sm shadow-lg shadow-rose-600/30 animate-pulse cursor-pointer transition-all"
+                >
+                  🔕 Desativar Alarme
+                </button>
+              )}
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleFinishAndExit}
+                className="w-full justify-center font-black py-3.5 rounded-2xl shadow-lg hover:scale-[1.01] transition-transform text-sm tracking-wide"
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+              >
+                Concluir e Voltar aos Baralhos
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -914,104 +914,150 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card hoverEffect className="card-metric-hours border-l-4">
-          <CardBody className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Horas Estudadas</p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{totalStudyHours}h</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{sessoes.length} sessões</p>
-            </div>
-            <div className="card-metric-hours-icon-bg w-12 h-12 rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6" />
-            </div>
-          </CardBody>
-        </Card>
-        <Card hoverEffect className="border-l-4" style={{ borderLeftColor: palette.primary }}>
-          <CardBody className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Questões & Acertos</p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{globalAccuracyRate}%</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{totalQuestionsCorrect}/{totalQuestionsAttempted} acertos</p>
-            </div>
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{
-                backgroundColor: `${palette.primary}18`,
-                color: palette.primary,
-              }}
+      {/* 1. Resolução segura da cor do tema para as bordas */}
+      {(() => {
+        // Mapeia a cor hex da borda conforme o tema ativo normalizado
+        const themeBorderColor = (() => {
+          switch (normalizedSkin) {
+            case 'roxo':
+              return '#8B5CF6'; // Roxo vibrante
+            case 'laranja':
+              return '#FF6B00'; // Laranja / Amber vibrante
+            case 'rosa':
+              return '#EC4899'; // Rosa Gabarita
+            case 'azul':
+              return '#3B82F6'; // Azul vibrante
+            case 'verde':
+            default:
+              return '#10B981'; // Verde Esmeralda
+          }
+        })();
+
+        const themeIconBg = `${themeBorderColor}1A`; // ~10% de opacidade
+
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* CARD 1: HORAS ESTUDADAS */}
+            <Card 
+              hoverEffect 
+              className="card-metric-hours card-metric-theme border-l-4 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs"
+              style={{ borderLeftColor: themeBorderColor, borderLeftWidth: '4px' }}
             >
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-          </CardBody>
-        </Card>
-        <Card 
-          hoverEffect 
-          role="button"
-          tabIndex={0}
-          onClick={() => setIsStreakModalOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setIsStreakModalOpen(true);
-            }
-          }}
-          className="border-l-4 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-          style={{ borderLeftColor: palette.primary }}
-        >
-          <CardBody className="p-4 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Constância</p>
-                <span 
-                  className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+              <CardBody className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Horas Estudadas</p>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{totalStudyHours}h</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{sessoes.length} sessões</p>
+                </div>
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
                   style={{
-                    backgroundColor: `${palette.primary}18`,
-                    color: palette.primary,
+                    backgroundColor: themeIconBg,
+                    color: themeBorderColor,
                   }}
                 >
-                  Ver histórico
-                </span>
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{user.streakDays} Dias Seguidos</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Clique Para Abrir</p>
-            </div>
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{
-                backgroundColor: `${palette.primary}18`,
-                color: palette.primary,
-              }}
+                  <Clock className="w-6 h-6 stroke-[2]" />
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* CARD 2: QUESTÕES & ACERTOS */}
+            <Card 
+              hoverEffect 
+              className="card-metric-theme border-l-4 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs" 
+              style={{ borderLeftColor: themeBorderColor, borderLeftWidth: '4px' }}
             >
-              <Flame className="w-6 h-6" />
-            </div>
-          </CardBody>
-        </Card>
-        <Card
-          hoverEffect
-          role="button"
-          tabIndex={0}
-          onClick={() => onNavigateTab('revisoes')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onNavigateTab('revisoes');
-            }
-          }}
-          className="border-l-4 border-l-purple-500 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-        >
-          <CardBody className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Revisões Pendentes</p>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{pendingRevisoes.length}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Para hoje</p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
-              <Award className="w-6 h-6" />
-            </div>
-          </CardBody>
-        </Card>
-      </div>
+              <CardBody className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Questões & Acertos</p>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{globalAccuracyRate}%</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{totalQuestionsCorrect}/{totalQuestionsAttempted} acertos</p>
+                </div>
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
+                  style={{
+                    backgroundColor: themeIconBg,
+                    color: themeBorderColor,
+                  }}
+                >
+                  <CheckCircle2 className="w-6 h-6 stroke-[2]" />
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* CARD 3: CONSTÂNCIA */}
+            <Card 
+              hoverEffect 
+              role="button"
+              tabIndex={0}
+              onClick={() => setIsStreakModalOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsStreakModalOpen(true);
+                }
+              }}
+              className="card-metric-theme border-l-4 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs"
+              style={{ borderLeftColor: themeBorderColor, borderLeftWidth: '4px' }}
+            >
+              <CardBody className="p-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Constância</p>
+                    <span 
+                      className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+                      style={{
+                        backgroundColor: themeIconBg,
+                        color: themeBorderColor,
+                      }}
+                    >
+                      Ver histórico
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{user.streakDays} Dias Seguidos</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Clique Para Abrir</p>
+                </div>
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
+                  style={{
+                    backgroundColor: themeIconBg,
+                    color: themeBorderColor,
+                  }}
+                >
+                  <Flame className="w-6 h-6 stroke-[2]" />
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* CARD 4: REVISÕES PENDENTES (Mantém fixo o acento violeta característico de revisões) */}
+            <Card
+              hoverEffect
+              role="button"
+              tabIndex={0}
+              onClick={() => onNavigateTab('revisoes')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onNavigateTab('revisoes');
+                }
+              }}
+              className="card-metric-revisoes border-l-4 border-l-purple-500 dark:border-l-purple-400 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs"
+              style={{ borderLeftColor: '#A855F7', borderLeftWidth: '4px' }}
+            >
+              <CardBody className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Revisões Pendentes</p>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{pendingRevisoes.length}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Para hoje</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+                  <Award className="w-6 h-6 stroke-[2]" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        );
+      })()}
 
       {plan && (
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between gap-4">

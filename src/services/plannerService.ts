@@ -124,6 +124,63 @@ export class PlannerService {
     });
   }
 
+  static sliceDailyMinutesIntoBlocks(
+    totalDayMinutes: number,
+    minMinutes: number,
+    maxMinutes: number
+  ): number[] {
+    if (totalDayMinutes <= 0) return [];
+
+    const min = Math.max(15, minMinutes);
+    const max = Math.max(min, maxMinutes);
+
+    if (totalDayMinutes <= min) {
+      return [totalDayMinutes];
+    }
+
+    const targetAvg = (min + max) / 2;
+    let count = Math.max(1, Math.round(totalDayMinutes / targetAvg));
+
+    while (count > 1 && totalDayMinutes / count < min) {
+      count--;
+    }
+    while (totalDayMinutes / count > max) {
+      count++;
+    }
+
+    const rawBase = Math.floor((totalDayMinutes / count) / 5) * 5;
+    const baseDuration = Math.max(min, Math.min(max, rawBase));
+
+    const blocks: number[] = new Array(count).fill(baseDuration);
+    let remainder = totalDayMinutes - baseDuration * count;
+
+    let idx = 0;
+    while (remainder > 0) {
+      const step = remainder >= 15 && blocks[idx] + 15 <= max ? 15 : 5;
+      if (blocks[idx] + step <= max) {
+        blocks[idx] += step;
+        remainder -= step;
+      } else {
+        let placed = false;
+        for (let j = 0; j < count; j++) {
+          if (blocks[j] + step <= max) {
+            blocks[j] += step;
+            remainder -= step;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          blocks[blocks.length - 1] += remainder;
+          remainder = 0;
+        }
+      }
+      idx = (idx + 1) % count;
+    }
+
+    return blocks;
+  }
+
   static generateSessions(
     planId: string,
     concursoId: string,
@@ -134,7 +191,8 @@ export class PlannerService {
     assuntos: Assunto[],
     revisoes: Revisao[],
     distribution: DisciplinaAllocation[],
-    preservedSessions: PlannedSession[] = []
+    preservedSessions: PlannedSession[] = [],
+    blockLimits: { minMinutes: number; maxMinutes: number } = { minMinutes: 25, maxMinutes: 45 }
   ): { sessions: PlannedSession[]; conflicts: PlanConflict[] } {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -142,24 +200,46 @@ export class PlannerService {
     const examDate = this.parseLocalDate(targetExamDateStr);
 
     const totalDays = Math.max(7, Math.ceil((examDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-    const SLOT_DURATION = 60;
     const finalSessions: PlannedSession[] = [...preservedSessions.filter(s => s.status === 'concluida')];
 
-    const subjectQueue: DisciplinaAllocation[] = [];
-    distribution.forEach(alloc => {
-      const slotsCount = Math.max(1, Math.round(alloc.allocatedMinutesPerWeek / SLOT_DURATION));
-      for (let i = 0; i < slotsCount; i++) {
-        subjectQueue.push(alloc);
-      }
-    });
-
-    const interleavedQueue = this.interleaveSubjects(subjectQueue);
-    let queueIdx = 0;
     const pendingReviews = revisoes.filter(r => r.status === 'pendente');
     let reviewIdx = 0;
 
+    // Sanidade de limites: minDur e maxDur
+    const minDur = Math.max(15, Math.min(blockLimits.minMinutes, blockLimits.maxMinutes));
+    const maxDur = Math.max(minDur, blockLimits.maxMinutes);
+
+    // Carga semanal em minutos
+    const weeklyTotalMinutes = Object.values(availability).reduce((acc, val) => acc + (val || 0), 0);
+
+    interface SubjectBalance {
+      alloc: DisciplinaAllocation;
+      remainingMinutes: number;
+    }
+
+    const initBalances = (): Record<string, SubjectBalance> => {
+      const balances: Record<string, SubjectBalance> = {};
+      distribution.forEach(d => {
+        const target = d.allocatedMinutesPerWeek || Math.round(weeklyTotalMinutes * (d.allocatedPercentage / 100));
+        balances[d.disciplinaId] = { alloc: d, remainingMinutes: target };
+      });
+      return balances;
+    };
+
+    let balances = initBalances();
+
+    const topicIndices: Record<string, number> = {};
+    distribution.forEach(d => {
+      topicIndices[d.disciplinaId] = 0;
+    });
+
     const planningHorizonDays = Math.min(totalDays, 42);
+
     for (let dayOffset = 0; dayOffset < planningHorizonDays; dayOffset++) {
+      if (dayOffset > 0 && dayOffset % 7 === 0) {
+        balances = initBalances();
+      }
+
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + dayOffset);
       const currentDateStr = this.formatLocalDate(currentDate);
@@ -167,22 +247,41 @@ export class PlannerService {
       const dailyMinutes = availability[dayOfWeek] || 0;
       if (dailyMinutes <= 0) continue;
 
-      const slotsForDay = Math.floor(dailyMinutes / SLOT_DURATION);
-      if (slotsForDay <= 0) continue;
-
       const existingForDay = finalSessions.filter(s => s.date === currentDateStr);
-      let minutesUsedInDay = existingForDay.reduce((acc, s) => acc + s.durationMinutes, 0);
+      const existingMinutesForDay = existingForDay.reduce((acc, s) => acc + s.durationMinutes, 0);
+      let dayRemaining = dailyMinutes - existingMinutesForDay;
       let slotOrder = existingForDay.length + 1;
 
-      for (let s = 0; s < slotsForDay; s++) {
-        if (minutesUsedInDay + SLOT_DURATION > dailyMinutes) break;
+      if (dayRemaining < minDur) continue;
 
-        const shouldSlotReview = s === 0 && reviewIdx < pendingReviews.length;
-        if (shouldSlotReview) {
+      let lastScheduledDiscId: string | null = existingForDay.length > 0 ? existingForDay[existingForDay.length - 1].disciplinaId : null;
+
+      // Calcula quantidade alvo de blocos para o dia
+      const targetAverage = (minDur + maxDur) / 2;
+      let targetBlockCount = Math.max(1, Math.round(dayRemaining / targetAverage));
+
+      while (dayRemaining / targetBlockCount > maxDur) {
+        targetBlockCount++;
+      }
+      while (targetBlockCount > 1 && dayRemaining / targetBlockCount < minDur) {
+        targetBlockCount--;
+      }
+
+      interface DayBlock {
+        alloc: DisciplinaAllocation;
+        duration: number;
+      }
+
+      const dayBlocks: DayBlock[] = [];
+
+      for (let b = 0; b < targetBlockCount; b++) {
+        // Encaixa uma revisão no primeiro bloco se houver
+        if (b === 0 && reviewIdx < pendingReviews.length) {
           const rev = pendingReviews[reviewIdx];
           const discAlloc = distribution.find(d => d.disciplinaId === rev.disciplinaId) || distribution[0];
           if (discAlloc) {
             const isPast = currentDate < today;
+            const revDuration = Math.max(15, Math.min(45, Math.min(dayRemaining, maxDur)));
             const newSession: PlannedSession = {
               id: `plan_ses_rev_${currentDateStr}_${slotOrder}`,
               planId,
@@ -194,7 +293,7 @@ export class PlannerService {
               date: currentDateStr,
               dayOfWeek,
               startTime: this.getSlotStartTime(slotOrder),
-              durationMinutes: 45,
+              durationMinutes: revDuration,
               type: 'revisao',
               status: isPast ? 'atrasada' : 'pendente',
               revisaoId: rev.id,
@@ -202,24 +301,103 @@ export class PlannerService {
               order: slotOrder++,
             };
             finalSessions.push(newSession);
-            minutesUsedInDay += 45;
+            dayRemaining -= revDuration;
             reviewIdx++;
+            lastScheduledDiscId = discAlloc.disciplinaId;
+            if (dayRemaining < minDur) break;
             continue;
           }
         }
 
-        if (interleavedQueue.length === 0) break;
-        const currentAlloc = interleavedQueue[queueIdx % interleavedQueue.length];
-        queueIdx++;
+        const isLastBlock = b === targetBlockCount - 1;
 
-        const discTopics = assuntos.filter(a => a.disciplinaId === currentAlloc.disciplinaId);
-        const unstudiedTopic = discTopics.find(t => t.status === 'nao_iniciado') ||
-          discTopics.find(t => t.status === 'em_estudo') ||
-          discTopics[0];
+        // Seleciona candidatos excluindo a última disciplina agendada (se houver mais de 1 disciplina)
+        let candidates = Object.values(balances).filter(item => {
+          if (distribution.length > 1 && item.alloc.disciplinaId === lastScheduledDiscId) {
+            return false;
+          }
+          return true;
+        });
+
+        if (candidates.length === 0) {
+          candidates = Object.values(balances);
+        }
+
+        candidates.sort((a, b) => b.remainingMinutes - a.remainingMinutes);
+        const chosen = candidates[0];
+        if (!chosen) break;
+
+        const pct = chosen.alloc.allocatedPercentage || 10;
+        const weightRatio = pct / 100;
+
+        let proposedDuration: number;
+        if (weightRatio >= 0.35) {
+          proposedDuration = maxDur;
+        } else if (weightRatio <= 0.15) {
+          proposedDuration = minDur;
+        } else {
+          const mid = (minDur + maxDur) / 2;
+          proposedDuration = Math.round(mid / 5) * 5;
+        }
+
+        proposedDuration = Math.max(minDur, Math.min(maxDur, proposedDuration));
+
+        if (isLastBlock) {
+          let finalDuration = dayRemaining;
+
+          if (finalDuration > maxDur) {
+            let excesso = finalDuration - maxDur;
+            finalDuration = maxDur;
+            for (const prev of dayBlocks) {
+              const espaco = maxDur - prev.duration;
+              const incremento = Math.min(espaco, excesso);
+              prev.duration += incremento;
+              excesso -= incremento;
+              if (excesso <= 0) break;
+            }
+          } else if (finalDuration < minDur && dayBlocks.length > 0) {
+            const diff = minDur - finalDuration;
+            finalDuration = minDur;
+            const prev = dayBlocks[dayBlocks.length - 1];
+            if (prev.duration - diff >= minDur) {
+              prev.duration -= diff;
+            }
+          }
+
+          finalDuration = Math.max(minDur, Math.min(maxDur, finalDuration));
+          dayBlocks.push({ alloc: chosen.alloc, duration: finalDuration });
+          chosen.remainingMinutes -= finalDuration;
+          dayRemaining = 0;
+          lastScheduledDiscId = chosen.alloc.disciplinaId;
+        } else {
+          const remainingBlocksAfterThis = targetBlockCount - 1 - b;
+          const maxAllowedForThisBlock = dayRemaining - (remainingBlocksAfterThis * minDur);
+
+          let blockDuration = Math.min(proposedDuration, maxAllowedForThisBlock);
+          blockDuration = Math.max(minDur, Math.min(maxDur, Math.round(blockDuration / 5) * 5));
+
+          dayBlocks.push({ alloc: chosen.alloc, duration: blockDuration });
+          dayRemaining -= blockDuration;
+          chosen.remainingMinutes -= blockDuration;
+          lastScheduledDiscId = chosen.alloc.disciplinaId;
+        }
+      }
+
+      // Converte os dayBlocks em PlannedSessions garantindo NUNCA estourar o teto
+      dayBlocks.forEach((block) => {
+        const safeDuration = Math.max(minDur, Math.min(maxDur, block.duration));
+
+        const discTopics = assuntos.filter(a => a.disciplinaId === block.alloc.disciplinaId);
+        let unstudiedTopic: Assunto | undefined;
+        if (discTopics.length > 0) {
+          const idx = (topicIndices[block.alloc.disciplinaId] || 0) % discTopics.length;
+          unstudiedTopic = discTopics[idx];
+          topicIndices[block.alloc.disciplinaId] = idx + 1;
+        }
 
         let sessionType: PlanSessionType = 'teoria';
         if (dayOfWeek === 'sab' || dayOfWeek === 'dom') {
-          sessionType = s === slotsForDay - 1 ? 'simulado' : 'questoes';
+          sessionType = 'questoes';
         } else if (unstudiedTopic && unstudiedTopic.status === 'em_estudo') {
           sessionType = 'questoes';
         }
@@ -229,23 +407,23 @@ export class PlannerService {
           id: `plan_ses_${currentDateStr}_${slotOrder}`,
           planId,
           concursoId,
-          disciplinaId: currentAlloc.disciplinaId,
-          disciplinaName: currentAlloc.disciplinaName,
-          disciplinaColor: currentAlloc.color,
+          disciplinaId: block.alloc.disciplinaId,
+          disciplinaName: block.alloc.disciplinaName,
+          disciplinaColor: block.alloc.color,
           assuntoId: unstudiedTopic?.id,
           assuntoName: unstudiedTopic?.name || 'Estudo Dirigido',
           date: currentDateStr,
           dayOfWeek,
           startTime: this.getSlotStartTime(slotOrder),
-          durationMinutes: SLOT_DURATION,
+          durationMinutes: safeDuration,
           type: sessionType,
           status: isPast ? 'atrasada' : 'pendente',
-          notes: unstudiedTopic?.notes || `Meta: avançar em tópicos com peso ${currentAlloc.weight.toFixed(1)}`,
+          notes: unstudiedTopic?.notes || `Meta: avançar em tópicos (${block.alloc.allocatedPercentage}% da carga)`,
           order: slotOrder++,
         };
+
         finalSessions.push(newSession);
-        minutesUsedInDay += SLOT_DURATION;
-      }
+      });
     }
 
     const conflicts = this.detectConflicts(finalSessions, availability, targetExamDateStr, assuntos);

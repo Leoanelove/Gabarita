@@ -188,7 +188,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       map[s.date].push(s);
     });
     Object.keys(map).forEach(k => {
-      map[k].sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
+      map[k].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     });
     return map;
   }, [plan.sessions]);
@@ -363,12 +363,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 >
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs font-bold text-slate-500 flex items-center gap-1">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold text-xs">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {session.startTime || '08:00'} ({session.durationMinutes} min)
-                      </span>
+                        <span>{session.durationMinutes} min</span>
+                      </div>
                       <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-xs"
+                        className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-xs"
                         style={{ backgroundColor: session.disciplinaColor || '#0ea5e9' }}
                       >
                         {session.disciplinaName}
@@ -502,6 +502,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     key={day.dateStr}
                     onClick={() => {
                       setSelectedDateStr(day.dateStr);
+                      setViewMode('diario');
                     }}
                     className={`min-h-24 p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                       day.isToday
@@ -542,13 +543,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           }}
                           className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white truncate shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
                           style={{ backgroundColor: s.disciplinaColor || '#0ea5e9' }}
-                          title={`${s.startTime || ''} - ${s.disciplinaName}: ${s.assuntoName}`}
+                          title={`${s.disciplinaName}: ${s.assuntoName} (${s.durationMinutes} min)`}
                         >
-                          {s.startTime ? `${s.startTime} ` : ''}{s.disciplinaName}
+                          {s.disciplinaName}
                         </div>
                       ))}
                       {daySessions.length > 2 && (
-                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block text-center">
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDateStr(day.dateStr);
+                            setViewMode('diario');
+                          }}
+                          className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block text-center cursor-pointer hover:underline hover:text-emerald-500 transition-colors"
+                        >
                           +{daySessions.length - 2} mais
                         </span>
                       )}

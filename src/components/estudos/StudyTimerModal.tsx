@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Play, 
   Pause, 
@@ -9,10 +9,19 @@ import {
   SkipForward, 
   Square,
   AlertCircle,
+  AlertTriangle,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useTimerAlarm } from '../../hooks/useTimerAlarm';
+import {
+  RingtoneSelectorButton,
+  SoundVolumeControlButton,
+  ActiveAlarmAlertBanner,
+} from './RingtoneSelectorModal';
 
 export interface ThemeNeonToken {
   accent: string;
@@ -77,6 +86,8 @@ interface FloatingTimerWidgetProps {
   themeToken: ThemeNeonToken;
   currentMode: TimerMode;
   progressRatio: number;
+  isSoundOn: boolean;
+  onToggleSound: () => void;
 }
 
 const FloatingTimerWidget: React.FC<FloatingTimerWidgetProps> = ({
@@ -86,6 +97,8 @@ const FloatingTimerWidget: React.FC<FloatingTimerWidgetProps> = ({
   onTogglePlay,
   themeToken,
   progressRatio,
+  isSoundOn,
+  onToggleSound,
 }) => {
   const widgetRadius = 46;
   const widgetCircumference = 2 * Math.PI * widgetRadius;
@@ -93,9 +106,20 @@ const FloatingTimerWidget: React.FC<FloatingTimerWidgetProps> = ({
 
   return (
     <div 
-      className="fixed bottom-6 right-6 z-50 animate-in fade-in zoom-in-95 duration-200 select-none"
+      className="fixed bottom-6 right-6 z-50 animate-in fade-in zoom-in-95 duration-200 select-none flex flex-col items-end gap-2"
       style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.85))' }}
     >
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-950/95 border border-slate-800 backdrop-blur-md shadow-lg">
+        <SoundVolumeControlButton
+          buttonClassName="p-1 rounded-full text-slate-400 hover:text-white transition-colors cursor-pointer"
+          iconClassName="w-3.5 h-3.5"
+        />
+        <RingtoneSelectorButton
+          buttonClassName="p-1 rounded-full text-slate-400 hover:text-white transition-colors cursor-pointer"
+          iconClassName="w-3.5 h-3.5"
+        />
+      </div>
+
       <div
         onClick={() => onRestore()}
         className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-slate-950/95 backdrop-blur-md cursor-pointer flex flex-col items-center justify-center p-2 transition-all duration-300 hover:scale-105 group"
@@ -188,142 +212,529 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
     (colorSkin === 'purple' ? 'roxo' : colorSkin === 'orange' || colorSkin === 'dbz' ? 'laranja' : colorSkin) || 'verde';
   const themeToken = THEME_NEON_TOKENS[normalizedSkin] || THEME_NEON_TOKENS.verde;
 
+  const { isSoundOn, toggleSound, isAlarmRinging, unlockAudio, triggerAlarm, stopAlarm } = useTimerAlarm();
+
   // Estados de exibição e controle do Timer
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [pausedSeconds, setPausedSeconds] = useState<number>(0);
   const [currentMode, setCurrentMode] = useState<TimerMode>(initialMode);
   const [pomodoroCycle, setPomodoroCycle] = useState<number>(1);
   const [focoMinutes, setFocoMinutes] = useState<number>(initialDurationMinutes || 25);
+  const [focoTotalSeconds, setFocoTotalSeconds] = useState<number>((initialDurationMinutes || 25) * 60);
+  const [pausaCurtaTotalSeconds, setPausaCurtaTotalSeconds] = useState<number>(5 * 60);
+  const [pausaLongaTotalSeconds, setPausaLongaTotalSeconds] = useState<number>(15 * 60);
   const [customMinutesInput, setCustomMinutesInput] = useState<string>('');
   const [secondsRemaining, setSecondsRemaining] = useState<number>((initialDurationMinutes || 25) * 60);
   const [totalFocusSeconds, setTotalFocusSeconds] = useState<number>(0);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState<boolean>(false);
+
+  // Estados de edição inline do visor HH:MM:SS
+  const [isEditingTime, setIsEditingTime] = useState<boolean>(false);
+  const [editHours, setEditHours] = useState<string>('00');
+  const [editMinutes, setEditMinutes] = useState<string>('25');
+  const [editSeconds, setEditSeconds] = useState<string>('00');
+
+  const hoursInputRef = useRef<HTMLInputElement>(null);
+  const minutesInputRef = useRef<HTMLInputElement>(null);
+  const secondsInputRef = useRef<HTMLInputElement>(null);
+
+  const prevSecondsRef = useRef<number>((initialDurationMinutes || 25) * 60);
+  const secondsRemainingRef = useRef<number>((initialDurationMinutes || 25) * 60);
+  const totalFocusSecondsRef = useRef<number>(0);
+  const endTimeRef = useRef<number | null>(null);
+  const runStartTimestampRef = useRef<number | null>(null);
+  const pausedAtTimestampRef = useRef<number | null>(null);
+  const baseFocusSecondsBeforeRunRef = useRef<number>(0);
+  const handleStopAndSaveRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    secondsRemainingRef.current = secondsRemaining;
+  }, [secondsRemaining]);
+
+  useEffect(() => {
+    totalFocusSecondsRef.current = totalFocusSeconds;
+  }, [totalFocusSeconds]);
+
+  // Contador progressivo em tempo real do "Tempo Pausado" (baseado em Date.now() - pausedAtTimestamp)
+  useEffect(() => {
+    if (!isPaused || isRunning) {
+      return;
+    }
+    if (!pausedAtTimestampRef.current) {
+      pausedAtTimestampRef.current = Date.now();
+    }
+
+    const syncPauseClock = () => {
+      if (!pausedAtTimestampRef.current) return;
+      const elapsedPause = Math.max(0, Math.floor((Date.now() - pausedAtTimestampRef.current) / 1000));
+      setPausedSeconds(elapsedPause);
+    };
+
+    syncPauseClock();
+    const interval = setInterval(syncPauseClock, 250);
+    document.addEventListener('visibilitychange', syncPauseClock);
+    window.addEventListener('focus', syncPauseClock);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', syncPauseClock);
+      window.removeEventListener('focus', syncPauseClock);
+    };
+  }, [isPaused, isRunning]);
 
   // Inicialização ao abrir o modal
   useEffect(() => {
     if (isOpen) {
+      stopAlarm();
       setIsMinimized(false);
       setShowResetConfirm(false);
+      setShowDiscardConfirm(false);
       setIsRunning(false);
+      setIsPaused(false);
+      setPausedSeconds(0);
+      pausedAtTimestampRef.current = null;
+      setIsEditingTime(false);
 
       const targetMinutes = (initialDurationMinutes && initialDurationMinutes > 0) ? initialDurationMinutes : 25;
       setFocoMinutes(targetMinutes);
+      setFocoTotalSeconds(targetMinutes * 60);
+      setPausaCurtaTotalSeconds(5 * 60);
+      setPausaLongaTotalSeconds(15 * 60);
       setCustomMinutesInput(![25, 30, 45, 50, 60, 90].includes(targetMinutes) ? String(targetMinutes) : '');
       setSecondsRemaining(targetMinutes * 60);
+      secondsRemainingRef.current = targetMinutes * 60;
+      prevSecondsRef.current = targetMinutes * 60;
       setTotalFocusSeconds(0);
+      totalFocusSecondsRef.current = 0;
       setCurrentMode(initialMode || 'foco');
       setPomodoroCycle(1);
     } else {
+      stopAlarm();
+      setShowDiscardConfirm(false);
       setIsRunning(false);
+      setIsPaused(false);
+      setPausedSeconds(0);
+      pausedAtTimestampRef.current = null;
       setIsMinimized(false);
+      setIsEditingTime(false);
     }
-  }, [isOpen, initialDurationMinutes, initialMode]);
+  }, [isOpen, initialDurationMinutes, initialMode, stopAlarm]);
 
-  // Contagem regressiva e acumulação de foco
+  // Dispara o alarme em loop contínuo + Notificação + Pop-up quando o cronômetro chega a 00:00:00
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isRunning) {
-      interval = setInterval(() => {
-        setSecondsRemaining((prev) => {
-          if (prev <= 1) {
-            if (interval) clearInterval(interval);
-            setIsRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-
-        // Contabiliza tempo líquido somente quando estiver no modo foco
-        if (currentMode === 'foco') {
-          setTotalFocusSeconds((prev) => prev + 1);
-        }
-      }, 1000);
-    } else {
-      if (interval) clearInterval(interval);
+    if (prevSecondsRef.current > 0 && secondsRemaining === 0) {
+      setIsMinimized(false);
+      setIsPaused(false);
+      setPausedSeconds(0);
+      pausedAtTimestampRef.current = null;
+      triggerAlarm({
+        title: currentMode === 'foco' ? 'Tempo Finalizado!' : 'Pausa Concluída!',
+        subtitle:
+          currentMode === 'foco'
+            ? 'Parabéns! Seu tempo de foco foi concluído.'
+            : 'Sua pausa terminou. Hora de retomar os estudos!',
+        onSaveSession: () => handleStopAndSaveRef.current(),
+      });
     }
+    prevSecondsRef.current = secondsRemaining;
+  }, [secondsRemaining, currentMode, triggerAlarm]);
+
+  // Contagem regressiva à prova de segundo plano (Timestamp real + Web Worker + visibilitychange)
+  useEffect(() => {
+    if (!isRunning) {
+      endTimeRef.current = null;
+      runStartTimestampRef.current = null;
+      return;
+    }
+
+    const startNow = Date.now();
+    const initialSecs = secondsRemainingRef.current;
+    endTimeRef.current = startNow + initialSecs * 1000;
+    runStartTimestampRef.current = startNow;
+    baseFocusSecondsBeforeRunRef.current = totalFocusSecondsRef.current;
+
+    const syncFromClock = () => {
+      if (!endTimeRef.current || !runStartTimestampRef.current) return;
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - now) / 1000));
+      const elapsedRun = Math.max(0, Math.floor((now - runStartTimestampRef.current) / 1000));
+
+      setSecondsRemaining(remaining);
+      if (currentMode === 'foco') {
+        const cappedElapsed = Math.min(initialSecs, elapsedRun);
+        setTotalFocusSeconds(baseFocusSecondsBeforeRunRef.current + cappedElapsed);
+      }
+
+      if (remaining <= 0) {
+        setIsRunning(false);
+      }
+    };
+
+    // Cria Web Worker inline para não sofrer congelamento quando o navegador estiver minimizado
+    let worker: Worker | null = null;
+    let workerUrl: string | null = null;
+    try {
+      const workerCode = `
+        let timerId = null;
+        self.onmessage = function(e) {
+          if (e.data === 'start') {
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(function() { self.postMessage('tick'); }, 250);
+          } else if (e.data === 'stop') {
+            if (timerId) clearInterval(timerId);
+            timerId = null;
+          }
+        };
+      `;
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      workerUrl = URL.createObjectURL(blob);
+      worker = new Worker(workerUrl);
+      worker.onmessage = () => syncFromClock();
+      worker.postMessage('start');
+    } catch {
+      // fallback se Web Worker não puder ser criado
+    }
+
+    const fallbackInterval = setInterval(syncFromClock, 500);
+    const handleVisibilityOrFocus = () => syncFromClock();
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(fallbackInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      if (worker) {
+        worker.postMessage('stop');
+        worker.terminate();
+      }
+      if (workerUrl) {
+        URL.revokeObjectURL(workerUrl);
+      }
     };
   }, [isRunning, currentMode]);
 
   // Total de segundos do modo ativo para percentual
   const currentTotalSeconds = useMemo(() => {
-    if (currentMode === 'foco') return focoMinutes * 60;
-    if (currentMode === 'pausa_curta') return 5 * 60;
-    return 15 * 60;
-  }, [currentMode, focoMinutes]);
+    if (currentMode === 'foco') return focoTotalSeconds;
+    if (currentMode === 'pausa_curta') return pausaCurtaTotalSeconds;
+    return pausaLongaTotalSeconds;
+  }, [currentMode, focoTotalSeconds, pausaCurtaTotalSeconds, pausaLongaTotalSeconds]);
+
+  // Formatação amigável da Meta do modo atual
+  const formattedMetaLabel = useMemo(() => {
+    const totalSecs = currentTotalSeconds;
+    if (totalSecs % 60 === 0) {
+      return `${Math.round(totalSecs / 60)} min`;
+    }
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    if (mins === 0) {
+      return `${secs} seg`;
+    }
+    return `${mins}m ${secs}s`;
+  }, [currentTotalSeconds]);
+
+  // Apenas permite editar manualmente os números quando o cronômetro estiver Pronto (parado antes de iniciar)
+  const canEditTime = !isRunning && !isPaused && secondsRemaining === currentTotalSeconds;
+
+  // Edição inline ao clicar nos números (HH:MM:SS)
+  const startEditingTime = (targetField: 'hh' | 'mm' | 'ss' = 'mm') => {
+    if (isRunning) return;
+    if (!canEditTime) return;
+    stopAlarm();
+    const hrs = Math.floor(secondsRemaining / 3600);
+    const mins = Math.floor((secondsRemaining % 3600) / 60);
+    const secs = secondsRemaining % 60;
+
+    setEditHours(String(hrs).padStart(2, '0'));
+    setEditMinutes(String(mins).padStart(2, '0'));
+    setEditSeconds(String(secs).padStart(2, '0'));
+    setIsEditingTime(true);
+
+    setTimeout(() => {
+      const refMap = {
+        hh: hoursInputRef,
+        mm: minutesInputRef,
+        ss: secondsInputRef,
+      };
+      refMap[targetField].current?.focus();
+      refMap[targetField].current?.select();
+    }, 10);
+  };
+
+  const commitEditedTime = () => {
+    if (!isEditingTime) return;
+    const h = Math.max(0, parseInt(editHours || '0', 10) || 0);
+    const m = Math.max(0, parseInt(editMinutes || '0', 10) || 0);
+    const s = Math.max(0, parseInt(editSeconds || '0', 10) || 0);
+
+    const newTotalSeconds = h * 3600 + m * 60 + s;
+
+    if (newTotalSeconds > 0) {
+      setSecondsRemaining(newTotalSeconds);
+      secondsRemainingRef.current = newTotalSeconds;
+      prevSecondsRef.current = newTotalSeconds;
+
+      if (currentMode === 'foco') {
+        setFocoTotalSeconds(newTotalSeconds);
+        const approxMins = Math.max(1, Math.round(newTotalSeconds / 60));
+        setFocoMinutes(approxMins);
+        if (newTotalSeconds % 60 === 0 && [25, 30, 45, 50, 60, 90].includes(newTotalSeconds / 60)) {
+          setCustomMinutesInput('');
+        } else {
+          setCustomMinutesInput(String(approxMins));
+        }
+      } else if (currentMode === 'pausa_curta') {
+        setPausaCurtaTotalSeconds(newTotalSeconds);
+      } else {
+        setPausaLongaTotalSeconds(newTotalSeconds);
+      }
+    }
+    setIsEditingTime(false);
+  };
+
+  const handleSegmentKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    segment: 'hh' | 'mm' | 'ss'
+  ) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitEditedTime();
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsEditingTime(false);
+      return;
+    }
+    if (e.key === ':' || e.key === ';') {
+      e.preventDefault();
+      if (segment === 'hh') {
+        minutesInputRef.current?.focus();
+        minutesInputRef.current?.select();
+      } else if (segment === 'mm') {
+        secondsInputRef.current?.focus();
+        secondsInputRef.current?.select();
+      }
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      const input = e.currentTarget;
+      if (input.selectionStart === input.value.length) {
+        if (segment === 'hh') {
+          e.preventDefault();
+          minutesInputRef.current?.focus();
+          minutesInputRef.current?.select();
+        } else if (segment === 'mm') {
+          e.preventDefault();
+          secondsInputRef.current?.focus();
+          secondsInputRef.current?.select();
+        }
+      }
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      const input = e.currentTarget;
+      if (input.selectionStart === 0 && input.selectionEnd === 0) {
+        if (segment === 'ss') {
+          e.preventDefault();
+          minutesInputRef.current?.focus();
+          minutesInputRef.current?.select();
+        } else if (segment === 'mm') {
+          e.preventDefault();
+          hoursInputRef.current?.focus();
+          hoursInputRef.current?.select();
+        }
+      }
+      return;
+    }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const delta = e.key === 'ArrowUp' ? 1 : -1;
+      const maxVal = segment === 'ss' ? 59 : 99;
+      if (segment === 'hh') {
+        const cur = parseInt(editHours || '0', 10) || 0;
+        const next = Math.max(0, Math.min(maxVal, cur + delta));
+        setEditHours(String(next).padStart(2, '0'));
+      } else if (segment === 'mm') {
+        const cur = parseInt(editMinutes || '0', 10) || 0;
+        const next = Math.max(0, Math.min(maxVal, cur + delta));
+        setEditMinutes(String(next).padStart(2, '0'));
+      } else {
+        const cur = parseInt(editSeconds || '0', 10) || 0;
+        const next = Math.max(0, Math.min(maxVal, cur + delta));
+        setEditSeconds(String(next).padStart(2, '0'));
+      }
+    }
+  };
 
   // Ações do Cronômetro
   const handleToggleTimer = () => {
+    if (isEditingTime) {
+      commitEditedTime();
+    }
+    unlockAudio();
+    stopAlarm();
     if (secondsRemaining <= 0) {
       handleSkipNext();
       return;
     }
-    setIsRunning(prev => !prev);
+    if (isRunning) {
+      setIsRunning(false);
+      setIsPaused(true);
+      pausedAtTimestampRef.current = Date.now();
+      setPausedSeconds(0);
+    } else {
+      setIsPaused(false);
+      pausedAtTimestampRef.current = null;
+      setPausedSeconds(0);
+      setIsRunning(true);
+    }
   };
 
   const handleSelectMode = (mode: TimerMode) => {
     if (mode === currentMode) return;
+    stopAlarm();
+    setIsEditingTime(false);
     setCurrentMode(mode);
     setIsRunning(false);
+    setIsPaused(false);
+    pausedAtTimestampRef.current = null;
+    setPausedSeconds(0);
     if (mode === 'foco') {
-      setSecondsRemaining(focoMinutes * 60);
+      setSecondsRemaining(focoTotalSeconds);
+      prevSecondsRef.current = focoTotalSeconds;
     } else if (mode === 'pausa_curta') {
-      setSecondsRemaining(5 * 60);
+      setSecondsRemaining(pausaCurtaTotalSeconds);
+      prevSecondsRef.current = pausaCurtaTotalSeconds;
     } else {
-      setSecondsRemaining(15 * 60);
+      setSecondsRemaining(pausaLongaTotalSeconds);
+      prevSecondsRef.current = pausaLongaTotalSeconds;
     }
   };
 
   const handleChangeFocoMinutes = (mins: number) => {
+    stopAlarm();
+    setIsEditingTime(false);
     setFocoMinutes(mins);
+    setFocoTotalSeconds(mins * 60);
     if (currentMode === 'foco' && !isRunning) {
+      setIsPaused(false);
+      pausedAtTimestampRef.current = null;
+      setPausedSeconds(0);
       setSecondsRemaining(mins * 60);
+      prevSecondsRef.current = mins * 60;
     }
   };
 
   const handleResetTimer = () => {
+    stopAlarm();
+    setIsEditingTime(false);
     setIsRunning(false);
+    setIsPaused(false);
+    pausedAtTimestampRef.current = null;
+    setPausedSeconds(0);
     setShowResetConfirm(false);
     if (currentMode === 'foco') {
-      setSecondsRemaining(focoMinutes * 60);
+      setSecondsRemaining(focoTotalSeconds);
+      prevSecondsRef.current = focoTotalSeconds;
       setTotalFocusSeconds(0);
     } else if (currentMode === 'pausa_curta') {
-      setSecondsRemaining(5 * 60);
+      setSecondsRemaining(pausaCurtaTotalSeconds);
+      prevSecondsRef.current = pausaCurtaTotalSeconds;
     } else {
-      setSecondsRemaining(15 * 60);
+      setSecondsRemaining(pausaLongaTotalSeconds);
+      prevSecondsRef.current = pausaLongaTotalSeconds;
     }
   };
 
   const handleSkipNext = () => {
+    stopAlarm();
+    setIsEditingTime(false);
     setIsRunning(false);
+    setIsPaused(false);
+    pausedAtTimestampRef.current = null;
+    setPausedSeconds(0);
     if (currentMode === 'foco') {
       const nextCycle = pomodoroCycle >= 4 ? 1 : pomodoroCycle + 1;
       const nextMode: TimerMode = pomodoroCycle >= 4 ? 'pausa_longa' : 'pausa_curta';
       setPomodoroCycle(nextCycle);
       setCurrentMode(nextMode);
-      setSecondsRemaining(nextMode === 'pausa_longa' ? 15 * 60 : 5 * 60);
+      const nextSecs = nextMode === 'pausa_longa' ? pausaLongaTotalSeconds : pausaCurtaTotalSeconds;
+      setSecondsRemaining(nextSecs);
+      prevSecondsRef.current = nextSecs;
     } else {
       setCurrentMode('foco');
-      setSecondsRemaining(focoMinutes * 60);
+      setSecondsRemaining(focoTotalSeconds);
+      prevSecondsRef.current = focoTotalSeconds;
     }
   };
 
-  const handleClose = () => {
+  // Verifica se há uma sessão ativa (rodando, pausada ou com tempo cronometrado/líquido > 0)
+  const hasActiveSession =
+    isRunning ||
+    isPaused ||
+    totalFocusSeconds > 0 ||
+    secondsRemaining < currentTotalSeconds ||
+    isAlarmRinging;
+
+  useEffect(() => {
+    if (!showDiscardConfirm) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowDiscardConfirm(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showDiscardConfirm]);
+
+  const confirmDiscardAndClose = () => {
+    stopAlarm();
+    setShowDiscardConfirm(false);
+    setShowResetConfirm(false);
+    setIsEditingTime(false);
     setIsRunning(false);
+    setIsPaused(false);
+    pausedAtTimestampRef.current = null;
+    setPausedSeconds(0);
+    setTotalFocusSeconds(0);
+    totalFocusSecondsRef.current = 0;
+    setSecondsRemaining(focoTotalSeconds);
+    secondsRemainingRef.current = focoTotalSeconds;
+    prevSecondsRef.current = focoTotalSeconds;
     setIsMinimized(false);
     onClose();
   };
 
+  const handleClose = () => {
+    if (hasActiveSession) {
+      setShowDiscardConfirm(true);
+      return;
+    }
+    confirmDiscardAndClose();
+  };
+
   // Botão Retrátil "Parar e salvar"
   const handleStopAndSave = () => {
+    stopAlarm();
+    setIsEditingTime(false);
     setIsRunning(false);
+    setIsPaused(false);
+    pausedAtTimestampRef.current = null;
+    setPausedSeconds(0);
     setIsMinimized(false);
     // Tempo líquido: se acumulou totalFocusSeconds usa ele;
     // se por acaso o usuário fez contagem regressiva parcial sem acumular, pega a diferença
-    let elapsed = totalFocusSeconds;
+    let elapsed = totalFocusSecondsRef.current;
     if (elapsed <= 0 && currentMode === 'foco') {
-      const diff = (focoMinutes * 60) - secondsRemaining;
+      const diff = focoTotalSeconds - secondsRemainingRef.current;
       if (diff > 0) elapsed = diff;
     }
     // Se o usuário clicou em Parar e Salvar logo no início sem rodar o timer,
@@ -334,6 +745,8 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
 
     onStopAndSave(elapsed, focoMinutes);
   };
+
+  handleStopAndSaveRef.current = handleStopAndSave;
 
   // Formatação de tempo em HH:MM:SS
   const formatTime = (totalSeconds: number) => {
@@ -365,6 +778,8 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
         themeToken={themeToken}
         currentMode={currentMode}
         progressRatio={progressRatio}
+        isSoundOn={isSoundOn}
+        onToggleSound={toggleSound}
       />
     );
   }
@@ -381,7 +796,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
       <div className="relative w-full max-w-[560px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
         
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
+        <div className="relative z-50 flex items-center justify-between gap-3 px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div 
               className="w-10 h-10 rounded-full border flex items-center justify-center shrink-0 transition-all duration-300"
@@ -425,6 +840,12 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
               <span>{pomodoroCycle} de 4</span>
             </div>
 
+            {/* Controle de Volume + Ativar/Desativar Som (🔊) */}
+            <SoundVolumeControlButton />
+
+            {/* Botão Engrenagem (Seleção dos 11 Toques de Alarme) */}
+            <RingtoneSelectorButton />
+
             {/* Botão Minimizar */}
             <button
               type="button"
@@ -451,6 +872,19 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
 
         {/* Conteúdo Central do Cronômetro */}
         <div className="overflow-y-auto px-5 py-4 sm:px-6 sm:py-5 space-y-5 custom-scrollbar text-xs sm:text-sm">
+          {isAlarmRinging && (
+            <ActiveAlarmAlertBanner
+              title={currentMode === 'foco' ? 'Tempo Finalizado!' : 'Pausa Concluída!'}
+              subtitle={
+                currentMode === 'foco'
+                  ? 'Parabéns! Seu tempo de foco foi concluído.'
+                  : 'Sua pausa terminou. Hora de retomar os estudos!'
+              }
+              onStopAlarm={stopAlarm}
+              onSaveAndFinish={handleStopAndSave}
+              saveLabel="Concluir e Salvar"
+            />
+          )}
           
           {/* Abas de Ciclo (Foco | Pausa curta | Pausa longa) */}
           <div className="bg-slate-100 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800 p-1 rounded-xl grid grid-cols-3 gap-1 shadow-inner">
@@ -504,7 +938,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
           </div>
 
           {/* Display Central Neon / Card do Timer */}
-          <div className="bg-slate-100/70 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 text-center relative overflow-hidden shadow-inner flex flex-col items-center">
+          <div className="relative z-10 bg-slate-100/70 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 text-center overflow-hidden shadow-inner flex flex-col items-center">
             <div 
               className="absolute inset-0 pointer-events-none transition-all duration-500"
               style={{
@@ -564,19 +998,130 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                   {currentMode === 'foco' ? 'Tempo de Foco' : currentMode === 'pausa_curta' ? 'Pausa Curta' : 'Pausa Longa'}
                 </span>
 
-                <div 
-                  className="text-4xl sm:text-5xl font-mono font-black tracking-widest select-none transition-all duration-300 text-white"
-                  style={isDarkMode ? {
-                    color: '#ffffff',
-                    textShadow: `0 0 10px ${themeToken.glow}, 0 0 20px ${themeToken.glow}, 0 0 40px ${themeToken.glow}`,
-                  } : {
-                    color: '#FFFFFF',
-                    filter: `drop-shadow(0 0 2px ${palette.primary}) drop-shadow(0 0 6px ${palette.primary}80)`,
-                    textShadow: `0 0 1px ${palette.primary}, 0 0 4px ${palette.primary}aa`,
-                  }}
-                >
-                  {formatTime(secondsRemaining)}
-                </div>
+                {isEditingTime ? (
+                  <div
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        commitEditedTime();
+                      }
+                    }}
+                    className="text-4xl sm:text-5xl font-mono font-black tracking-widest select-none transition-all duration-300 text-white inline-flex items-center justify-center overflow-visible"
+                    style={isDarkMode ? {
+                      color: '#ffffff',
+                      textShadow: `0 0 10px ${themeToken.glow}, 0 0 20px ${themeToken.glow}, 0 0 40px ${themeToken.glow}`,
+                    } : {
+                      color: '#FFFFFF',
+                      filter: `drop-shadow(0 0 2px ${palette.primary}) drop-shadow(0 0 6px ${palette.primary}80)`,
+                      textShadow: `0 0 1px ${palette.primary}, 0 0 4px ${palette.primary}aa`,
+                    }}
+                  >
+                    <input
+                      ref={hoursInputRef}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={2}
+                      value={editHours}
+                      aria-label="Horas"
+                      onFocus={(e) => e.currentTarget.select()}
+                      onChange={(e) => setEditHours(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      onKeyDown={(e) => handleSegmentKeyDown(e, 'hh')}
+                      className={`w-[2.6ch] px-1.5 py-0.5 text-center bg-transparent overflow-visible leading-none font-mono font-black tracking-widest text-white rounded-xl outline-none selection:bg-transparent selection:text-white ${
+                        currentMode === 'foco'
+                          ? 'focus:bg-emerald-500/15 focus:ring-2 focus:ring-emerald-500/50'
+                          : 'focus:bg-amber-500/15 focus:ring-2 focus:ring-amber-500/50'
+                      }`}
+                      style={{ color: 'inherit', textShadow: 'inherit' }}
+                    />
+                    <span className="select-none">:</span>
+                    <input
+                      ref={minutesInputRef}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={2}
+                      value={editMinutes}
+                      aria-label="Minutos"
+                      onFocus={(e) => e.currentTarget.select()}
+                      onChange={(e) => setEditMinutes(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      onKeyDown={(e) => handleSegmentKeyDown(e, 'mm')}
+                      className={`w-[2.6ch] px-1.5 py-0.5 text-center bg-transparent overflow-visible leading-none font-mono font-black tracking-widest text-white rounded-xl outline-none selection:bg-transparent selection:text-white ${
+                        currentMode === 'foco'
+                          ? 'focus:bg-emerald-500/15 focus:ring-2 focus:ring-emerald-500/50'
+                          : 'focus:bg-amber-500/15 focus:ring-2 focus:ring-amber-500/50'
+                      }`}
+                      style={{ color: 'inherit', textShadow: 'inherit' }}
+                    />
+                    <span className="select-none">:</span>
+                    <input
+                      ref={secondsInputRef}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={2}
+                      value={editSeconds}
+                      aria-label="Segundos"
+                      onFocus={(e) => e.currentTarget.select()}
+                      onChange={(e) => setEditSeconds(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      onKeyDown={(e) => handleSegmentKeyDown(e, 'ss')}
+                      className={`w-[2.6ch] px-1.5 py-0.5 text-center bg-transparent overflow-visible leading-none font-mono font-black tracking-widest text-white rounded-xl outline-none selection:bg-transparent selection:text-white ${
+                        currentMode === 'foco'
+                          ? 'focus:bg-emerald-500/15 focus:ring-2 focus:ring-emerald-500/50'
+                          : 'focus:bg-amber-500/15 focus:ring-2 focus:ring-amber-500/50'
+                      }`}
+                      style={{ color: 'inherit', textShadow: 'inherit' }}
+                    />
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => {
+                      if (isRunning) return;
+                      startEditingTime('mm');
+                    }}
+                    title={canEditTime ? 'Clique para editar o tempo' : undefined}
+                    className={`text-4xl sm:text-5xl font-mono font-black tracking-widest select-none transition-all duration-300 text-white inline-flex items-center justify-center ${
+                      canEditTime ? 'cursor-pointer' : 'cursor-default'
+                    }`}
+                    style={isDarkMode ? {
+                      color: '#ffffff',
+                      textShadow: `0 0 10px ${themeToken.glow}, 0 0 20px ${themeToken.glow}, 0 0 40px ${themeToken.glow}`,
+                    } : {
+                      color: '#FFFFFF',
+                      filter: `drop-shadow(0 0 2px ${palette.primary}) drop-shadow(0 0 6px ${palette.primary}80)`,
+                      textShadow: `0 0 1px ${palette.primary}, 0 0 4px ${palette.primary}aa`,
+                    }}
+                  >
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isRunning) return;
+                        startEditingTime('hh');
+                      }}
+                      className={canEditTime ? 'hover:opacity-85 transition-opacity' : ''}
+                    >
+                      {String(Math.floor(secondsRemaining / 3600)).padStart(2, '0')}
+                    </span>
+                    <span>:</span>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isRunning) return;
+                        startEditingTime('mm');
+                      }}
+                      className={canEditTime ? 'hover:opacity-85 transition-opacity' : ''}
+                    >
+                      {String(Math.floor((secondsRemaining % 3600) / 60)).padStart(2, '0')}
+                    </span>
+                    <span>:</span>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isRunning) return;
+                        startEditingTime('ss');
+                      }}
+                      className={canEditTime ? 'hover:opacity-85 transition-opacity' : ''}
+                    >
+                      {String(secondsRemaining % 60).padStart(2, '0')}
+                    </span>
+                  </div>
+                )}
 
                 <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                   <span 
@@ -584,19 +1129,31 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                       isRunning ? 'animate-ping' : ''
                     }`}
                     style={{ 
-                      backgroundColor: isRunning ? palette.primary : '#64748b',
+                      backgroundColor: isRunning ? palette.primary : isPaused ? '#f59e0b' : '#64748b',
                       boxShadow: isRunning ? `0 0 6px ${palette.primary}` : undefined,
                     }} 
                   />
-                  <span>{isRunning ? 'Em andamento' : secondsRemaining < currentTotalSeconds ? 'Pausado' : 'Pronto'}</span>
+                  <span>{isRunning ? 'Em andamento' : (isPaused || secondsRemaining < currentTotalSeconds) ? 'Pausado' : 'Pronto'}</span>
                 </div>
               </div>
             </div>
 
+            {/* Indicador em tempo real de Tempo Pausado (PAUSADO 00:00:00) */}
+            {(isPaused || (!isRunning && secondsRemaining < currentTotalSeconds && secondsRemaining > 0)) && (
+              <div className="inline-flex items-center gap-2.5 rounded-full bg-[#2b3036] border border-amber-500/50 px-4 py-1.5 shadow-md animate-in fade-in zoom-in-95 duration-200 mb-2">
+                <span className="text-amber-500 font-bold tracking-wider text-xs uppercase">
+                  PAUSADO
+                </span>
+                <span className="text-white font-mono font-bold text-xs sm:text-sm">
+                  {formatTime(pausedSeconds)}
+                </span>
+              </div>
+            )}
+
             {/* Barra Linear de Meta */}
             <div className="w-full max-w-xs mx-auto space-y-1.5 mt-1">
               <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                <span>Meta: {currentMode === 'foco' ? `${focoMinutes} min` : currentMode === 'pausa_curta' ? '5 min' : '15 min'}</span>
+                <span>Meta: {formattedMetaLabel}</span>
                 <span style={{ color: palette.primary }} className="font-bold">
                   {Math.round(progressRatio * 100)}%
                 </span>
@@ -649,7 +1206,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                 ) : (
                   <>
                     <Play className="w-4 h-4 fill-current shrink-0" />
-                    <span>{secondsRemaining < currentTotalSeconds ? 'Retomar' : currentMode === 'foco' ? 'Iniciar Foco' : 'Iniciar Pausa'}</span>
+                    <span>Iniciar</span>
                   </>
                 )}
               </button>
@@ -856,6 +1413,71 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
         </div>
 
       </div>
+
+      {/* Modal de Confirmação "Descartar Cronômetro?" */}
+      {showDiscardConfirm && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setShowDiscardConfirm(false)}
+        >
+          <div
+            className="discard-timer-modal w-full max-w-[440px] p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-slate-800 shadow-2xl animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="discard-timer-title"
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border"
+                style={{
+                  backgroundColor: `${palette.primary}1a`,
+                  borderColor: `${palette.primary}30`,
+                  color: palette.primary,
+                }}
+              >
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h3
+                  id="discard-timer-title"
+                  className="text-xl font-bold leading-snug text-slate-900 dark:text-white"
+                >
+                  Descartar Cronômetro?
+                </h3>
+                <p className="text-sm leading-relaxed mt-1.5 text-slate-500 dark:text-slate-400">
+                  O tempo cronometrado no planejamento será descartado e nada será registrado.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-5 py-2.5 rounded-xl font-medium text-sm transition-colors bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 dark:bg-slate-800/50 dark:hover:bg-slate-800 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmDiscardAndClose}
+                className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
+                style={{
+                  backgroundColor: palette.primary,
+                  boxShadow: isDarkMode
+                    ? `0 4px 16px ${themeToken.subtleGlow}`
+                    : `0 4px 12px ${palette.primary}35`,
+                }}
+              >
+                Descartar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

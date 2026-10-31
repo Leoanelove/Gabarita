@@ -284,9 +284,9 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       description="Histórico visual de frequência, dias ativos e sequência ininterrupta."
       maxWidth="2xl"
     >
-      <div className="space-y-3 text-xs">
+      <div className="streak-calendar-modal space-y-3 text-xs">
         {/* Painel de Navegação de Mês + Legenda Integrada */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div className="streak-nav-bar flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-1.5">
             <button
               onClick={handlePrevMonth}
@@ -311,34 +311,34 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
             >
               Mês Atual
             </button>
-            <Badge variant="emerald" size="sm" className="hidden md:inline-flex">
+            <span className="streak-month-badge hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border">
               {totalStudiedInMonth} dias neste mês
-            </Badge>
+            </span>
           </div>
 
-          {/* Legenda de Cores Compacta */}
-          <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-1">
-              <span className="w-3.5 h-3.5 rounded-md bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                <Check className="w-2.5 h-2.5 stroke-[3]" />
+          {/* Legenda de Cores Semânticas Universais (Independente do Tema Ativo) */}
+          <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+            <div className="flex items-center gap-1.5">
+              <span className="streak-legend-studied w-4 h-4 rounded-md border flex items-center justify-center">
+                <Check className="streak-icon-studied w-2.5 h-2.5 stroke-[3]" />
               </span>
               <span>Estudou</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3.5 h-3.5 rounded-md bg-rose-500/20 border border-rose-500 flex items-center justify-center text-rose-500">
-                <X className="w-2.5 h-2.5 stroke-[3]" />
+            <div className="flex items-center gap-1.5">
+              <span className="streak-legend-missed w-4 h-4 rounded-md border flex items-center justify-center">
+                <X className="streak-icon-missed w-2.5 h-2.5 stroke-[3]" />
               </span>
               <span>Não estudou</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3.5 h-3.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
+            <div className="flex items-center gap-1.5">
+              <span className="streak-legend-future w-4 h-4 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
               <span>Futuro</span>
             </div>
           </div>
         </div>
 
         {/* Grid do Calendário Mais Largo e Compacto na Vertical */}
-        <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-2.5 bg-white dark:bg-slate-900/90 shadow-xs">
+        <div className="streak-grid-container border border-slate-200 dark:border-slate-800 rounded-2xl p-2.5 bg-white dark:bg-slate-900/90 shadow-xs">
           {/* Cabeçalho dos dias da semana */}
           <div className="grid grid-cols-7 gap-1.5 text-center font-bold text-[11px] text-slate-400 pb-1.5 border-b border-slate-100 dark:border-slate-800">
             <span>DOM</span>
@@ -355,64 +355,86 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
             {daysInGrid.map((item, idx) => {
               const { dayNumber, isCurrentMonth, isToday, isFuture, isBeforeStart, studied } = item;
 
-              let style =
-                'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400';
-              let icon = null;
+              const getCalendarCellStyles = () => {
+                // 1. Dias fora do mês atual (Padding) ou dias futuros: neutros, sem marcação
+                if (!isCurrentMonth || isFuture) {
+                  return {
+                    container:
+                      'streak-cell-neutral border border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 text-slate-400 dark:text-slate-600',
+                    numberText: 'text-slate-400 dark:text-slate-600 font-normal',
+                    icon: null as 'check' | 'x' | null,
+                  };
+                }
 
-              if (!isCurrentMonth) {
-                // 1. Dias fora do mês atual (Padding): neutros/esmaecidos, sem ícone ("X" ou "check")
-                style =
-                  'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-slate-400 dark:text-slate-600';
-                icon = null;
-              } else if (isFuture) {
-                // 2. Dias posteriores a hoje (Futuro): estilo neutro, sem marcação
-                style =
-                  'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-slate-400 dark:text-slate-600';
-                icon = null;
-              } else if (studied) {
-                // 3. Usuário estudou no dia: indicador de sucesso (Check verde)
-                style =
-                  'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs';
-                icon = (
-                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
-                );
-              } else if (isToday) {
-                // 4. Dia de hoje ainda sem estudo registrado: pendente/neutro com badge "Hoje", sem "X" vermelho precipitado
-                style =
-                  'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-semibold';
-                icon = null;
-              } else if (isBeforeStart) {
-                // 5. Dias anteriores ao início dos estudos (ou quando nunca iniciou): totalmente neutros, sem "X" e sem "check"
-                style =
-                  'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400';
-                icon = null;
-              } else {
-                // 6. Intervalo válido (dataInicioEstudo <= diaGrid < dataHoje) em que o usuário NÃO estudou: "X" vermelho
-                style =
-                  'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-medium';
-                icon = <X className="w-3.5 h-3.5 text-rose-500 stroke-[3]" />;
-              }
+                // 2. Dias com estudo registrado (SEMPRE VERDE EM TODOS OS 5 TEMAS E MODOS):
+                if (studied) {
+                  const isTodayHighlight = isToday
+                    ? 'streak-cell-today-ring ring-2 ring-emerald-500 border-2 border-emerald-500 dark:border-emerald-400 z-10'
+                    : 'border border-emerald-400 dark:border-emerald-600/80';
+
+                  return {
+                    container: `streak-cell-studied ${isTodayHighlight} bg-emerald-100/90 dark:bg-emerald-950/70 text-emerald-950 dark:text-emerald-100 font-bold shadow-xs`,
+                    numberText: 'text-emerald-950 dark:text-emerald-100 font-extrabold',
+                    icon: 'check' as const,
+                  };
+                }
+
+                // 3. Dia de hoje ainda sem estudo registrado: pendente/neutro com destaque "Hoje", sem "X" precipitado
+                if (isToday) {
+                  return {
+                    container:
+                      'streak-cell-today-pending streak-cell-today-ring ring-2 ring-emerald-500 border-2 border-emerald-500 dark:border-emerald-400 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 font-semibold z-10',
+                    numberText: 'text-slate-700 dark:text-slate-200 font-bold',
+                    icon: null as 'check' | 'x' | null,
+                  };
+                }
+
+                // 4. Dias anteriores ao início dos estudos: neutros, sem "X" e sem "check"
+                if (isBeforeStart) {
+                  return {
+                    container:
+                      'streak-cell-neutral border border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 text-slate-400 dark:text-slate-600',
+                    numberText: 'text-slate-400 dark:text-slate-600 font-normal',
+                    icon: null as 'check' | 'x' | null,
+                  };
+                }
+
+                // 5. Dias passados no intervalo ativo sem estudo (SEMPRE VERMELHO EM TODOS OS 5 TEMAS E MODOS):
+                return {
+                  container:
+                    'streak-cell-missed border border-rose-300 dark:border-rose-900/70 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 font-bold',
+                  numberText: 'text-rose-600 dark:text-rose-400 font-bold',
+                  icon: 'x' as const,
+                };
+              };
+
+              const cellStyle = getCalendarCellStyles();
 
               return (
                 <div
                   key={`${item.dateStr}_${idx}`}
-                  className={`relative px-2.5 py-1.5 h-10 sm:h-11 rounded-xl border flex items-center justify-between transition-all select-none ${
+                  className={`streak-day-cell relative px-2.5 py-1.5 h-10 sm:h-11 rounded-xl flex items-center justify-between transition-all select-none ${
                     !isCurrentMonth ? 'opacity-35' : ''
-                  } ${
-                    isToday
-                      ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-slate-900 z-10'
-                      : ''
-                  } ${style}`}
+                  } ${cellStyle.container}`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-xs">{dayNumber}</span>
+                    <span className={`streak-day-number font-mono text-xs ${cellStyle.numberText}`}>
+                      {dayNumber}
+                    </span>
                     {isToday && (
-                      <span className="text-[9px] uppercase font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="streak-today-label text-[9px] uppercase font-extrabold text-emerald-700 dark:text-emerald-300">
                         Hoje
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center">{icon}</div>
+                  <div className="flex items-center">
+                    {cellStyle.icon === 'check' && (
+                      <Check className="streak-icon-studied w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" />
+                    )}
+                    {cellStyle.icon === 'x' && (
+                      <X className="streak-icon-missed w-3.5 h-3.5 text-rose-500 dark:text-rose-400 stroke-[3] shrink-0" />
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -420,7 +442,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
         </div>
 
         {/* Rodapé com Cálculo de Dias, Recorde Atual e Botão de Fechar */}
-        <div className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-emerald-500/10 border border-orange-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="streak-footer-bar px-4 py-2.5 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-emerald-500/10 border border-orange-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-orange-500 text-white shadow-xs">
               <Flame className="w-4 h-4 fill-current" />
@@ -445,7 +467,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
               <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">
                 Total de dias estudados
               </span>
-              <span className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
+              <span className="streak-total-studied-value text-base font-black font-mono">
                 {totalDiasEstudados} dias
               </span>
             </div>

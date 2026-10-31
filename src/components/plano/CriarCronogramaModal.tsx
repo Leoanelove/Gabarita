@@ -139,6 +139,26 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
     });
   });
 
+  // Configuração de Faixa de Tempo por Bloco de Estudo (Mínimo e Máximo)
+  const [minBlockDuration, setMinBlockDuration] = useState<number>(30);
+  const [maxBlockDuration, setMaxBlockDuration] = useState<number>(60);
+
+  const DURATION_OPTIONS = [15, 20, 25, 30, 40, 45, 50, 60, 75, 90, 120];
+
+  const handleMinChange = (val: number) => {
+    setMinBlockDuration(val);
+    if (val > maxBlockDuration) {
+      setMaxBlockDuration(val);
+    }
+  };
+
+  const handleMaxChange = (val: number) => {
+    if (val < minBlockDuration) {
+      setMinBlockDuration(val);
+    }
+    setMaxBlockDuration(val);
+  };
+
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -373,7 +393,8 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
         assuntos,
         revisoes,
         newDistribution,
-        preservedCompleted
+        preservedCompleted,
+        { minMinutes: minBlockDuration, maxMinutes: maxBlockDuration }
       );
 
       const activeMatch = concursos.find(c => c.id === resolvedActiveConcursoId);
@@ -795,6 +816,57 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Seção Duração de Cada Sessão de Estudo (Mínimo e Máximo) */}
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                  De quanto tempo é cada sessão de estudo?
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Duração mínima e máxima de cada bloco de estudo.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Mínimo
+                  </label>
+                  <select
+                    value={minBlockDuration}
+                    onChange={(e) => handleMinChange(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-bold font-mono border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                  >
+                    {DURATION_OPTIONS.map((opt) => (
+                      <option key={`min-${opt}`} value={opt}>
+                        {opt}min
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 pt-4">a</span>
+
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Máximo
+                  </label>
+                  <select
+                    value={maxBlockDuration}
+                    onChange={(e) => handleMaxChange(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-lg text-xs font-bold font-mono border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                  >
+                    {DURATION_OPTIONS.map((opt) => (
+                      <option key={`max-${opt}`} value={opt}>
+                        {opt}min
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Painel Informativo Resumo */}

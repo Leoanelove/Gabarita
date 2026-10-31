@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Play, 
   Pause, 
@@ -23,7 +23,9 @@ import {
   Layers, 
   ArrowRight,
   AlertCircle,
-  History 
+  History,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { 
   Disciplina, 
@@ -41,6 +43,12 @@ import { Modal } from '../../design-system/Modal';
 import { Input } from '../../design-system/Input';
 import { TimerService, ActiveTimerState } from '../../services/timerService';
 import { PlannerService } from '../../services/plannerService';
+import { useTimerAlarm } from '../../hooks/useTimerAlarm';
+import {
+  RingtoneSelectorButton,
+  SoundVolumeControlButton,
+  ActiveAlarmAlertBanner,
+} from './RingtoneSelectorModal';
 
 interface SessaoEstudoViewProps {
   user: UserProfile;
@@ -84,12 +92,16 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
   onTogglePlanSession,
   onOpenStudyTimer,
 }) => {
+  const { isAlarmRinging, unlockAudio, triggerAlarm, stopAlarm } = useTimerAlarm();
   const [activeTab, setActiveTab] = useState<TabMode>('foco');
   const [timerState, setTimerState] = useState<ActiveTimerState | null>(() => TimerService.getActiveTimer());
   const [currentSeconds, setCurrentSeconds] = useState<number>(() => {
     const active = TimerService.getActiveTimer();
     return active ? active.accumulatedSeconds : 0;
   });
+  const [pausedSeconds, setPausedSeconds] = useState<number>(0);
+  const pausedAtTimestampRef = useRef<number | null>(null);
+  const hasPlayedGoalChimeRef = useRef<boolean>(false);
 
   const [manualDisciplinaId, setManualDisciplinaId] = useState(disciplinas[0]?.id || '');
   const [manualAssuntoId, setManualAssuntoId] = useState('');
@@ -120,14 +132,32 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const syncActiveTimer = () => {
       const active = TimerService.getActiveTimer();
       if (active && active.isRunning && active.lastStartTimestamp) {
         const delta = Math.floor((Date.now() - active.lastStartTimestamp) / 1000);
         setCurrentSeconds(active.accumulatedSeconds + delta);
+        pausedAtTimestampRef.current = null;
+        setPausedSeconds(0);
+      } else if (active && !active.isRunning && active.accumulatedSeconds > 0) {
+        if (!pausedAtTimestampRef.current) {
+          pausedAtTimestampRef.current = Date.now();
+        }
+        const elapsedPause = Math.max(0, Math.floor((Date.now() - pausedAtTimestampRef.current) / 1000));
+        setPausedSeconds(elapsedPause);
+      } else {
+        pausedAtTimestampRef.current = null;
+        setPausedSeconds(0);
       }
-    }, 1000);
-    return () => clearInterval(interval);
+    };
+    const interval = setInterval(syncActiveTimer, 250);
+    document.addEventListener('visibilitychange', syncActiveTimer);
+    window.addEventListener('focus', syncActiveTimer);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', syncActiveTimer);
+      window.removeEventListener('focus', syncActiveTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -188,6 +218,7 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
   }, [assuntos, activeDiscId]);
 
   const handleStartRecommendation = () => {
+    unlockAudio();
     if (onOpenStudyTimer) {
       onOpenStudyTimer(nextStudyRecommendation.disciplinaId, nextStudyRecommendation.assuntoId);
       return;
@@ -202,27 +233,37 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
       plannedSessionId: 'plannedSessionId' in nextStudyRecommendation ? (nextStudyRecommendation as any).plannedSessionId : undefined,
       cycleBlockId: 'cycleBlockId' in nextStudyRecommendation ? (nextStudyRecommendation as any).cycleBlockId : undefined,
     });
+    hasPlayedGoalChimeRef.current = false;
     setTimerState(started);
     setCurrentSeconds(0);
     showFeedback(`Sessão de foco iniciada: ${nextStudyRecommendation.disciplinaName}`);
   };
 
   const handleTogglePauseResume = () => {
+    unlockAudio();
     if (!timerState) {
       handleStartRecommendation();
       return;
     }
     if (timerState.isRunning) {
       const paused = TimerService.pauseTimer();
+      pausedAtTimestampRef.current = Date.now();
+      setPausedSeconds(0);
       setTimerState(paused);
     } else {
       const resumed = TimerService.resumeTimer();
+      pausedAtTimestampRef.current = null;
+      setPausedSeconds(0);
       setTimerState(resumed);
     }
   };
 
   const handleResetTimer = () => {
+    stopAlarm();
     TimerService.clearTimer();
+    hasPlayedGoalChimeRef.current = false;
+    pausedAtTimestampRef.current = null;
+    setPausedSeconds(0);
     setTimerState(null);
     setCurrentSeconds(0);
     showFeedback('Cronômetro zerado.');
@@ -236,6 +277,7 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
   };
 
   const handleFinishTimerSession = async () => {
+    stopAlarm();
     if (!timerState) return;
     const durationMinutes = Math.max(1, Math.round(currentSeconds / 60));
     const xp = durationMinutes * 2 + (timerState.questionsCorrect || 0) * 5;
@@ -331,6 +373,15 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
 
   const plannedSeconds = (timerState?.plannedMinutes || 60) * 60;
   const progressPercent = Math.min(100, Math.round((currentSeconds / plannedSeconds) * 100));
+
+  useEffect(() => {
+    if (timerState?.isRunning && currentSeconds >= plannedSeconds && plannedSeconds > 0 && !hasPlayedGoalChimeRef.current) {
+      hasPlayedGoalChimeRef.current = true;
+      triggerAlarm('session');
+    } else if (currentSeconds < plannedSeconds) {
+      hasPlayedGoalChimeRef.current = false;
+    }
+  }, [currentSeconds, plannedSeconds, timerState?.isRunning, triggerAlarm]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -438,16 +489,47 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
 
           <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
             <CardBody className="p-6 sm:p-8 space-y-6">
+              {isAlarmRinging && (
+                <ActiveAlarmAlertBanner
+                  title="Tempo Finalizado!"
+                  subtitle="Parabéns! Seu tempo de foco foi concluído."
+                  onStopAlarm={stopAlarm}
+                  onSaveAndFinish={handleFinishTimerSession}
+                  saveLabel="Concluir e Salvar"
+                />
+              )}
               <div className="py-8 px-4 rounded-3xl bg-slate-950 text-white text-center space-y-4 relative overflow-hidden shadow-inner border border-slate-800 timer-focus-box">
-                <div className="flex items-center justify-between text-xs px-2 text-slate-400">
+                <div className="relative z-50 flex items-center justify-between text-xs px-2 text-slate-400">
                   <span className="flex items-center gap-1 font-mono">
                     <Clock className="w-3.5 h-3.5 text-emerald-400" /> Tempo Líquido Estudado
                   </span>
-                  <span className="font-mono text-emerald-400 font-bold">Meta: {timerState?.plannedMinutes || 60} min</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-emerald-400 font-bold">Meta: {timerState?.plannedMinutes || 60} min</span>
+                    <SoundVolumeControlButton
+                      buttonClassName="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      iconClassName="w-4 h-4"
+                    />
+                    <RingtoneSelectorButton
+                      buttonClassName="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      iconClassName="w-4 h-4"
+                    />
+                  </div>
                 </div>
-                <div className="text-5xl sm:text-7xl font-mono font-black tracking-widest text-emerald-400 py-2">
+                <div className="text-5xl sm:text-7xl font-mono font-black tracking-widest text-emerald-400 py-2 select-none cursor-default">
                   {TimerService.formatSeconds(currentSeconds)}
                 </div>
+                {timerState && !timerState.isRunning && currentSeconds > 0 && (
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-center gap-2.5 rounded-full bg-[#2b3036] border border-amber-500/50 px-4 py-1.5 shadow-md animate-in fade-in zoom-in-95 duration-200">
+                      <span className="text-amber-500 font-bold tracking-wider text-xs uppercase">
+                        PAUSADO
+                      </span>
+                      <span className="text-white font-mono font-bold text-xs sm:text-sm">
+                        {TimerService.formatSeconds(pausedSeconds)}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-1.5 max-w-md mx-auto">
                   <div className="flex justify-between text-[11px] font-mono text-slate-400">
                     <span>Progresso</span>
