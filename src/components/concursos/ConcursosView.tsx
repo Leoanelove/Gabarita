@@ -259,9 +259,11 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  // Separação estrita entre concursos ativos e arquivados
+ // Separação estrita entre concursos ativos (máx 3) e arquivados
   const concursosAtivos = useMemo(() => {
-    return concursos.filter(c => c.status !== 'arquivado' && !c.isArquivado);
+    return concursos
+      .filter(c => c.status !== 'arquivado' && !c.isArquivado)
+      .slice(0, MAX_CONCURSOS); // Garante que nunca renderize mais de 3 cards ativos na tela
   }, [concursos]);
 
   const concursosArquivados = useMemo(() => {

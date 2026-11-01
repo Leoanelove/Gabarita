@@ -16,7 +16,8 @@ import {
   ChevronDown,
   GraduationCap,
   CalendarCheck,
-  Lock
+  Lock,
+  Search
 } from 'lucide-react';
 import { 
   Disciplina, 
@@ -227,6 +228,28 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   // Disciplina e Assunto
   const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
   const [selectedAssuntoId, setSelectedAssuntoId] = useState<string>('');
+  // Dropdown customizado de Assunto / Tópico (evita corte de texto longo)
+  const [isTopicoDropdownOpen, setIsTopicoDropdownOpen] = useState(false);
+  const [topicoSearchTerm, setTopicoSearchTerm] = useState('');
+  const topicoDropdownContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fecha o dropdown de tópicos ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        topicoDropdownContainerRef.current &&
+        !topicoDropdownContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsTopicoDropdownOpen(false);
+      }
+    };
+    if (isTopicoDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isTopicoDropdownOpen]);
 
   // Pílulas de Tipo de Estudo
   const [studyType, setStudyType] = useState<StudySessionType>('teoria');
@@ -882,7 +905,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                 </div>
               </div>
 
-              <div className="sm:col-span-5">
+              <div className="sm:col-span-5" ref={topicoDropdownContainerRef}>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5" style={{ color: palette.primary }} />
@@ -890,35 +913,105 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                   </span>
                   {isRevisionContext && <Lock className="w-3.5 h-3.5 text-slate-400" />}
                 </label>
+                
                 <div className="relative">
-                  <select
-                    ref={topicoSelectRef}
-                    value={selectedAssuntoId}
-                    disabled={isRevisionContext}
-                    onChange={(e) => {
-                      if (isRevisionContext) return;
-                      setSelectedAssuntoId(e.target.value);
-                      if (e.target.value && e.target.value.trim() !== '') {
-                        setErroTopico(false);
-                      }
+                  {/* Botão Gatilho do Dropdown Customizado */}
+                  <button
+                    type="button"
+                    ref={topicoSelectRef as any}
+                    disabled={isRevisionContext || !selectedDisciplinaId}
+                    onClick={() => {
+                      if (isRevisionContext || !selectedDisciplinaId) return;
+                      setIsTopicoDropdownOpen(!isTopicoDropdownOpen);
+                      setTopicoSearchTerm('');
                     }}
-                    className={`w-full p-2.5 rounded-xl border text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none appearance-none pr-8 font-medium shadow-xs transition-colors ${
-                      isRevisionContext
+                    className={`w-full p-2.5 rounded-xl border text-left text-xs sm:text-sm flex items-center justify-between gap-2 shadow-xs transition-colors cursor-pointer ${
+                      isRevisionContext || !selectedDisciplinaId
                         ? 'bg-slate-100 dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 cursor-not-allowed opacity-85'
                         : erroTopico
-                        ? 'bg-white dark:bg-slate-900 border-rose-500 ring-2 ring-rose-500/30 cursor-pointer'
-                        : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-slate-400/40 cursor-pointer'
+                        ? 'bg-white dark:bg-slate-900 border-rose-500 ring-2 ring-rose-500/30'
+                        : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600'
                     }`}
                   >
-                    <option value="">Selecione o Tópico</option>
-                    {activeAssuntos.map(a => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className={`w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
-                    erroTopico ? 'text-rose-500' : 'text-slate-400'
-                  }`} />
+                    <span className="truncate text-slate-900 dark:text-white font-medium">
+                      {selectedAssuntoId
+                        ? activeAssuntos.find(a => a.id === selectedAssuntoId)?.name || 'Selecione o Tópico'
+                        : !selectedDisciplinaId
+                        ? 'Primeiro selecione a Disciplina'
+                        : 'Selecione o Tópico'}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+                        isTopicoDropdownOpen ? 'rotate-180' : ''
+                      } ${erroTopico ? 'text-rose-500' : 'text-slate-400'}`}
+                    />
+                  </button>
+
+                  {/* Menu Popover Flutuante com Busca e Quebra de Linha Completa */}
+                  {isTopicoDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                      {/* Campo de pesquisa rápida */}
+                      <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70">
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <input
+                            type="text"
+                            autoFocus
+                            value={topicoSearchTerm}
+                            onChange={(e) => setTopicoSearchTerm(e.target.value)}
+                            placeholder="Buscar tópico por palavra-chave..."
+                            className="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Lista rolável que quebra linha sem cortar */}
+                      <div className="max-h-64 overflow-y-auto custom-scrollbar p-1 space-y-0.5">
+                        {activeAssuntos.filter(a =>
+                          !topicoSearchTerm.trim() ||
+                          a.name.toLowerCase().includes(topicoSearchTerm.toLowerCase())
+                        ).length === 0 ? (
+                          <div className="py-6 text-center text-xs text-slate-400">
+                            Nenhum tópico encontrado.
+                          </div>
+                        ) : (
+                          activeAssuntos
+                            .filter(a =>
+                              !topicoSearchTerm.trim() ||
+                              a.name.toLowerCase().includes(topicoSearchTerm.toLowerCase())
+                            )
+                            .map((a) => {
+                              const isSelected = selectedAssuntoId === a.id;
+                              return (
+                                <button
+                                  key={a.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedAssuntoId(a.id);
+                                    setErroTopico(false);
+                                    setIsTopicoDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left p-2.5 rounded-xl text-xs sm:text-sm transition-colors flex items-start gap-2 cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
+                                      : 'text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                                  }`}
+                                >
+                                  <span className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0 mt-0.5">
+                                    {isSelected && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
+                                  </span>
+                                  <span className="leading-relaxed whitespace-normal break-words flex-1">
+                                    {a.name}
+                                  </span>
+                                </button>
+                              );
+                            })
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
                 {erroTopico && (
                   <p className="text-xs text-rose-500 mt-1 font-semibold animate-in fade-in duration-200">
                     Por favor, selecione um assunto ou tópico para salvar o estudo.

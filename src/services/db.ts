@@ -443,6 +443,10 @@ function mapDisciplinaFromDb(row: any): Disciplina {
 }
 
 function mapAssuntoFromDb(row: any): Assunto {
+  const total = Number(row.total_questions_solved || row.questoes_total || 0);
+  const certas = Number(row.correct_questions_solved || row.questoes_certas || 0);
+  const erradas = Math.max(0, total - certas);
+
   return {
     id: row.id,
     disciplinaId: row.disciplina_id,
@@ -452,16 +456,20 @@ function mapAssuntoFromDb(row: any): Assunto {
     difficulty: row.difficulty || 'media',
     status: row.status || 'nao_iniciado',
     masteryLevel: Number(row.mastery_level || 0),
-    totalQuestionsSolved: Number(row.total_questions_solved || 0),
-    correctQuestionsSolved: Number(row.correct_questions_solved || 0),
-    accuracyRate: Number(row.accuracy_rate || 0),
+    totalQuestionsSolved: total,
+    correctQuestionsSolved: certas,
+    accuracyRate: Number(row.accuracy_rate || (total > 0 ? Math.round((certas / total) * 100) : 0)),
     completed: Boolean(row.completed),
     link: row.link || undefined,
     notes: row.notes || undefined,
     lastStudiedAt: row.last_studied_at || undefined,
     subtopicos: Array.isArray(row.subtopicos) ? row.subtopicos : [],
     createdAt: row.created_at || new Date().toISOString(),
-  };
+    // Campos compatíveis com o Edital Verticalizado
+    questoesCertas: certas,
+    questoesErradas: erradas,
+    questoesTotal: total,
+  } as any;
 }
 
 function mapProvaFromDb(row: any): Prova {
@@ -1230,21 +1238,16 @@ export class DatabaseService {
         .from('concursos')
         .select('*')
         .order('created_at', { ascending: false });
-      if (uid && uid !== 'user_demo_01') {
+      if (uid) {
         query = query.eq('user_id', uid);
       }
       const { data, error } = await query;
 
       if (!error && Array.isArray(data)) {
         const remoteList = data.map(mapConcursoFromDb);
-        const remoteIds = new Set(remoteList.map(r => String(r.id)));
-        const unsynced = rawStored.filter(
-          item => !remoteIds.has(String(item.id)) && (!uid || !item.userId || item.userId === uid)
-        );
-        const merged = [...remoteList, ...unsynced];
 
         let foundActive = false;
-        const normalized = merged.map(c => {
+        const normalized = remoteList.map(c => {
           const isArchived = c.status === 'arquivado' || Boolean(c.isArquivado);
           const isCand = !isArchived && Boolean(c.active || c.isAtivo || c.is_ativo || c.isFocoAtivo);
           const isActive = isCand && !foundActive;
@@ -1689,43 +1692,42 @@ export class DatabaseService {
       localStorage.removeItem(getScopedStorageKey(`${STORAGE_KEYS.STUDY_CYCLE}_${id}`));
     } catch {}
 
-    // 7. Atualizar perfil com novo concurso ativo (ou vazio se não restar nenhum)
-    const nextActive = updatedList.find(c => c.active || c.isAtivo) || updatedList[0] || null;
+   // 7. Atualizar perfil com novo concurso ativo (ou vazio se não restar nenhum)
+    const nextActive = updatedList.find(c => (c.active || c.isAtivo) && c.status !== 'arquivado') || 
+                       updatedList.find(c => c.status !== 'arquivado') || null;
     await this.updateUserProfile({
       targetConcursoId: nextActive ? nextActive.id : '',
       targetConcursoTitle: nextActive ? `${nextActive.organ} - ${nextActive.role}` : '',
     });
 
-    // 8. Disparar deleções em cascata no Supabase
-    Promise.resolve().then(async () => {
-      try {
-        if (sessIdsToDelete.length > 0) {
-          await supabase.from('sessoes_estudo').delete().in('id', sessIdsToDelete);
-        }
-        if (revIdsToDelete.length > 0) {
-          await supabase.from('revisoes').delete().in('id', revIdsToDelete);
-        }
-        if (blocoIdsToDelete.length > 0) {
-          await supabase.from('blocos_questoes').delete().in('id', blocoIdsToDelete);
-        }
-        if (erroIdsToDelete.length > 0) {
-          await supabase.from('caderno_erros').delete().in('id', erroIdsToDelete);
-        }
-        if (simIdsToDelete.length > 0) {
-          await supabase.from('simulados').delete().in('id', simIdsToDelete);
-        }
-        if (assuntoIdsToDelete.size > 0) {
-          await supabase.from('assuntos').delete().in('id', Array.from(assuntoIdsToDelete));
-        }
-        if (discIdsToDelete.size > 0) {
-          await supabase.from('disciplinas').delete().in('id', Array.from(discIdsToDelete));
-        }
-        await supabase.from('provas').delete().eq('concurso_id', id);
-        await supabase.from('concursos').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Gabarita: Aviso ao excluir concurso em cascata no Supabase:', err);
+    // 8. Executar deleção síncrona no Supabase com await (impede que o concurso reapareça no loadData)
+    try {
+      if (sessIdsToDelete.length > 0) {
+        await supabase.from('sessoes_estudo').delete().in('id', sessIdsToDelete);
       }
-    });
+      if (revIdsToDelete.length > 0) {
+        await supabase.from('revisoes').delete().in('id', revIdsToDelete);
+      }
+      if (blocoIdsToDelete.length > 0) {
+        await supabase.from('blocos_questoes').delete().in('id', blocoIdsToDelete);
+      }
+      if (erroIdsToDelete.length > 0) {
+        await supabase.from('caderno_erros').delete().in('id', erroIdsToDelete);
+      }
+      if (simIdsToDelete.length > 0) {
+        await supabase.from('simulados').delete().in('id', simIdsToDelete);
+      }
+      if (assuntoIdsToDelete.size > 0) {
+        await supabase.from('assuntos').delete().in('id', Array.from(assuntoIdsToDelete));
+      }
+      if (discIdsToDelete.size > 0) {
+        await supabase.from('disciplinas').delete().in('id', Array.from(discIdsToDelete));
+      }
+      await supabase.from('provas').delete().eq('concurso_id', id);
+      await supabase.from('concursos').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Gabarita: Aviso ao excluir concurso no Supabase:', err);
+    }
 
     await this.syncActiveContestStorage();
     return updatedList;
@@ -3046,34 +3048,40 @@ export class DatabaseService {
     }
 
     if (assunto) {
+      const qAttempted = session.questionsAttempted || 0;
+      const qCorrect = session.questionsCorrect || 0;
+      const qWrong = Math.max(0, qAttempted - qCorrect);
+
       const updatedAssuntos = assuntos.map(a => {
         if (a.id === session.assuntoId) {
-          const newTotalQ = (a.totalQuestionsSolved || 0) + (session.questionsAttempted || 0);
-          const newCorrectQ = (a.correctQuestionsSolved || 0) + (session.questionsCorrect || 0);
+          const newTotalQ = (a.totalQuestionsSolved || a.questoesTotal || 0) + qAttempted;
+          const newCorrectQ = (a.correctQuestionsSolved || a.questoesCertas || 0) + qCorrect;
+          const newWrongQ = Math.max(0, newTotalQ - newCorrectQ);
           const newAcc = newTotalQ > 0 ? Math.round((newCorrectQ / newTotalQ) * 100) : a.accuracyRate || 0;
-          const isNowCompleted = session.teoriaFinalizada ? true : a.completed;
-          const nextStatus = session.teoriaFinalizada
+
+          // Se marcou teoria finalizada OU se respondeu questões para o tópico, considera concluído/dominado
+          const isNowCompleted = session.teoriaFinalizada ? true : (a.completed || qAttempted > 0);
+          const nextStatus = session.teoriaFinalizada || (qAttempted > 0 && newAcc >= 70)
             ? ('dominado' as const)
             : a.status === 'nao_iniciado'
             ? ('em_estudo' as const)
             : a.status;
+
           const upd = {
             ...a,
             completed: isNowCompleted,
             lastStudiedAt: newSession.completedAt || new Date().toISOString(),
             status: nextStatus,
+            // Atualiza tanto os nomes canônicos quanto os campos exibidos na tabela do Edital Verticalizado
             totalQuestionsSolved: newTotalQ,
             correctQuestionsSolved: newCorrectQ,
             accuracyRate: newAcc,
+            questoesCertas: newCorrectQ,
+            questoesErradas: newWrongQ,
+            questoesTotal: newTotalQ,
           };
-          this.updateAssunto(a.id, {
-            completed: upd.completed,
-            lastStudiedAt: upd.lastStudiedAt,
-            status: upd.status,
-            totalQuestionsSolved: newTotalQ,
-            correctQuestionsSolved: newCorrectQ,
-            accuracyRate: newAcc,
-          });
+
+          this.updateAssunto(a.id, upd);
           return upd;
         }
         return a;

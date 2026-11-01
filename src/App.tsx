@@ -771,7 +771,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
       setRevisoes(updatedRevisoes);
     }
 
-    const [updatedDiscs, updatedAss, updatedStats] = await Promise.all([
+   const [updatedDiscs, updatedAss, updatedStats] = await Promise.all([
       DatabaseService.getDisciplinas(),
       DatabaseService.getAssuntos(),
       DatabaseService.getEstatisticasProgressoReal(user.id),
@@ -779,6 +779,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     setDisciplinas(updatedDiscs);
     setAssuntos(updatedAss);
     setStats(updatedStats);
+
+    // Dispara evento para forçar atualização imediata do Edital Verticalizado na tela
+    window.dispatchEvent(new CustomEvent('gabarita_edital_verticalizado_sync'));
 
     const profile = await DatabaseService.getUserProfile(user.id);
     refreshProfile(profile);
@@ -1138,8 +1141,11 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
 
           {currentTab === 'revisoes' && (
             <RevisoesView
-              revisoes={revisoes}
-              disciplinas={disciplinas}
+              revisoes={activeConcursoId ? revisoes.filter(r => {
+                const disc = disciplinas.find(d => d.id === r.disciplinaId);
+                return disc && disc.concursoId === activeConcursoId;
+              }) : revisoes}
+              disciplinas={activeConcursoId ? disciplinas.filter(d => d.concursoId === activeConcursoId) : disciplinas}
               assuntos={assuntos}
               settings={revisionSettings || undefined}
               onNavigateTab={setCurrentTab}

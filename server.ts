@@ -417,28 +417,16 @@ function generateHeuristicAssistantReply(query: string, data: any): string {
 
 async function startServer() {
   const distPath = path.resolve(__dirname, 'dist');
-  const hasDist = fs.existsSync(distPath);
+  const isProd = process.env.NODE_ENV === 'production';
 
-  if (process.env.NODE_ENV === 'production' || hasDist) {
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve(distPath, 'index.html'));
-    });
-  } else {
-    try {
-      const { createServer: createViteServer } = await import('vite');
-      const vite = await createViteServer({
-        server: {
-          middlewareMode: true,
-          hmr: false,
-        },
-        appType: 'spa',
-      });
-      app.use(vite.middlewares);
-    } catch (viteErr) {
-      console.warn('Vite dev server não pôde ser iniciado, prosseguindo com rotas de API:', viteErr);
+  let viteMiddleware: any = null;
+
+  app.use((req, res, next) => {
+    if (viteMiddleware) {
+      return viteMiddleware(req, res, next);
     }
-  }
+    next();
+  });
 
   const portNumber = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
   const server = app.listen(portNumber, '0.0.0.0', () => {
@@ -448,6 +436,33 @@ async function startServer() {
   server.on('error', (err: any) => {
     console.error(`Erro no listener do servidor porta ${PORT}:`, err);
   });
+
+  if (!isProd) {
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: {
+          middlewareMode: true,
+          hmr: false,
+        },
+        appType: 'spa',
+      });
+      viteMiddleware = vite.middlewares;
+    } catch (viteErr) {
+      console.warn('Vite dev server não pôde ser iniciado, usando fallback estático:', viteErr);
+      if (fs.existsSync(distPath)) {
+        app.use(express.static(distPath));
+        app.get('*', (req, res) => {
+          res.sendFile(path.resolve(distPath, 'index.html'));
+        });
+      }
+    }
+  } else if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(distPath, 'index.html'));
+    });
+  }
 }
 
 startServer().catch(err => {

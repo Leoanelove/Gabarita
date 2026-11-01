@@ -91,9 +91,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     const carregarContagemRevisoesHoje = () => {
       try {
-        const raw = localStorage.getItem('gabarita_revisoes');
-        if (raw) {
-          const list = JSON.parse(raw);
+        const rawRevs = localStorage.getItem('gabarita_revisoes');
+        const rawDiscs = localStorage.getItem('gabarita_disciplinas');
+        if (rawRevs) {
+          const list = JSON.parse(rawRevs);
+          const discs = rawDiscs ? JSON.parse(rawDiscs) : [];
+          const activeDiscIds = new Set(
+            activeConcursoId ? discs.filter((d: any) => d.concursoId === activeConcursoId).map((d: any) => d.id) : []
+          );
+
           if (Array.isArray(list)) {
             const d = new Date();
             const ano = d.getFullYear();
@@ -102,6 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             const todayStr = `${ano}-${mes}-${dia}`;
             const count = list.filter((r: any) => {
               if (r.status === "concluida") return false;
+              if (activeConcursoId && activeDiscIds.size > 0 && !activeDiscIds.has(r.disciplinaId)) return false;
               const scheduledDate = r.scheduledFor && r.scheduledFor.includes("T") ? r.scheduledFor.split("T")[0] : (r.scheduledFor || "");
               return scheduledDate && scheduledDate <= todayStr;
             }).length;
@@ -112,7 +119,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       } catch {
         // fallback para DatabaseService
       }
-      DatabaseService.getRevisoes().then(list => {
+
+      Promise.all([DatabaseService.getRevisoes(), DatabaseService.getDisciplinas()]).then(([list, discs]) => {
+        const activeDiscIds = new Set(
+          activeConcursoId ? discs.filter(d => d.concursoId === activeConcursoId).map(d => d.id) : []
+        );
         const d = new Date();
         const ano = d.getFullYear();
         const mes = String(d.getMonth() + 1).padStart(2, "0");
@@ -120,6 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         const todayStr = `${ano}-${mes}-${dia}`;
         const count = list.filter(r => {
           if (r.status === "concluida") return false;
+          if (activeConcursoId && activeDiscIds.size > 0 && !activeDiscIds.has(r.disciplinaId)) return false;
           const scheduledDate = r.scheduledFor.includes("T") ? r.scheduledFor.split("T")[0] : r.scheduledFor;
           return scheduledDate <= todayStr;
         }).length;
@@ -135,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       window.removeEventListener("storage", carregarContagemRevisoesHoje);
       window.removeEventListener("focus", carregarContagemRevisoesHoje);
     };
-  }, [currentTab]);
+  }, [currentTab, activeConcursoId]);
 
   // Fechamento suave ao clicar fora (click outside)
   useEffect(() => {
