@@ -605,6 +605,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     sundayDate.setDate(now.getDate() - currentDayOfWeek);
     sundayDate.setHours(0, 0, 0, 0);
 
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+    const discMap = new Map<string, Disciplina>();
+    disciplinas.forEach(d => {
+      if (d.concursoId && validConcursoIds.has(d.concursoId)) {
+        discMap.set(d.id, d);
+      }
+    });
+
     const days: { data: string; diaSemana: string; minutos: number; estudou: boolean }[] = [];
 
     for (let i = 0; i < 7; i++) {
@@ -612,9 +620,17 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       d.setDate(sundayDate.getDate() + i);
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-      // Somar minutos estudados no dia
+      // Somar minutos estudados no dia (respeitando concurso e disciplina válidos/selecionados)
       let mins = 0;
       sessoes.forEach(s => {
+        const disc = discMap.get(s.disciplinaId);
+        if (!disc) return;
+        if (selectedDisciplinaId !== 'all' && s.disciplinaId !== selectedDisciplinaId) return;
+        if (selectedConcursoId !== 'all') {
+          if (disc.concursoId !== selectedConcursoId) return;
+          if (s.concursoId && s.concursoId !== selectedConcursoId) return;
+        }
+
         const sDate = new Date(s.completedAt || s.createdAt);
         if (!isNaN(sDate.getTime())) {
           const sKey = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}-${String(sDate.getDate()).padStart(2, '0')}`;
@@ -623,6 +639,23 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           }
         }
       });
+
+      if (selectedDisciplinaId === 'all') {
+        simulados.forEach(s => {
+          if (s.status !== 'finalizado') return;
+          if (validConcursoIds.size === 0) return;
+          if (s.concursoId && !validConcursoIds.has(s.concursoId)) return;
+          if (selectedConcursoId !== 'all' && s.concursoId !== selectedConcursoId) return;
+
+          const sDate = new Date(s.finishedAt || s.createdAt);
+          if (!isNaN(sDate.getTime())) {
+            const sKey = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}-${String(sDate.getDate()).padStart(2, '0')}`;
+            if (sKey === dateKey) {
+              mins += Math.round((s.elapsedSeconds || (s.durationMinutes * 60)) / 60);
+            }
+          }
+        });
+      }
 
       days.push({
         data: dateKey,
@@ -633,7 +666,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     }
 
     return days;
-  }, [sessoes]);
+  }, [sessoes, simulados, concursos, disciplinas, selectedDisciplinaId, selectedConcursoId]);
 
   // Exportação CSV
   const handleExportCSV = () => {
@@ -1293,25 +1326,43 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         <Card>
           <CardHeader title="Ritmo dos Últimos 7 Dias (Domingo a Sábado)" />
           <CardBody className="p-6">
-            <div className="grid grid-cols-7 gap-3 h-48 items-end">
-              {weeklyEvolutionData.map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 h-full justify-end">
-                  <span className="text-[10px] font-bold" style={{ color: themeGlowStyles.color }}>
-                    {Math.round(d.minutos / 60)}h
-                  </span>
-                  <div
-                    className="w-full rounded-t-lg transition-all duration-300"
-                    style={{
-                      height: `${Math.max(10, Math.min(100, (d.minutos / 240) * 100))}%`,
-                      background: 'linear-gradient(to top, var(--banner-progress-from), var(--banner-progress-to))',
-                      backgroundColor: themeGlowStyles.color,
-                      boxShadow: '0 0 12px var(--chart-glow)',
-                    }}
-                  />
-                  <span className="text-xs font-semibold">{d.diaSemana}</span>
+            {(() => {
+              const maxWeeklyMinutes = Math.max(...weeklyEvolutionData.map(item => item.minutos), 0);
+              return (
+                <div className="grid grid-cols-7 gap-3 h-48 items-end">
+                  {weeklyEvolutionData.map((d, idx) => {
+                    const barHeightPx =
+                      d.minutos > 0 && maxWeeklyMinutes > 0
+                        ? Math.max(14, Math.round((d.minutos / maxWeeklyMinutes) * 144))
+                        : 6;
+                    const labelText = d.minutos > 0 ? formatDurationFriendly(d.minutos) : '0h';
+
+                    return (
+                      <div key={idx} className="flex flex-col items-center gap-1 h-full justify-end">
+                        <span
+                          className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap"
+                          style={{ color: themeGlowStyles.color }}
+                        >
+                          {labelText}
+                        </span>
+                        <div
+                          className="w-full rounded-t-lg transition-all duration-300 shrink-0"
+                          title={`${d.diaSemana}: ${labelText}`}
+                          style={{
+                            height: `${barHeightPx}px`,
+                            background: 'linear-gradient(to top, var(--banner-progress-from), var(--banner-progress-to))',
+                            backgroundColor: themeGlowStyles.color,
+                            boxShadow: d.minutos > 0 ? '0 0 12px var(--chart-glow)' : 'none',
+                            opacity: d.minutos > 0 ? 1 : 0.35,
+                          }}
+                        />
+                        <span className="text-xs font-semibold">{d.diaSemana}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
           </CardBody>
         </Card>
       )}

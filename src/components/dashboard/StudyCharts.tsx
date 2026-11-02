@@ -86,7 +86,9 @@ export const StudyCharts: React.FC<StudyChartsProps> = ({ sessoes, disciplinas }
         <div className="space-y-4">
           <div className="flex items-end justify-between gap-2 h-44 pt-6 pb-2 px-2">
             {last7DaysData.map((day, idx) => {
-              const heightPercent = Math.min(100, Math.max(10, Math.round((day.hours / maxHours) * 100)));
+              const heightPercent = day.hours > 0 
+                ? Math.min(100, Math.round(15 + ((day.hours / maxHours) * 85)))
+                : 0;
               const isToday = day.isToday;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
@@ -94,34 +96,36 @@ export const StudyCharts: React.FC<StudyChartsProps> = ({ sessoes, disciplinas }
                     <p className="font-bold">{day.hours}h líquidas</p>
                     <p className="theme-primary-text font-bold">{day.questions} questões ({day.correct} acertos)</p>
                   </div>
-                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 h-4 flex items-center justify-center">
                     {day.hours > 0 ? `${day.hours}h` : ''}
                   </span>
                   <div className="w-full max-w-9 bg-slate-100 dark:bg-slate-800 rounded-t-lg h-32 flex items-end overflow-hidden p-0.5">
-                    <div
-                      className={`w-full rounded-t-md transition-all duration-500 ${
-                        isToday 
-                          ? (colorSkin === 'roxo' || colorSkin === 'purple')
-                            ? 'bg-gradient-to-t from-[#6D28D9] to-[#C4B5FD] shadow-sm'
-                            : (colorSkin === 'laranja' || colorSkin === 'orange' || colorSkin === 'dbz')
-                              ? 'bg-gradient-to-t from-[#D83100] to-[#FFCC00] shadow-sm'
-                              : (colorSkin === 'azul')
-                                ? 'bg-gradient-to-t from-[#1d4ed8] to-[#60a5fa] shadow-sm'
-                                : (colorSkin === 'rosa')
-                                  ? 'bg-gradient-to-t from-[#be185d] to-[#f472b6] shadow-sm'
-                                  : 'bg-gradient-to-t from-emerald-600 to-teal-400 shadow-sm'
-                          : (colorSkin === 'azul')
-                            ? 'bg-gradient-to-t from-blue-700/80 to-blue-500/80'
-                            : (colorSkin === 'rosa')
-                              ? 'bg-gradient-to-t from-pink-700/80 to-pink-500/80'
-                              : (colorSkin === 'roxo' || colorSkin === 'purple')
-                                ? 'bg-gradient-to-t from-[#5B21B6]/85 to-[#8B5CF6]/85'
-                                : (colorSkin === 'laranja' || colorSkin === 'orange' || colorSkin === 'dbz')
-                                  ? 'bg-gradient-to-t from-[#C2410C]/85 to-[#FF8533]/85'
-                                  : 'bg-gradient-to-t from-emerald-700/80 to-emerald-500/80'
-                      }`}
-                      style={{ height: `${heightPercent}%` }}
-                    />
+                    {day.hours > 0 ? (
+                      <div
+                        className={`w-full rounded-t-md transition-all duration-500 ${
+                          isToday 
+                            ? (colorSkin === 'roxo' || colorSkin === 'purple')
+                              ? 'bg-gradient-to-t from-[#6D28D9] to-[#C4B5FD] shadow-sm'
+                              : (colorSkin === 'laranja' || colorSkin === 'orange' || colorSkin === 'dbz')
+                                ? 'bg-gradient-to-t from-[#D83100] to-[#FFCC00] shadow-sm'
+                                : (colorSkin === 'azul')
+                                  ? 'bg-gradient-to-t from-[#1d4ed8] to-[#60a5fa] shadow-sm'
+                                  : (colorSkin === 'rosa')
+                                    ? 'bg-gradient-to-t from-[#be185d] to-[#f472b6] shadow-sm'
+                                    : 'bg-gradient-to-t from-emerald-600 to-teal-400 shadow-sm'
+                            : (colorSkin === 'azul')
+                              ? 'bg-gradient-to-t from-blue-700/80 to-blue-500/80'
+                              : (colorSkin === 'rosa')
+                                ? 'bg-gradient-to-t from-pink-700/80 to-pink-500/80'
+                                : (colorSkin === 'roxo' || colorSkin === 'purple')
+                                  ? 'bg-gradient-to-t from-[#5B21B6]/85 to-[#8B5CF6]/85'
+                                  : (colorSkin === 'laranja' || colorSkin === 'orange' || colorSkin === 'dbz')
+                                    ? 'bg-gradient-to-t from-[#C2410C]/85 to-[#FF8533]/85'
+                                    : 'bg-gradient-to-t from-emerald-700/80 to-emerald-500/80'
+                        }`}
+                        style={{ height: `${heightPercent}%` }}
+                      />
+                    ) : null}
                   </div>
                   <span className={`text-[11px] font-semibold ${
                     isToday ? 'theme-primary-text font-bold' : 'text-slate-500 dark:text-slate-400'

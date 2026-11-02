@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   BookX, 
   AlertTriangle, 
@@ -77,6 +77,7 @@ export interface CadernoErrosViewProps {
   cadernoErros: ItemCadernoErros[];
   disciplinas: Disciplina[];
   assuntos: Assunto[];
+  activeConcursoId?: string;
   questoes?: Questao[];
   blocosQuestoes?: RegistroBlocoQuestoes[];
   onNavigateTab?: (tab: any) => void;
@@ -171,6 +172,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
   cadernoErros,
   disciplinas,
   assuntos,
+  activeConcursoId,
   questoes = [],
   blocosQuestoes = [],
   onAddCadernoErro,
@@ -217,16 +219,11 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
     }
   }, [themeKey]);
 
-  if (disciplinas.length === 0) {
-    return (
-      <EmptyContestState
-        title="Você ainda não possui disciplinas cadastradas"
-        description="Cadastre seu concurso foco e adicione ou importe as matérias para registrar questões erradas e mapear suas armadilhas com o Caderno de Erros Inteligente."
-        actionText="Cadastrar Concurso e Matérias"
-        onAction={() => (onNavigateTab ? onNavigateTab('concursos') : null)}
-      />
-    );
-  }
+  // Disciplinas exclusivas do concurso com foco ativo
+  const activeDisciplinas = useMemo(() => {
+    if (!activeConcursoId) return disciplinas;
+    return disciplinas.filter(d => d.concursoId === activeConcursoId);
+  }, [disciplinas, activeConcursoId]);
 
   // Modals & form state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -248,7 +245,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Form states
-  const [formDisciplinaId, setFormDisciplinaId] = useState(disciplinas[0]?.id || '');
+  const [formDisciplinaId, setFormDisciplinaId] = useState(activeDisciplinas[0]?.id || '');
   const [formAssuntoId, setFormAssuntoId] = useState('');
   const [formBanca, setFormBanca] = useState('FGV');
   const [formDifficulty, setFormDifficulty] = useState<QuestionDifficulty>('media');
@@ -259,6 +256,17 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
   const [formQuestionUrl, setFormQuestionUrl] = useState('');
   const [formStatus, setFormStatus] = useState<ErroStatusRevisao>('pendente');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Manter a disciplina selecionada no formulário sincronizada com o concurso em foco ativo
+  useEffect(() => {
+    if (activeDisciplinas.length > 0 && !activeDisciplinas.some(d => d.id === formDisciplinaId)) {
+      setFormDisciplinaId(activeDisciplinas[0].id);
+      setFormAssuntoId('');
+    }
+    if (filterDisciplina !== 'todas' && !activeDisciplinas.some(d => d.id === filterDisciplina)) {
+      setFilterDisciplina('todas');
+    }
+  }, [activeDisciplinas, formDisciplinaId, filterDisciplina]);
 
   const showFeedback = (msg: string, type: 'success' | 'info' = 'success') => {
     setFeedback({ msg, type });
@@ -413,7 +421,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
 
   const handleOpenNewModal = () => {
     setEditingItem(null);
-    setFormDisciplinaId(disciplinas[0]?.id || '');
+    setFormDisciplinaId(activeDisciplinas[0]?.id || '');
     setFormAssuntoId('');
     setFormBanca('FGV');
     setFormDifficulty('media');
@@ -428,7 +436,8 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
 
   const handleOpenEditModal = (item: ItemCadernoErros) => {
     setEditingItem(item);
-    setFormDisciplinaId(item.disciplinaId);
+    const belongsToActive = activeDisciplinas.some(d => d.id === item.disciplinaId);
+    setFormDisciplinaId(belongsToActive ? item.disciplinaId : (activeDisciplinas[0]?.id || item.disciplinaId));
     setFormAssuntoId(item.assuntoId || '');
     setFormBanca(item.banca || 'FGV');
     setFormDifficulty(item.difficulty || 'media');
@@ -444,7 +453,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
   const handleSaveItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formStatement.trim() || !formObservation.trim()) return;
-    const disc = disciplinas.find(d => d.id === formDisciplinaId);
+    const disc = activeDisciplinas.find(d => d.id === formDisciplinaId) || disciplinas.find(d => d.id === formDisciplinaId);
     const top = assuntos.find(a => a.id === formAssuntoId);
     setIsSubmitting(true);
     try {
@@ -519,6 +528,17 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
     filterStatus !== 'todos' || 
     filterBanca !== 'todas' || 
     sortBy !== 'recentes';
+
+  if (activeDisciplinas.length === 0) {
+    return (
+      <EmptyContestState
+        title="Você ainda não possui disciplinas cadastradas"
+        description="Cadastre seu concurso foco e adicione ou importe as matérias para registrar questões erradas e mapear suas armadilhas com o Caderno de Erros Inteligente."
+        actionText="Cadastrar Concurso e Matérias"
+        onAction={() => (onNavigateTab ? onNavigateTab('concursos') : null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn pb-8">
@@ -932,7 +952,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                 className="w-full sm:w-auto max-w-full sm:max-w-[200px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
               >
                 <option value="todas">Todas as Disciplinas</option>
-                {disciplinas.map(d => {
+                {activeDisciplinas.map(d => {
                   const cnt = cadernoErros.filter(e => e.disciplinaId === d.id).length;
                   const shortName = d.name.length > 42 ? `${d.name.slice(0, 42)}...` : d.name;
                   return (
@@ -1525,7 +1545,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                 className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 required
               >
-                {disciplinas.map(d => (
+                {activeDisciplinas.map(d => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>

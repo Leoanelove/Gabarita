@@ -170,17 +170,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
   }, [isDropdownOpen]);
 
+  // Listener reativo imediato para sincronização do concurso ativo
+  useEffect(() => {
+    const handleActiveChanged = (e: Event) => {
+      const customEvt = e as CustomEvent<{ id: string; concurso?: Concurso }>;
+      if (customEvt.detail?.id) {
+        DatabaseService.getConcursos().then(data => {
+          if (data && data.length > 0) setLocalConcursos(data);
+        });
+      }
+    };
+    window.addEventListener('gabarita_active_concurso_changed', handleActiveChanged);
+    window.addEventListener('storage', handleActiveChanged);
+    return () => {
+      window.removeEventListener('gabarita_active_concurso_changed', handleActiveChanged);
+      window.removeEventListener('storage', handleActiveChanged);
+    };
+  }, []);
+
   // Lista efetiva de concursos disponíveis - estritamente ATIVOS para seleção de Foco Atual
-  const allConcursos = localConcursos.length > 0 ? localConcursos : concursos;
+  const allConcursos = (concursos && concursos.length > 0) ? concursos : localConcursos;
   const displayConcursos = allConcursos.filter(c => c.status !== 'arquivado' && !c.isArquivado);
 
   // Identificação segura do concurso ativo (exclui arquivados)
   const currentActiveId = activeConcursoId || 
+    (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : '') ||
+    user?.targetConcursoId ||
     displayConcursos.find(c => c.active || c.isAtivo || c.isFocoAtivo)?.id || 
-    displayConcursos.find(c => c.id === user?.targetConcursoId)?.id || 
     displayConcursos[0]?.id || '';
 
-  const activeConcurso = displayConcursos.find(c => c.id === currentActiveId) || displayConcursos[0];
+  const activeConcurso = displayConcursos.find(c => String(c.id) === String(currentActiveId)) || displayConcursos[0];
   const activeConcursoTitle = activeConcurso
     ? `${activeConcurso.organ || activeConcurso.title || 'Concurso'} - ${activeConcurso.role || ''}`
     : (user?.targetConcursoTitle || 'TCU - Auditor Federal');

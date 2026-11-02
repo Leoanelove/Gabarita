@@ -21,7 +21,11 @@ import {
   X,
   Settings,
   ClipboardCheck,
-  BarChart3
+  BarChart3,
+  Zap,
+  RotateCcw,
+  Edit3,
+  EyeOff
 } from 'lucide-react';
 import { 
   Concurso, 
@@ -34,7 +38,8 @@ import {
   SessaoEstudo, 
   StudyPlan,
   StudyCycle,
-  Prova 
+  Prova,
+  RevisionRating 
 } from '../../types';
 import { Card, CardHeader, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
@@ -47,6 +52,8 @@ import { StreakCalendarModal } from './StreakCalendarModal';
 import { EmptyContestState } from '../common/EmptyContestState';
 import { resolveSubjectIcon } from '../common/SubjectIcon';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
+import { StudyTimerModal } from '../estudos/StudyTimerModal';
+import { StudyRegisterModal } from '../estudos/StudyRegisterModal';
 
 interface DashboardViewProps {
   user: UserProfile;
@@ -59,12 +66,23 @@ interface DashboardViewProps {
   plan?: StudyPlan | null;
   cycle?: StudyCycle | null;
   provas?: Prova[];
+  activeConcursoId?: string;
   isLoading?: boolean;
   errorMessage?: string | null;
   onNavigateTab: (tab: NavigationTab) => void;
   onOpenStudyTimer: (preSelectedDisciplinaId?: string, preSelectedAssuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual') => void;
   onOpenStudyRegister?: (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string }) => void;
-  onCompleteRevisao: (id: string, rating: 'facil' | 'medio' | 'dificil') => void;
+  onCompleteRevisao: (
+    id: string, 
+    rating: RevisionRating,
+    accuracyRate?: number, 
+    questionsAttempted?: number, 
+    questionsCorrect?: number, 
+    notes?: string,
+    sessionDetails?: any
+  ) => void | Promise<void>;
+  onUpdateRevisao?: (id: string, partial: Partial<Revisao>) => Promise<void>;
+  onDeleteRevisao?: (id: string) => Promise<void>;
   onRetry?: () => void;
 }
 
@@ -164,12 +182,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   plan,
   cycle,
   provas = [],
+  activeConcursoId: propActiveConcursoId,
   isLoading = false,
   errorMessage = null,
   onNavigateTab,
   onOpenStudyTimer,
   onOpenStudyRegister,
   onCompleteRevisao,
+  onUpdateRevisao,
+  onDeleteRevisao,
   onRetry,
 }) => {
   const themeContext = useTheme();
@@ -182,12 +203,120 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Estados e controle do fluxo "Revisar Agora" (Cronômetro de Foco + Registro de Estudo contextualizado)
+  const [activeTimerReview, setActiveTimerReview] = useState<Revisao | null>(null);
+  const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
+  const [isStudyRegisterModalOpen, setIsStudyRegisterModalOpen] = useState(false);
+  const [registerElapsedSeconds, setRegisterElapsedSeconds] = useState(0);
+  const [registerModo, setRegisterModo] = useState<'cronometro' | 'manual'>('cronometro');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Fechar menu de 3 pontinhos das revisões ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (openMenuId && !target.closest('.menu-options-container')) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenuId]);
+
+  // PASSO 1: Iniciar revisão -> abre o Cronômetro de Foco contextualizado
+  const handleStartRevision = (rev: Revisao) => {
+    setOpenMenuId(null);
+    setActiveTimerReview(rev);
+    setIsTimerModalOpen(true);
+  };
+
+  // PASSO 2: Ao parar e salvar no Cronômetro -> abre o modal de Registro de Estudo
+  const handleStopTimerAndOpenRegister = (elapsedSeconds: number, rev: Revisao) => {
+    setIsTimerModalOpen(false);
+    setRegisterElapsedSeconds(elapsedSeconds);
+    setRegisterModo('cronometro');
+    setIsStudyRegisterModalOpen(true);
+  };
+
+  // Ação de Registrar Manualmente (via menu 3 pontinhos)
+  const handleManualRegister = (rev: Revisao) => {
+    setOpenMenuId(null);
+    setActiveTimerReview(rev);
+    setRegisterElapsedSeconds(25 * 60);
+    setRegisterModo('manual');
+    setIsStudyRegisterModalOpen(true);
+  };
+
+  // Concluir rapidamente sem cronometrar
+  const handleQuickComplete = (rev: Revisao) => {
+    setOpenMenuId(null);
+    onCompleteRevisao(rev.id, 'facil');
+  };
+
+  // Ignorar revisão
+  const handleIgnoreReview = async (rev: Revisao) => {
+    setOpenMenuId(null);
+    if (onUpdateRevisao) {
+      await onUpdateRevisao(rev.id, { status: 'ignorada' });
+    }
+  };
+
+  // Voltar do modal de registro para o cronômetro
+  const handleBackToTimer = () => {
+    setIsStudyRegisterModalOpen(false);
+    setIsTimerModalOpen(true);
+  };
+
+  // Salvar registro de estudo e concluir a revisão
+  const handleSaveRevisionSession = async (savedSession: any) => {
+    if (!activeTimerReview) return;
+
+    const correctCount = savedSession.questionsCorrect || 0;
+    const attemptedCount = savedSession.questionsAttempted || 0;
+    const accRate = attemptedCount > 0 ? Math.round((correctCount / attemptedCount) * 100) : undefined;
+
+    const derivedRating: RevisionRating =
+      accRate === undefined
+        ? 'facil'
+        : accRate >= 75
+        ? 'facil'
+        : accRate >= 50
+        ? 'medio'
+        : 'dificil';
+
+    await onCompleteRevisao(
+      activeTimerReview.id,
+      derivedRating,
+      accRate,
+      attemptedCount > 0 ? attemptedCount : undefined,
+      attemptedCount > 0 ? correctCount : undefined,
+      savedSession.notes || '',
+      {
+        durationMinutes: savedSession.durationMinutes,
+        durationSeconds: savedSession.durationSeconds,
+        material: savedSession.material,
+        teoriaFinalizada: savedSession.teoriaFinalizada,
+        programarRevisoes: false,
+        contabilizarPlanejamento: true,
+        pageIntervals: savedSession.pageIntervals,
+        videoaulas: savedSession.videoaulas,
+        completedAt: savedSession.completedAt || new Date().toISOString(),
+      }
+    );
+
+    setIsStudyRegisterModalOpen(false);
+    setActiveTimerReview(null);
+  };
+
   // Identificação do concurso ativo para persistência de metas
   const activeConcursoId = useMemo(() => {
+    if (propActiveConcursoId && concursos.some(c => c.id === propActiveConcursoId)) {
+      return propActiveConcursoId;
+    }
     return concursos.find(c => c.active || c.isAtivo)?.id || 
       concursos.find(c => c.id === user.targetConcursoId)?.id || 
       concursos[0]?.id || 'default';
-  }, [concursos, user.targetConcursoId]);
+  }, [propActiveConcursoId, concursos, user.targetConcursoId]);
 
   // Metas semanais persistidas no localStorage por concurso (padrão: 12h e 500 questões)
   const [weeklyGoals, setWeeklyGoals] = useState<{ hours: number; questions: number }>(() => {
@@ -296,10 +425,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const activeConcurso = useMemo(() => {
+    if (propActiveConcursoId) {
+      const matched = concursos.find(c => c.id === propActiveConcursoId);
+      if (matched) return matched;
+    }
     return concursos.find(c => c.active || c.isAtivo) || 
       concursos.find(c => c.id === user.targetConcursoId) || 
       concursos[0] || null;
-  }, [concursos, user.targetConcursoId]);
+  }, [propActiveConcursoId, concursos, user.targetConcursoId]);
 
   const activeDisciplinasList = useMemo(() => {
     if (!activeConcurso) return [];
@@ -577,23 +710,67 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     ? Math.round((completedTopicsCount / totalTopicsCount) * 100) 
     : 0;
 
-  const nextAssuntoToStudy = relevantAssuntos.find(a => !a.completed) || relevantAssuntos[0];
-  const nextDisciplina = nextAssuntoToStudy 
-    ? activeDisciplinasList.find(d => d.id === nextAssuntoToStudy.disciplinaId) 
-    : activeDisciplinasList[0];
+  const effectiveCycle: StudyCycle | null = (() => {
+    if (!activeConcurso) return null;
+    if (cycle && cycle.concursoId === activeConcurso.id) {
+      return cycle;
+    }
+    try {
+      const saved = localStorage.getItem(`gabarita_study_cycle_${activeConcurso.id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.concursoId === activeConcurso.id) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  })();
+
+  const effectivePlan: StudyPlan | null = (() => {
+    if (!activeConcurso) return null;
+    if (plan && plan.concursoId === activeConcurso.id) {
+      return plan;
+    }
+    try {
+      const saved = localStorage.getItem(`gabarita_study_plan_${activeConcurso.id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.concursoId === activeConcurso.id) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  })();
 
   const hasActiveCycle = Boolean(
-    cycle &&
-    cycle.blocks &&
-    cycle.blocks.length > 0 &&
-    (!activeConcurso || !cycle.concursoId || cycle.concursoId === activeConcurso.id)
+    activeConcurso &&
+    effectiveCycle &&
+    effectiveCycle.concursoId === activeConcurso.id &&
+    Array.isArray(effectiveCycle.blocks) &&
+    effectiveCycle.blocks.length > 0
   );
 
+  const hasActivePlan = Boolean(
+    activeConcurso &&
+    effectivePlan &&
+    effectivePlan.concursoId === activeConcurso.id &&
+    Array.isArray(effectivePlan.sessions) &&
+    effectivePlan.sessions.length > 0
+  );
+
+  const hasActivePlanning = hasActiveCycle || hasActivePlan;
+
   const studyQueue = (() => {
-    if (hasActiveCycle && cycle) {
-      const blocks = cycle.blocks;
+    if (hasActiveCycle && effectiveCycle) {
+      const blocks = effectiveCycle.blocks;
       const startIndex = blocks.findIndex(b => b.status !== 'concluido');
-      const effectiveStart = startIndex >= 0 ? startIndex : (cycle.currentBlockIndex || 0);
+      const effectiveStart = startIndex >= 0 ? startIndex : (effectiveCycle.currentBlockIndex || 0);
       const orderedBlocks = [
         ...blocks.slice(effectiveStart),
         ...blocks.slice(0, effectiveStart),
@@ -618,62 +795,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       });
     }
 
-    // Fallback inteligente pelas disciplinas cadastradas no concurso ativo
-    const seenNames = new Set<string>();
-    const uniqueDiscs = activeDisciplinasList.filter(d => {
-      const key = d.name.trim().toUpperCase();
-      if (seenNames.has(key)) return false;
-      seenNames.add(key);
-      return true;
-    });
+    if (hasActivePlan && effectivePlan) {
+      const sessions = effectivePlan.sessions;
+      const pending = sessions.filter(s => s.status !== 'concluida');
+      const orderedSessions = pending.length > 0
+        ? [...pending, ...sessions.filter(s => s.status === 'concluida')]
+        : sessions;
+      return orderedSessions.slice(0, 4).map(s => {
+        const customAssuntoId = customSelectedTopics[s.disciplinaId];
+        const customAssunto = customAssuntoId
+          ? relevantAssuntos.find(a => a.id === customAssuntoId && a.disciplinaId === s.disciplinaId)
+          : undefined;
+        const defaultAssunto = relevantAssuntos.find(a => a.disciplinaId === s.disciplinaId && !a.completed) ||
+          relevantAssuntos.find(a => a.disciplinaId === s.disciplinaId);
+        const resolvedAssuntoId = customAssunto?.id || s.assuntoId || defaultAssunto?.id;
+        const resolvedAssuntoName = customAssunto?.name || s.assuntoName || defaultAssunto?.name || 'Estudo dirigido do edital';
+        return {
+          id: s.id,
+          disciplinaId: s.disciplinaId,
+          disciplinaName: s.disciplinaName,
+          assuntoId: resolvedAssuntoId,
+          assuntoName: resolvedAssuntoName,
+          durationMinutes: s.durationMinutes || 45,
+        };
+      });
+    }
 
-    return uniqueDiscs.slice(0, 4).map(d => {
-      const customAssuntoId = customSelectedTopics[d.id];
-      const customAssunto = customAssuntoId
-        ? relevantAssuntos.find(a => a.id === customAssuntoId && a.disciplinaId === d.id)
-        : undefined;
-      const topic = customAssunto ||
-        relevantAssuntos.find(a => a.disciplinaId === d.id && !a.completed) ||
-        relevantAssuntos.find(a => a.disciplinaId === d.id);
-      return {
-        id: d.id,
-        disciplinaId: d.id,
-        disciplinaName: d.name,
-        assuntoId: topic?.id,
-        assuntoName: topic?.name || 'Conteúdo programático do edital',
-        durationMinutes: 45,
-      };
-    });
+    return [];
   })();
 
-  const primaryStudyItem = studyQueue[0] || (nextDisciplina && nextAssuntoToStudy ? (() => {
-    const customId = customSelectedTopics[nextDisciplina.id];
-    const customTopic = customId
-      ? relevantAssuntos.find(a => a.id === customId && a.disciplinaId === nextDisciplina.id)
-      : undefined;
-    const chosenTopic = customTopic || nextAssuntoToStudy;
-    return {
-      id: nextDisciplina.id,
-      disciplinaId: nextDisciplina.id,
-      disciplinaName: nextDisciplina.name,
-      assuntoId: chosenTopic.id,
-      assuntoName: chosenTopic.name,
-      durationMinutes: 45,
-    };
-  })() : null);
+  const primaryStudyItem = hasActivePlanning ? (studyQueue[0] || null) : null;
 
-  const upcomingStudyItems = studyQueue.slice(1, 4);
+  const upcomingStudyItems = hasActivePlanning ? studyQueue.slice(1, 4) : [];
 
   const cycleProgressPercent = (() => {
-    if (hasActiveCycle && cycle && cycle.blocks.length > 0) {
-      const totalMins = cycle.blocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
-      const doneMins = cycle.blocks.reduce((acc, b) => {
+    if (hasActiveCycle && effectiveCycle && effectiveCycle.blocks.length > 0) {
+      const totalMins = effectiveCycle.blocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
+      const doneMins = effectiveCycle.blocks.reduce((acc, b) => {
         if (b.status === 'concluido') return acc + (b.durationMinutes || 0);
         return acc + Math.min(b.durationMinutes || 0, b.elapsedMinutes || 0);
       }, 0);
       return totalMins > 0 ? Math.min(100, Math.round((doneMins / totalMins) * 100)) : 0;
     }
-    return editalProgressPercent;
+    if (hasActivePlan && effectivePlan && effectivePlan.sessions.length > 0) {
+      const doneCount = effectivePlan.sessions.filter(s => s.status === 'concluida').length;
+      return Math.min(100, Math.round((doneCount / effectivePlan.sessions.length) * 100));
+    }
+    return 0;
   })();
 
   const formattedTodayLabel = (() => {
@@ -1059,7 +1227,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         );
       })()}
 
-      {plan && (
+      {hasActivePlan && effectivePlan && (
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="p-2.5 rounded-xl bg-purple-500/10 text-purple-500">
@@ -1067,10 +1235,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
             <div>
               <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                Cronograma Inteligente ({plan.concursoTitle})
+                Cronograma Inteligente ({effectivePlan.concursoTitle})
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                {plan.sessions.filter(s => s.status === 'concluida').length} de {plan.sessions.length} sessões concluídas
+                {effectivePlan.sessions.filter(s => s.status === 'concluida').length} de {effectivePlan.sessions.length} sessões concluídas
               </p>
             </div>
           </div>
@@ -1086,8 +1254,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        {/* Quadro 1 (Superior Esquerdo): Tópico Atual & Próximos Estudos */}
-        {primaryStudyItem && (() => {
+        {/* Quadro 1 (Superior Esquerdo): Tópico Atual & Próximos Estudos (ou Empty State quando não houver plano) */}
+        {hasActivePlanning && primaryStudyItem ? (() => {
           const { icon: PrimaryIcon, color: primaryIconColor } = resolveSubjectIcon(primaryStudyItem.disciplinaName);
           const ringRadius = 15;
           const ringCircumference = 2 * Math.PI * ringRadius;
@@ -1344,7 +1512,91 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </CardBody>
             </Card>
           );
-        })()}
+        })() : (
+          <Card className="h-full min-h-[440px] sm:min-h-[480px] rounded-2xl flex flex-col overflow-hidden border border-slate-200/90 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
+            <CardBody className="p-6 sm:p-7 flex-1 flex flex-col">
+              {/* 1. Título do Card (Topo Esquerdo) */}
+              <div className="mb-5">
+                <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 select-none">
+                  PLANEJAMENTO
+                </span>
+              </div>
+
+              {/* Container relativo com Skeleton Decorativo de fundo + Conteúdo Centralizado */}
+              <div className="relative flex-1 flex flex-col justify-between">
+                {/* 2. Elementos Visuais de Fundo (Skeleton Decorativo) */}
+                <div className="space-y-6 pointer-events-none select-none" aria-hidden="true">
+                  {/* Bloco retangular cinza-claro suave simulando banner em branco */}
+                  <div className="rounded-2xl bg-slate-100/90 dark:bg-slate-800/60 p-5 sm:p-6 space-y-5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white dark:bg-slate-700/65 shrink-0" />
+                      <div className="space-y-2.5 flex-1 min-w-0">
+                        <div className="w-20 h-4 rounded-md bg-white dark:bg-slate-700/65" />
+                        <div className="w-full max-w-[340px] h-6 rounded-lg bg-white dark:bg-slate-700/65" />
+                        <div className="w-28 h-5 rounded-full bg-white dark:bg-slate-700/65" />
+                      </div>
+                    </div>
+                    <div className="w-full h-2.5 rounded-full bg-white dark:bg-slate-700/65" />
+                  </div>
+
+                  {/* Duas linhas de placeholder sutis abaixo */}
+                  <div className="space-y-4 pt-1">
+                    <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100 dark:border-slate-800/60">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100/80 dark:bg-slate-800/50 shrink-0" />
+                      <div className="w-56 sm:w-72 h-4 rounded-md bg-slate-100/80 dark:bg-slate-800/50" />
+                    </div>
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100/50 dark:bg-slate-800/35 shrink-0" />
+                      <div className="w-48 sm:w-64 h-4 rounded-md bg-slate-100/50 dark:bg-slate-800/35" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Conteúdo Centralizado em Overlay */}
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4">
+                  {/* 3. Ícone Central */}
+                  <div
+                    className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center mb-3.5 shadow-2xs transition-colors"
+                    style={{
+                      backgroundColor: `${palette.primary}20`,
+                      color: palette.primary,
+                    }}
+                  >
+                    <Calendar className="w-6 h-6 stroke-[2.2]" />
+                  </div>
+
+                  {/* 4. Título Principal Centralizado */}
+                  <h4 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    Nenhum Plano de Estudos Criado
+                  </h4>
+
+                  {/* 5. Subtítulo Centralizado */}
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mt-1.5 leading-relaxed">
+                    Crie seu ciclo ou quadro de horários para organizar a sua rotina de estudos.
+                  </p>
+
+                  {/* 6. Botão de Ação (CTA) Centralizado Abaixo */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem('gabarita_open_method_modal', 'true');
+                      } catch {}
+                      onNavigateTab('plano');
+                    }}
+                    className="mt-6 px-6 py-2.5 rounded-full text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shadow-md hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: palette.primary,
+                      boxShadow: `0 6px 18px -4px ${palette.glowColor || `${palette.primary}55`}`,
+                    }}
+                  >
+                    <span>+ Criar Plano de Estudos</span>
+                  </button>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
         {/* Quadro 2 (Superior Direito): Metas de Estudo Semanal */}
         <div className="h-full min-h-[440px] sm:min-h-[480px] flex flex-col bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
@@ -1494,7 +1746,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {/* Nota Informativa da Meta */}
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                 Meta definida por você{' '}
-                {hasActiveCycle || (plan && plan.sessions && plan.sessions.length > 0) ? (
+                {hasActivePlanning ? (
                   <span 
                     className="font-semibold"
                     style={{ color: palette.primary }}
@@ -1655,19 +1907,85 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </p>
               </div>
             ) : (
-              pendingRevisoes.slice(0, 4).map((rev) => (
-                <div key={rev.id} className="p-4 sm:p-5 flex items-center justify-between gap-3">
-                  <div>
-                    <Badge variant="purple" size="sm">Ciclo {rev.method}</Badge>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">{rev.assuntoName}</h4>
+              pendingRevisoes.slice(0, 4).map((rev) => {
+                const intervalLabel = rev.intervalDays
+                  ? `Ciclo ${rev.intervalDays === 1 ? '24h' : `${rev.intervalDays}d`}`
+                  : rev.method
+                  ? `Ciclo ${rev.method}`
+                  : 'Ciclo 24h';
+
+                return (
+                  <div key={rev.id} className="p-4 sm:p-5 flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="purple" size="sm">{intervalLabel}</Badge>
+                        {rev.disciplinaName && (
+                          <span className="text-xs font-semibold theme-primary-text truncate max-w-xs">
+                            {rev.disciplinaName}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1 line-clamp-2">
+                        {rev.assuntoName}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleStartRevision(rev)}
+                        leftIcon={<Zap className="w-3.5 h-3.5" />}
+                        className="font-bold text-xs shadow-xs"
+                      >
+                        Revisar agora
+                      </Button>
+
+                      {/* Menu Dropdown de 3 Pontinhos */}
+                      <div className="relative menu-options-container">
+                        <button
+                          type="button"
+                          onClick={() => setOpenMenuId(openMenuId === rev.id ? null : rev.id)}
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          aria-label="Mais opções"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {openMenuId === rev.id && (
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-30 py-1 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => handleManualRegister(rev)}
+                              className="w-full px-3.5 py-2 text-left flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                              Registrar manualmente
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickComplete(rev)}
+                              className="w-full px-3.5 py-2 text-left flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600 dark:text-emerald-400 cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              Concluir rapidamente
+                            </button>
+                            {onUpdateRevisao && (
+                              <button
+                                type="button"
+                                onClick={() => handleIgnoreReview(rev)}
+                                className="w-full px-3.5 py-2 text-left flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-amber-600 dark:text-amber-400 cursor-pointer"
+                              >
+                                <EyeOff className="w-3.5 h-3.5" />
+                                Ignorar revisão
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="primary" onClick={() => onCompleteRevisao(rev.id, 'facil')}>
-                      Concluir
-                    </Button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </CardBody>
         </Card>
@@ -2056,6 +2374,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         );
       })()}
+
+      {/* =========================================================================
+          CRONÔMETRO DE FOCO CONTEXTUALIZADO PARA REVISÃO (FLUXO REVISAR AGORA)
+          ========================================================================= */}
+      <StudyTimerModal
+        isOpen={isTimerModalOpen && !!activeTimerReview}
+        onClose={() => {
+          setIsTimerModalOpen(false);
+          setActiveTimerReview(null);
+        }}
+        initialDurationMinutes={25}
+        onStopAndSave={(elapsedSeconds) => {
+          if (activeTimerReview) {
+            handleStopTimerAndOpenRegister(elapsedSeconds, activeTimerReview);
+          }
+        }}
+      />
+
+      {/* =========================================================================
+          MODAL DE REGISTRO DE ESTUDO CONTEXTUALIZADO PARA REVISÃO
+          ========================================================================= */}
+      {isStudyRegisterModalOpen && activeTimerReview && (
+        <StudyRegisterModal
+          isOpen={isStudyRegisterModalOpen && !!activeTimerReview}
+          onClose={() => {
+            setIsStudyRegisterModalOpen(false);
+            setActiveTimerReview(null);
+          }}
+          modo={registerModo}
+          isRevisionContext={true}
+          disciplinas={disciplinas}
+          assuntos={assuntos}
+          initialDisciplinaId={activeTimerReview.disciplinaId}
+          initialDisciplinaName={activeTimerReview.disciplinaName}
+          initialAssuntoId={activeTimerReview.assuntoId}
+          initialAssuntoName={activeTimerReview.assuntoName}
+          elapsedSeconds={registerElapsedSeconds}
+          plannedMinutes={25}
+          onSaveSuccess={handleSaveRevisionSession}
+          onBackToTimer={registerModo === 'manual' ? undefined : handleBackToTimer}
+        />
+      )}
     </div>
   );
 };

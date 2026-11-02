@@ -30,7 +30,7 @@ export const MetodoEstudoModal: React.FC<MetodoEstudoModalProps> = ({
   onClose,
   currentMethod = 'ciclo',
   onSelectMethod,
-  title = 'Escolha o Método de Estudo',
+  title = 'Escolha Seu Metodo de Estudo',
   description = 'Selecione a metodologia que melhor atende à sua rotina e estratégia de aprovação.',
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<StudyMethod>(currentMethod);

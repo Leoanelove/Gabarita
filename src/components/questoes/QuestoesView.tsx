@@ -36,6 +36,7 @@ interface QuestoesViewProps {
   questoes: Questao[];
   disciplinas: Disciplina[];
   assuntos: Assunto[];
+  activeConcursoId?: string;
   blocosQuestoes: RegistroBlocoQuestoes[];
   cadernoErros?: ItemCadernoErros[];
   onNavigateTab?: (tab: any) => void;
@@ -57,6 +58,7 @@ export const QuestoesView: React.FC<QuestoesViewProps> = ({
   questoes,
   disciplinas,
   assuntos,
+  activeConcursoId,
   blocosQuestoes,
   cadernoErros = [],
   onRecordBlocoQuestoes,
@@ -71,19 +73,13 @@ export const QuestoesView: React.FC<QuestoesViewProps> = ({
   onOpenStudyTimer,
   onNavigateTab,
 }) => {
-  if (disciplinas.length === 0) {
-    return (
-      <EmptyContestState
-        title="Você ainda não possui disciplinas cadastradas"
-        description="Cadastre seu concurso foco e adicione ou importe as matérias do edital para registrar simulados e blocos de resolução de questões."
-        actionText="Cadastrar Concurso e Matérias"
-        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
-      />
-    );
-  }
+  const activeDisciplinas = useMemo(() => {
+    if (!activeConcursoId) return disciplinas;
+    return disciplinas.filter(d => d.concursoId === activeConcursoId);
+  }, [disciplinas, activeConcursoId]);
 
   const [activeTab, setActiveTab] = useState<QuestoesTab>('registro');
-  const [formDisciplinaId, setFormDisciplinaId] = useState(disciplinas[0]?.id || '');
+  const [formDisciplinaId, setFormDisciplinaId] = useState(activeDisciplinas[0]?.id || '');
   const [formAssuntoId, setFormAssuntoId] = useState('');
   const [formBanca, setFormBanca] = useState('FGV');
   const [formDifficulty, setFormDifficulty] = useState<QuestionDifficulty>('media');
@@ -174,6 +170,17 @@ export const QuestoesView: React.FC<QuestoesViewProps> = ({
     }
   };
 
+  if (activeDisciplinas.length === 0) {
+    return (
+      <EmptyContestState
+        title="Você ainda não possui disciplinas cadastradas"
+        description="Cadastre seu concurso foco e adicione ou importe as matérias do edital para registrar simulados e blocos de resolução de questões."
+        actionText="Cadastrar Concurso e Matérias"
+        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {feedback && (
@@ -225,7 +232,7 @@ export const QuestoesView: React.FC<QuestoesViewProps> = ({
                     onChange={(e) => setFormDisciplinaId(e.target.value)}
                     className="w-full p-2.5 rounded border bg-white dark:bg-slate-900"
                   >
-                    {disciplinas.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    {activeDisciplinas.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -306,8 +313,9 @@ export const QuestoesView: React.FC<QuestoesViewProps> = ({
       {activeTab === 'caderno' && (
         <CadernoErrosView
           cadernoErros={cadernoErros}
-          disciplinas={disciplinas}
+          disciplinas={activeDisciplinas}
           assuntos={assuntos}
+          activeConcursoId={activeConcursoId}
           questoes={questoes}
           blocosQuestoes={blocosQuestoes}
           onAddCadernoErro={onAddCadernoErro || (async () => {})}

@@ -76,7 +76,9 @@ export interface StudyRegisterModalProps {
   disciplinas: Disciplina[];
   assuntos: Assunto[];
   initialDisciplinaId?: string;
+  initialDisciplinaName?: string;
   initialAssuntoId?: string;
+  initialAssuntoName?: string;
   elapsedSeconds: number; // Tempo líquido capturado do cronômetro
   plannedMinutes?: number;
   onSaveSuccess: (savedSession: {
@@ -119,7 +121,9 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   disciplinas,
   assuntos,
   initialDisciplinaId,
+  initialDisciplinaName,
   initialAssuntoId,
+  initialAssuntoName,
   elapsedSeconds,
   plannedMinutes = 25,
   onSaveSuccess,
@@ -136,6 +140,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   const durationContainerRef = useRef<HTMLDivElement>(null);
   const hoursInputRef = useRef<HTMLInputElement>(null);
   const minutesInputRef = useRef<HTMLInputElement>(null);
+  const secondsInputRef = useRef<HTMLInputElement>(null);
 
   // Entradas de Tempo Editáveis (Pré-preenchidas pelo Cronômetro ou Zeradas no Manual)
   const [manualHours, setManualHours] = useState<string>('00');
@@ -153,38 +158,152 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   const [dateMode, setDateMode] = useState<'hoje' | 'ontem' | 'outro'>('hoje');
   const [customDate, setCustomDate] = useState<string>(getTodayYMD);
 
-  // Helpers para edição de inputs de tempo (HH:MM:SS)
+  // Helpers para edição de inputs de tempo (HH:MM:SS) com suporte a adição contínua (auto-avanço)
   const handleTimeInputChange = (
     setter: React.Dispatch<React.SetStateAction<string>>,
     max: number,
-    val: string
+    val: string,
+    field?: 'hh' | 'mm' | 'ss'
   ) => {
     if (erroTempo) {
       setErroTempo(false);
       setErroTopico(false);
     }
-    const digits = val.replace(/\D/g, '').slice(0, 2);
-    if (digits === '') {
+    const clean = val.replace(/\D/g, '');
+    if (clean === '') {
       setter('');
       return;
     }
+    const digits = clean.length > 2 ? clean.slice(-2) : clean;
     const num = parseInt(digits, 10);
-    if (num >= max) {
-      setter(String(max - 1).padStart(2, '0'));
+    const finalVal = num >= max ? String(max - 1).padStart(2, '0') : digits;
+    setter(finalVal);
+
+    // Auto-avanço contínuo: quando atinge 2 dígitos, pula para o próximo campo automaticamente
+    if (digits.length === 2) {
+      if (field === 'hh') {
+        minutesInputRef.current?.focus();
+        minutesInputRef.current?.select();
+      } else if (field === 'mm') {
+        secondsInputRef.current?.focus();
+        secondsInputRef.current?.select();
+      }
+    }
+  };
+
+  // Navegação contínua pelo teclado (Backspace, Setas e Dois Pontos ':')
+  const handleTimeKeyDown = (
+    field: 'hh' | 'mm' | 'ss',
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    // Tecla ':' ou ';' avança imediatamente para o próximo campo
+    if (e.key === ':' || e.key === ';') {
+      e.preventDefault();
+      if (field === 'hh') {
+        setManualHours((prev) => (prev.length === 1 ? prev.padStart(2, '0') : prev));
+        minutesInputRef.current?.focus();
+        minutesInputRef.current?.select();
+      } else if (field === 'mm') {
+        setManualMinutes((prev) => (prev.length === 1 ? prev.padStart(2, '0') : prev));
+        secondsInputRef.current?.focus();
+        secondsInputRef.current?.select();
+      }
+      return;
+    }
+
+    // Tecla Backspace: se campo estiver vazio ou cursor no início, retorna para o campo anterior
+    if (e.key === 'Backspace') {
+      const input = e.currentTarget;
+      const isAtStart = input.selectionStart === 0 && input.selectionEnd === 0;
+      const isEmpty = !input.value;
+      if (isAtStart || isEmpty) {
+        if (field === 'ss') {
+          e.preventDefault();
+          minutesInputRef.current?.focus();
+          minutesInputRef.current?.select();
+        } else if (field === 'mm') {
+          e.preventDefault();
+          hoursInputRef.current?.focus();
+          hoursInputRef.current?.select();
+        }
+      }
+      return;
+    }
+
+    // Tecla Seta Direita: se cursor no fim, avança para o próximo campo
+    if (e.key === 'ArrowRight') {
+      const input = e.currentTarget;
+      if (input.selectionStart === input.value.length && input.selectionEnd === input.value.length) {
+        if (field === 'hh') {
+          e.preventDefault();
+          minutesInputRef.current?.focus();
+          minutesInputRef.current?.select();
+        } else if (field === 'mm') {
+          e.preventDefault();
+          secondsInputRef.current?.focus();
+          secondsInputRef.current?.select();
+        }
+      }
+      return;
+    }
+
+    // Tecla Seta Esquerda: se cursor no início, volta para o campo anterior
+    if (e.key === 'ArrowLeft') {
+      const input = e.currentTarget;
+      if (input.selectionStart === 0 && input.selectionEnd === 0) {
+        if (field === 'ss') {
+          e.preventDefault();
+          minutesInputRef.current?.focus();
+          minutesInputRef.current?.select();
+        } else if (field === 'mm') {
+          e.preventDefault();
+          hoursInputRef.current?.focus();
+          hoursInputRef.current?.select();
+        }
+      }
+      return;
+    }
+  };
+
+  // Suporte a colar (Paste) contínuo de tempo (ex: "01:30:00", "01:30", "013000")
+  const handleTimePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData('text').trim();
+    if (text.includes(':')) {
+      e.preventDefault();
+      const parts = text.split(':').map((p) => p.replace(/\D/g, '').slice(0, 2));
+      if (parts.length >= 3) {
+        setManualHours(parts[0].padStart(2, '0'));
+        setManualMinutes(parts[1].padStart(2, '0'));
+        setManualSeconds(parts[2].padStart(2, '0'));
+        secondsInputRef.current?.focus();
+      } else if (parts.length === 2) {
+        setManualHours(parts[0].padStart(2, '0'));
+        setManualMinutes(parts[1].padStart(2, '0'));
+        setManualSeconds('00');
+        secondsInputRef.current?.focus();
+      }
     } else {
-      setter(digits);
+      const rawDigits = text.replace(/\D/g, '');
+      if (rawDigits.length >= 4) {
+        e.preventDefault();
+        const h = rawDigits.slice(0, 2);
+        const m = rawDigits.slice(2, 4);
+        const s = rawDigits.slice(4, 6) || '00';
+        setManualHours(h.padStart(2, '0'));
+        setManualMinutes(m.padStart(2, '0'));
+        setManualSeconds(s.padStart(2, '0'));
+        secondsInputRef.current?.focus();
+      }
     }
   };
 
   const handleTimeInputBlur = (
-    setter: React.Dispatch<React.SetStateAction<string>>,
-    val: string
+    setter: React.Dispatch<React.SetStateAction<string>>
   ) => {
-    if (!val || val.trim() === '') {
-      setter('00');
-    } else {
-      setter(val.padStart(2, '0'));
-    }
+    setter((prev) => {
+      if (!prev || prev.trim() === '') return '00';
+      return prev.padStart(2, '0');
+    });
   };
 
   // Tempo total calculado em segundos (editável tanto no modo cronômetro quanto manual)
@@ -300,8 +419,8 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         setManualHours('00');
         setManualMinutes('00');
         setManualSeconds('00');
-        setSelectedDisciplinaId(initialDisciplinaId || '');
-        setSelectedAssuntoId(initialAssuntoId || '');
+        setSelectedDisciplinaId(initialDisciplinaId || initialDisciplinaName || '');
+        setSelectedAssuntoId(initialAssuntoId || initialAssuntoName || '');
       } else {
         // Modo cronômetro (ou tempo líquido vindo do Timer): pré-preenche HH:MM:SS e libera edição manual
         const safeSecs = Math.max(0, Math.round(elapsedSeconds || 0));
@@ -311,9 +430,9 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         setManualHours(String(h).padStart(2, '0'));
         setManualMinutes(String(m).padStart(2, '0'));
         setManualSeconds(String(s).padStart(2, '0'));
-        const defaultDisc = initialDisciplinaId || (disciplinas && disciplinas[0]?.id) || '';
+        const defaultDisc = initialDisciplinaId || (disciplinas && disciplinas[0]?.id) || initialDisciplinaName || '';
         setSelectedDisciplinaId(defaultDisc);
-        setSelectedAssuntoId(initialAssuntoId || '');
+        setSelectedAssuntoId(initialAssuntoId || initialAssuntoName || '');
       }
 
       if (isRevisionContext) {
@@ -543,10 +662,10 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
     }
 
     // Validação Bloqueante: Assunto / Tópico é estritamente obrigatório
-    const isTopicoInvalido = !selectedAssuntoId || 
+    const isTopicoInvalido = (!selectedAssuntoId || 
       selectedAssuntoId.trim() === '' || 
       selectedAssuntoId === 'Selecione o Tópico' || 
-      selectedAssuntoId === 'Selecione o Assunto';
+      selectedAssuntoId === 'Selecione o Assunto') && !initialAssuntoName;
 
     if (isTopicoInvalido) {
       setErroTopico(true);
@@ -900,6 +1019,9 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                     {uniqueDisciplinas.map(d => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
+                    {isRevisionContext && selectedDisciplinaId && !uniqueDisciplinas.some(d => d.id === selectedDisciplinaId) && (
+                      <option value={selectedDisciplinaId}>{initialDisciplinaName || selectedDisciplinaId}</option>
+                    )}
                   </select>
                   <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -935,7 +1057,9 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                   >
                     <span className="truncate text-slate-900 dark:text-white font-medium">
                       {selectedAssuntoId
-                        ? activeAssuntos.find(a => a.id === selectedAssuntoId)?.name || 'Selecione o Tópico'
+                        ? activeAssuntos.find(a => a.id === selectedAssuntoId)?.name || initialAssuntoName || 'Selecione o Tópico'
+                        : initialAssuntoName
+                        ? initialAssuntoName
                         : !selectedDisciplinaId
                         ? 'Primeiro selecione a Disciplina'
                         : 'Selecione o Tópico'}
@@ -1039,10 +1163,21 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
-                      maxLength={2}
+                      maxLength={3}
                       value={manualHours}
-                      onChange={(e) => handleTimeInputChange(setManualHours, 100, e.target.value)}
-                      onBlur={() => handleTimeInputBlur(setManualHours, manualHours)}
+                      onChange={(e) => handleTimeInputChange(setManualHours, 100, e.target.value, 'hh')}
+                      onKeyDown={(e) => handleTimeKeyDown('hh', e)}
+                      onPaste={handleTimePaste}
+                      onBlur={(e) => {
+                        if (
+                          e.relatedTarget === hoursInputRef.current ||
+                          e.relatedTarget === minutesInputRef.current ||
+                          e.relatedTarget === secondsInputRef.current
+                        ) {
+                          return;
+                        }
+                        handleTimeInputBlur(setManualHours);
+                      }}
                       onFocus={(e) => e.target.select()}
                       className="w-7 text-center bg-transparent focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-800 rounded px-0.5"
                       placeholder="00"
@@ -1055,10 +1190,21 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
-                      maxLength={2}
+                      maxLength={3}
                       value={manualMinutes}
-                      onChange={(e) => handleTimeInputChange(setManualMinutes, 60, e.target.value)}
-                      onBlur={() => handleTimeInputBlur(setManualMinutes, manualMinutes)}
+                      onChange={(e) => handleTimeInputChange(setManualMinutes, 60, e.target.value, 'mm')}
+                      onKeyDown={(e) => handleTimeKeyDown('mm', e)}
+                      onPaste={handleTimePaste}
+                      onBlur={(e) => {
+                        if (
+                          e.relatedTarget === hoursInputRef.current ||
+                          e.relatedTarget === minutesInputRef.current ||
+                          e.relatedTarget === secondsInputRef.current
+                        ) {
+                          return;
+                        }
+                        handleTimeInputBlur(setManualMinutes);
+                      }}
                       onFocus={(e) => e.target.select()}
                       className="w-7 text-center bg-transparent focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-800 rounded px-0.5"
                       placeholder="00"
@@ -1067,13 +1213,25 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                     />
                     <span className={`mx-0.5 font-bold ${erroTempo ? 'text-rose-400' : 'text-slate-400 dark:text-slate-500'}`}>:</span>
                     <input
+                      ref={secondsInputRef}
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
-                      maxLength={2}
+                      maxLength={3}
                       value={manualSeconds}
-                      onChange={(e) => handleTimeInputChange(setManualSeconds, 60, e.target.value)}
-                      onBlur={() => handleTimeInputBlur(setManualSeconds, manualSeconds)}
+                      onChange={(e) => handleTimeInputChange(setManualSeconds, 60, e.target.value, 'ss')}
+                      onKeyDown={(e) => handleTimeKeyDown('ss', e)}
+                      onPaste={handleTimePaste}
+                      onBlur={(e) => {
+                        if (
+                          e.relatedTarget === hoursInputRef.current ||
+                          e.relatedTarget === minutesInputRef.current ||
+                          e.relatedTarget === secondsInputRef.current
+                        ) {
+                          return;
+                        }
+                        handleTimeInputBlur(setManualSeconds);
+                      }}
                       onFocus={(e) => e.target.select()}
                       className="w-7 text-center bg-transparent focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-800 rounded px-0.5"
                       placeholder="00"

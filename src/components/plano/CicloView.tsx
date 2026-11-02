@@ -106,7 +106,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
 }) => {
   // Função auxiliar para carregar ciclo específico do concurso ativo no localStorage
   const getStoredCycleForActiveConcurso = (): StudyCycle => {
-    // 1. Se a prop cycle já possui blocos válidos para o concurso ativo, use-a
+    // 1. Se a prop cycle já possui blocos válidos estritamente para o concurso ativo, use-a
     if (cycle && cycle.blocks && cycle.blocks.length > 0 && (!activeConcursoId || cycle.concursoId === activeConcursoId)) {
       return cycle;
     }
@@ -115,10 +115,11 @@ export const CicloView: React.FC<CicloViewProps> = ({
     if (activeConcursoId) {
       try {
         const raw = localStorage.getItem(`gabarita_ciclo_estudos_${activeConcursoId}`) ||
+                    localStorage.getItem(`gabarita_ciclo_${activeConcursoId}`) ||
                     localStorage.getItem(`gabarita_study_cycle_${activeConcursoId}`);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
+          if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length > 0 && (!parsed.concursoId || parsed.concursoId === activeConcursoId)) {
             return parsed;
           }
         }
@@ -127,7 +128,24 @@ export const CicloView: React.FC<CicloViewProps> = ({
       }
     }
 
-    return cycle;
+    // 3. Se a prop cycle é do concurso ativo mesmo vazia
+    if (cycle && (!activeConcursoId || cycle.concursoId === activeConcursoId)) {
+      return cycle;
+    }
+
+    // 4. Retorna ciclo vazio estritamente isolado para o concurso ativo - JAMAIS dados de outro concurso
+    return {
+      id: `cycle_${activeConcursoId || 'empty'}`,
+      userId: 'user',
+      concursoId: activeConcursoId || '',
+      concursoTitle: '',
+      currentBlockIndex: 0,
+      completedCyclesCount: 0,
+      totalCycleMinutes: 0,
+      blocks: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
   };
 
   const [activeCycle, setActiveCycle] = useState<StudyCycle>(getStoredCycleForActiveConcurso);
@@ -149,25 +167,41 @@ export const CicloView: React.FC<CicloViewProps> = ({
                   localStorage.getItem(`gabarita_study_cycle_${activeConcursoId}`);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
+        if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length > 0 && (!parsed.concursoId || parsed.concursoId === activeConcursoId)) {
           setActiveCycle(parsed);
           return;
         }
       }
-      if (cycle && cycle.blocks && cycle.blocks.length > 0) {
+      if (cycle && cycle.blocks && cycle.blocks.length > 0 && cycle.concursoId === activeConcursoId) {
         setActiveCycle(cycle);
+        return;
       }
+      // Se não há ciclo configurado para o concurso ativo, mantém o estado limpo
+      setActiveCycle({
+        id: `cycle_${activeConcursoId}`,
+        userId: 'user',
+        concursoId: activeConcursoId,
+        concursoTitle: '',
+        currentBlockIndex: 0,
+        completedCyclesCount: 0,
+        totalCycleMinutes: 0,
+        blocks: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
     } catch (e) {
       console.warn('Erro na leitura reativa do ciclo:', e);
     }
   }, [activeConcursoId]);
 
-  // Sincroniza instantaneamente quando a prop cycle externa for atualizada
+  // Sincroniza instantaneamente quando a prop cycle externa for atualizada (apenas se for do concurso ativo)
   useEffect(() => {
-    if (cycle && cycle.blocks && cycle.blocks.length > 0) {
-      setActiveCycle(cycle);
+    if (cycle) {
+      if (!activeConcursoId || cycle.concursoId === activeConcursoId) {
+        setActiveCycle(cycle);
+      }
     }
-  }, [cycle]);
+  }, [cycle, activeConcursoId]);
 
   // Listener global para sincronização reativa imediata de ciclos gerados
   useEffect(() => {
@@ -411,15 +445,45 @@ export const CicloView: React.FC<CicloViewProps> = ({
   const handleConfirmRemoveCycle = async () => {
     setIsSubmitting(true);
     try {
+      const targetCid = activeConcursoId || activeCycle?.concursoId;
+      if (targetCid) {
+        try {
+          localStorage.removeItem(`gabarita_ciclo_estudos_${targetCid}`);
+          localStorage.removeItem(`gabarita_ciclo_${targetCid}`);
+          localStorage.removeItem(`gabarita_study_cycle_${targetCid}`);
+        } catch (e) {
+          console.warn('Erro ao limpar localStorage do ciclo:', e);
+        }
+      }
+
+      const cleared = await DatabaseService.removeStudyCycle();
+
+      const emptyCycle: StudyCycle = {
+        ...cleared,
+        blocks: [],
+        currentBlockIndex: 0,
+        completedCyclesCount: 0,
+        totalCycleMinutes: 0,
+        concursoId: targetCid,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setActiveCycle(emptyCycle);
+
       if (onRemoveCycle) {
         await onRemoveCycle();
-      } else {
-        const cleared = await DatabaseService.removeStudyCycle();
-        setActiveCycle(cleared);
       }
+      if (onSaveNewCycle) {
+        await onSaveNewCycle(emptyCycle);
+      }
+
+      window.dispatchEvent(new CustomEvent('gabarita_cycle_updated', { detail: emptyCycle }));
+
       setIsRemoveCycleModalOpen(false);
       setIsActionsMenuOpen(false);
-      showFeedback('Ciclo de estudos removido com sucesso.');
+      showFeedback('Ciclo de estudos excluído com sucesso.');
+    } catch (err) {
+      console.error('Erro ao excluir ciclo:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -499,7 +563,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
               className="text-white rounded-lg px-6 py-2.5 font-semibold inline-flex items-center gap-2 cursor-pointer shadow-md hover:brightness-110 active:scale-95 transition-all text-sm"
             >
               <Plus className="w-4 h-4" />
-              <span>Criar meu primeiro ciclo</span>
+              <span>Criar novo ciclo</span>
             </button>
           </div>
         </div>
@@ -845,6 +909,14 @@ export const CicloView: React.FC<CicloViewProps> = ({
               >
                 <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                 <span>Editar ciclo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsRemoveCycleModalOpen(true)}
+                className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600 group"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
+                <span>Excluir ciclo</span>
               </button>
             </div>
           </div>

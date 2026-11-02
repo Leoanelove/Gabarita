@@ -704,8 +704,11 @@ function mapSimuladoFromDb(row: any): Simulado {
 }
 
 function mapDeckFromDb(row: any): Deck {
+  const cid = row.concurso_id || row.concursoId || undefined;
   return {
     id: row.id,
+    concursoId: cid,
+    concurso_id: cid,
     disciplina: row.disciplina,
     nome: row.nome,
     totalCards: Number(row.total_cards || 0),
@@ -715,9 +718,12 @@ function mapDeckFromDb(row: any): Deck {
 }
 
 function mapFlashcardFromDb(row: any): Flashcard {
+  const cid = row.concurso_id || row.concursoId || undefined;
   return {
     id: row.id,
     deckId: row.deck_id,
+    concursoId: cid,
+    concurso_id: cid,
     disciplina: row.disciplina,
     topico: row.topico || undefined,
     frente: row.frente,
@@ -1232,6 +1238,8 @@ export class DatabaseService {
   // --- CONCURSOS ---
   static async getConcursos(): Promise<Concurso[]> {
     const rawStored = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const preferredActiveId = (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : null) || loadStored<any>(STORAGE_KEYS.USER, null)?.targetConcursoId;
+
     try {
       const uid = await getCurrentUserId();
       let query = supabase
@@ -1245,13 +1253,15 @@ export class DatabaseService {
 
       if (!error && Array.isArray(data)) {
         const remoteList = data.map(mapConcursoFromDb);
+        const nonArchived = remoteList.filter(c => c.status !== 'arquivado' && !c.isArquivado);
 
-        let foundActive = false;
+        const resolvedActiveId = (preferredActiveId && nonArchived.some(c => String(c.id) === String(preferredActiveId)))
+          ? String(preferredActiveId)
+          : (nonArchived.find(c => c.active || c.isAtivo || c.is_ativo || c.isFocoAtivo)?.id || nonArchived[0]?.id || '');
+
         const normalized = remoteList.map(c => {
           const isArchived = c.status === 'arquivado' || Boolean(c.isArquivado);
-          const isCand = !isArchived && Boolean(c.active || c.isAtivo || c.is_ativo || c.isFocoAtivo);
-          const isActive = isCand && !foundActive;
-          if (isActive) foundActive = true;
+          const isActive = !isArchived && String(c.id) === String(resolvedActiveId);
           return {
             ...c,
             active: isActive,
@@ -1262,6 +1272,13 @@ export class DatabaseService {
             status: isArchived ? ('arquivado' as const) : (c.status === 'arquivado' ? 'previsto' : c.status),
           };
         });
+
+        if (resolvedActiveId && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('gabarita_active_concurso_id', resolvedActiveId);
+          } catch {}
+        }
+
         saveStored(STORAGE_KEYS.CONCURSOS, normalized);
         return normalized;
       }
@@ -1269,7 +1286,11 @@ export class DatabaseService {
       console.warn('Gabarita: Falha ao buscar concursos do Supabase:', e);
     }
 
-    let foundActive = false;
+    const nonArchivedStored = rawStored.filter(c => c.status !== 'arquivado' && !c.isArquivado);
+    const resolvedStoredActiveId = (preferredActiveId && nonArchivedStored.some(c => String(c.id) === String(preferredActiveId)))
+      ? String(preferredActiveId)
+      : (nonArchivedStored.find(c => c.active || c.isAtivo || c.is_ativo || c.isFocoAtivo)?.id || nonArchivedStored[0]?.id || '');
+
     return rawStored.map(c => {
       const organ = (c.organ || c.orgao || c.nome || c.nomeOrgao || '').trim();
       const role = c.role || c.cargo || '';
@@ -1277,17 +1298,9 @@ export class DatabaseService {
         ? (role ? `${organ} - ${role}` : organ)
         : (c.title || c.titulo || organ);
       const isArchived = c.status === 'arquivado' || Boolean(c.isArquivado);
-      const isCandidateActive = !isArchived && Boolean(c.active || c.isAtivo || c.is_ativo || c.isFocoAtivo);
-      const isActive = isCandidateActive && !foundActive;
-      if (isActive) foundActive = true;
+      const isActive = !isArchived && String(c.id) === String(resolvedStoredActiveId);
       return {
         ...c,
-        active: isActive,
-        isAtivo: isActive,
-        is_ativo: isActive,
-        isFocoAtivo: isActive,
-        isArquivado: isArchived,
-        status: isArchived ? ('arquivado' as const) : (c.status === 'arquivado' ? 'previsto' : c.status),
         organ: organ || c.organ,
         orgao: organ || c.orgao,
         nome: organ || c.nome,
@@ -1296,6 +1309,12 @@ export class DatabaseService {
         role,
         title: title || c.title,
         titulo: title || c.titulo,
+        active: isActive,
+        isAtivo: isActive,
+        is_ativo: isActive,
+        isFocoAtivo: isActive,
+        isArquivado: isArchived,
+        status: isArchived ? ('arquivado' as const) : (c.status === 'arquivado' ? 'previsto' : c.status),
       };
     });
   }
@@ -1736,14 +1755,20 @@ export class DatabaseService {
   static async getActiveConcurso(): Promise<Concurso | null> {
     const list = await this.getConcursos();
     if (list.length === 0) return null;
-    const active = list.find(c => c.active);
-    if (active) return active;
-    const user = await this.getUserProfile();
-    if (user?.targetConcursoId) {
-      const match = list.find(c => c.id === user.targetConcursoId);
+    const preferredId = (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : null);
+    if (preferredId) {
+      const match = list.find(c => String(c.id) === String(preferredId) && c.status !== 'arquivado' && !c.isArquivado);
       if (match) return match;
     }
-    return list[0] || null;
+    const user = await this.getUserProfile();
+    if (user?.targetConcursoId) {
+      const match = list.find(c => String(c.id) === String(user.targetConcursoId) && c.status !== 'arquivado' && !c.isArquivado);
+      if (match) return match;
+    }
+    const active = list.find(c => (c.active || c.isAtivo) && c.status !== 'arquivado' && !c.isArquivado);
+    if (active) return active;
+    const nonArchived = list.filter(c => c.status !== 'arquivado' && !c.isArquivado);
+    return nonArchived[0] || list[0] || null;
   }
 
   static async setActiveConcurso(id: string): Promise<{ concursos: Concurso[]; activeConcurso: Concurso }> {
@@ -1783,24 +1808,36 @@ export class DatabaseService {
       active: true,
       isAtivo: true,
       is_ativo: true,
+      isFocoAtivo: true,
       updatedAt: new Date().toISOString(),
     };
 
-    // Regra de exclusividade: apenas o concurso selecionado terá active/isAtivo = true, os outros são desativados
+    // Regra de exclusividade estrita: apenas o concurso selecionado terá active/isAtivo = true, os outros são desativados
     const updatedList = list.map(c => {
       const isActive = String(c.id) === String(activeConcurso.id);
       if (isActive) {
         return activeConcurso;
       }
-      return { ...c, active: false, isAtivo: false, is_ativo: false, updatedAt: new Date().toISOString() };
+      return { 
+        ...c, 
+        active: false, 
+        isAtivo: false, 
+        is_ativo: false, 
+        isFocoAtivo: false, 
+        updatedAt: new Date().toISOString() 
+      };
     });
+
+    try {
+      localStorage.setItem('gabarita_active_concurso_id', activeConcurso.id);
+    } catch {}
 
     saveStored(STORAGE_KEYS.CONCURSOS, updatedList);
     await this.updateUserProfile({
       targetConcursoId: activeConcurso.id,
       targetConcursoTitle: `${activeConcurso.organ} - ${activeConcurso.role}`,
     });
-    await this.syncActiveContestStorage();
+    await this.syncActiveContestStorage(activeConcurso.id);
 
     // Sincroniza exclusividade no Supabase
     const uid = await getCurrentUserId();
@@ -1811,6 +1848,12 @@ export class DatabaseService {
       } catch (e) {
         console.warn('Gabarita: Erro ao sincronizar foco ativo no Supabase:', e);
       }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('gabarita_active_concurso_changed', { 
+        detail: { id: activeConcurso.id, concurso: activeConcurso } 
+      }));
     }
 
     return { concursos: updatedList, activeConcurso };
@@ -1944,11 +1987,16 @@ export class DatabaseService {
   }
 
   // --- SINGLE SOURCE OF TRUTH (gabarita_active_contest) ---
-  static async syncActiveContestStorage(): Promise<any> {
+  static async syncActiveContestStorage(targetId?: string): Promise<any> {
     const concursos = await this.getConcursos();
-    const active = concursos.find(c => c.active) || concursos[0];
+    const storedActiveId = targetId || (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : null);
+    const active = (storedActiveId ? concursos.find(c => String(c.id) === String(storedActiveId)) : null) ||
+                   concursos.find(c => c.active || c.isAtivo) || 
+                   concursos[0];
     if (!active) {
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_CONTEST);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_CONTEST);
+      }
       return null;
     }
     const allDisciplinas = await this.getDisciplinas();
@@ -5286,35 +5334,77 @@ export class DatabaseService {
 
   // --- STUDY PLAN & CRONOGRAMA ---
   static async getStudyPlan(concursoId?: string): Promise<StudyPlan> {
-    try {
-      let query = supabase.from('study_plans').select('*');
-      if (concursoId) {
-        query = query.eq('concurso_id', concursoId);
-      }
-      const { data, error } = await query.order('updated_at', { ascending: false }).limit(1);
+    const targetId = concursoId || (await this.getActiveConcurso())?.id;
 
-      if (!error && Array.isArray(data) && data.length > 0) {
-        const plan = mapStudyPlanFromDb(data[0]);
-        saveStored(STORAGE_KEYS.STUDY_PLAN, plan);
-        return plan;
+    if (targetId) {
+      try {
+        const { data, error } = await supabase
+          .from('study_plans')
+          .select('*')
+          .eq('concurso_id', targetId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          const plan = mapStudyPlanFromDb(data[0]);
+          if (plan && plan.concursoId === targetId && Array.isArray(plan.sessions) && plan.sessions.length > 0) {
+            try {
+              localStorage.setItem(`gabarita_study_plan_${targetId}`, JSON.stringify(plan));
+            } catch {}
+            saveStored(STORAGE_KEYS.STUDY_PLAN, plan);
+            return plan;
+          }
+        }
+      } catch (e) {
+        console.warn('Gabarita: Falha ao buscar study plan do Supabase:', e);
       }
-    } catch (e) {
-      console.warn('Gabarita: Falha ao buscar study plan do Supabase:', e);
+
+      try {
+        const raw = localStorage.getItem(`gabarita_study_plan_${targetId}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.concursoId === targetId && Array.isArray(parsed.sessions) && parsed.sessions.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {}
     }
 
     const current = loadStored<StudyPlan>(STORAGE_KEYS.STUDY_PLAN, INITIAL_STUDY_PLAN);
-    if (concursoId && current.concursoId !== concursoId) {
-      const concursos = await this.getConcursos();
-      const target = concursos.find(c => c.id === concursoId);
-      if (target) {
-        return this.recalculateStudyPlan(concursoId);
-      }
+    if (targetId && current.concursoId === targetId && Array.isArray(current.sessions) && current.sessions.length > 0) {
+      return current;
     }
-    return current;
+
+    const currentUid = await getCurrentUserId();
+    const concursos = await this.getConcursos();
+    const activeC = concursos.find(c => c.id === targetId);
+    return {
+      id: `plan_${targetId || 'empty'}`,
+      concursoId: targetId || '',
+      concursoTitle: activeC ? `${activeC.organ || activeC.title} - ${activeC.role}` : 'Plano de Estudos',
+      userId: currentUid || 'user_demo_01',
+      startDate: new Date().toISOString().split('T')[0],
+      targetExamDate: activeC?.examDate ? activeC.examDate.split('T')[0] : new Date(Date.now() + 86400000 * 90).toISOString().split('T')[0],
+      dailyAverageMinutes: 240,
+      totalWeeks: 12,
+      totalPlannedHours: 288,
+      weeklyAvailability: { seg: 240, ter: 240, qua: 240, qui: 240, sex: 240, sab: 180, dom: 120 },
+      disciplinasDistribution: [],
+      sessions: [],
+      conflicts: [],
+      historyLogs: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
   }
 
   static async saveStudyPlan(plan: StudyPlan): Promise<StudyPlan> {
     saveStored(STORAGE_KEYS.STUDY_PLAN, plan);
+    if (plan.concursoId) {
+      try {
+        localStorage.setItem(`gabarita_study_plan_${plan.concursoId}`, JSON.stringify(plan));
+      } catch {}
+    }
 
     getCurrentUserId().then(uid => {
       const targetUid = plan.userId || uid;
@@ -5338,6 +5428,45 @@ export class DatabaseService {
     });
 
     return plan;
+  }
+
+  static async removeStudyPlan(concursoId?: string): Promise<StudyPlan> {
+    const plan = await this.getStudyPlan(concursoId);
+    const targetId = concursoId || plan.concursoId || (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : '') || '';
+    const idsToClean = new Set([
+      targetId,
+      plan.concursoId,
+      typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : null,
+    ].filter(Boolean));
+
+    idsToClean.forEach(cid => {
+      try {
+        localStorage.removeItem(`gabarita_study_plan_${cid}`);
+        localStorage.removeItem(`gabarita_cronograma_${cid}`);
+      } catch (err) {
+        console.warn('Erro ao remover cronograma do concurso no localStorage:', err);
+      }
+    });
+
+    try {
+      localStorage.removeItem(STORAGE_KEYS.STUDY_PLAN);
+      localStorage.removeItem('@gabarita:study_plan');
+      localStorage.removeItem('gabarita_study_plan');
+    } catch (err) {}
+
+    const clearedPlan: StudyPlan = {
+      ...plan,
+      concursoId: targetId,
+      totalPlannedHours: 0,
+      weeklyAvailability: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0, sab: 0, dom: 0 },
+      disciplinasDistribution: [],
+      sessions: [],
+      conflicts: [],
+      historyLogs: [],
+      updatedAt: new Date().toISOString(),
+    };
+
+    return this.saveStudyPlan(clearedPlan);
   }
 
   static async recalculateStudyPlan(
@@ -5562,12 +5691,14 @@ export class DatabaseService {
 
         if (!error && Array.isArray(data) && data.length > 0) {
           const mapped = mapStudyCycleFromDb(data[0]);
-          saveStored(STORAGE_KEYS.STUDY_CYCLE, mapped);
-          try {
-            localStorage.setItem(`gabarita_ciclo_estudos_${targetId}`, JSON.stringify(mapped));
-            localStorage.setItem(`gabarita_study_cycle_${targetId}`, JSON.stringify(mapped));
-          } catch {}
-          return mapped;
+          if (mapped && mapped.concursoId === targetId && Array.isArray(mapped.blocks) && mapped.blocks.length > 0) {
+            saveStored(STORAGE_KEYS.STUDY_CYCLE, mapped);
+            try {
+              localStorage.setItem(`gabarita_ciclo_estudos_${targetId}`, JSON.stringify(mapped));
+              localStorage.setItem(`gabarita_study_cycle_${targetId}`, JSON.stringify(mapped));
+            } catch {}
+            return mapped;
+          }
         }
       } catch (e) {
         console.warn('Gabarita: Falha ao buscar ciclo do Supabase:', e);
@@ -5578,7 +5709,7 @@ export class DatabaseService {
         const raw = localStorage.getItem(`gabarita_ciclo_estudos_${targetId}`);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
+          if (parsed && parsed.concursoId === targetId && Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
             saveStored(STORAGE_KEYS.STUDY_CYCLE, parsed);
             return parsed;
           }
@@ -5776,14 +5907,29 @@ export class DatabaseService {
 
   static async removeStudyCycle(): Promise<StudyCycle> {
     const cycle = await this.getStudyCycle();
-    if (cycle.concursoId) {
+    const idsToClean = new Set([
+      cycle.concursoId,
+      localStorage.getItem('gabarita_active_concurso_id'),
+    ].filter(Boolean));
+
+    idsToClean.forEach(cid => {
       try {
-        localStorage.removeItem(`gabarita_ciclo_estudos_${cycle.concursoId}`);
-        localStorage.removeItem(`gabarita_study_cycle_${cycle.concursoId}`);
+        localStorage.removeItem(`gabarita_ciclo_estudos_${cid}`);
+        localStorage.removeItem(`gabarita_study_cycle_${cid}`);
+        localStorage.removeItem(`gabarita_ciclo_${cid}`);
       } catch (err) {
         console.warn('Erro ao remover ciclo do concurso no localStorage:', err);
       }
-    }
+    });
+
+    try {
+      localStorage.removeItem('gabarita_ciclo_estudos_default');
+      localStorage.removeItem('gabarita_study_cycle_default');
+      localStorage.removeItem('gabarita_ciclo_default');
+      localStorage.removeItem('@gabarita:study_cycle');
+      localStorage.removeItem('gabarita_study_cycle');
+    } catch (err) {}
+
     const clearedCycle: StudyCycle = {
       ...cycle,
       currentBlockIndex: 0,
@@ -5797,6 +5943,7 @@ export class DatabaseService {
 
   // --- FLASHCARDS & DECKS ---
   static async getDecks(): Promise<Deck[]> {
+    const localDecks = loadStored<Deck[]>('@gabarita:decks', []);
     try {
       const { data, error } = await supabase
         .from('decks')
@@ -5804,18 +5951,27 @@ export class DatabaseService {
         .order('created_at', { ascending: false });
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapDeckFromDb);
+        const localMap = new Map(localDecks.map(d => [d.id, d]));
+        const list = data.map(row => {
+          const mapped = mapDeckFromDb(row);
+          const localMatch = localMap.get(mapped.id);
+          const cid = mapped.concursoId || mapped.concurso_id || localMatch?.concursoId || localMatch?.concurso_id;
+          return cid ? { ...mapped, concursoId: cid, concurso_id: cid } : mapped;
+        });
         saveStored('@gabarita:decks', list);
         return list;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar baralhos do Supabase:', e);
     }
-    return loadStored<Deck[]>('@gabarita:decks', []);
+    return localDecks;
   }
 
   static async saveDecks(decks: Deck[]): Promise<Deck[]> {
     saveStored('@gabarita:decks', decks);
+    try {
+      localStorage.setItem('@gabarita:decks', JSON.stringify(decks));
+    } catch {}
 
     getCurrentUserId().then(uid => {
       if (uid && decks.length > 0) {
@@ -5838,6 +5994,7 @@ export class DatabaseService {
   }
 
   static async getFlashcards(): Promise<Flashcard[]> {
+    const localCards = loadStored<Flashcard[]>('@gabarita:flashcards', []);
     try {
       const { data, error } = await supabase
         .from('flashcards')
@@ -5845,18 +6002,27 @@ export class DatabaseService {
         .order('created_at', { ascending: false });
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data.map(mapFlashcardFromDb);
+        const localMap = new Map(localCards.map(c => [c.id, c]));
+        const list = data.map(row => {
+          const mapped = mapFlashcardFromDb(row);
+          const localMatch = localMap.get(mapped.id);
+          const cid = mapped.concursoId || mapped.concurso_id || localMatch?.concursoId || localMatch?.concurso_id;
+          return cid ? { ...mapped, concursoId: cid, concurso_id: cid } : mapped;
+        });
         saveStored('@gabarita:flashcards', list);
         return list;
       }
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar flashcards do Supabase:', e);
     }
-    return loadStored<Flashcard[]>('@gabarita:flashcards', []);
+    return localCards;
   }
 
   static async saveFlashcards(cards: Flashcard[]): Promise<Flashcard[]> {
     saveStored('@gabarita:flashcards', cards);
+    try {
+      localStorage.setItem('@gabarita:flashcards', JSON.stringify(cards));
+    } catch {}
 
     getCurrentUserId().then(uid => {
       if (uid && cards.length > 0) {

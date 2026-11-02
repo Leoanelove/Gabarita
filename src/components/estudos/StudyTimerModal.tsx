@@ -537,6 +537,21 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
       }
       return;
     }
+    if (e.key === 'Backspace') {
+      const input = e.currentTarget;
+      if ((input.selectionStart === 0 && input.selectionEnd === 0) || !input.value) {
+        if (segment === 'ss') {
+          e.preventDefault();
+          minutesInputRef.current?.focus();
+          minutesInputRef.current?.select();
+        } else if (segment === 'mm') {
+          e.preventDefault();
+          hoursInputRef.current?.focus();
+          hoursInputRef.current?.select();
+        }
+      }
+      return;
+    }
     if (e.key === 'ArrowLeft') {
       const input = e.currentTarget;
       if (input.selectionStart === 0 && input.selectionEnd === 0) {
@@ -1019,11 +1034,19 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                       ref={hoursInputRef}
                       type="text"
                       inputMode="numeric"
-                      maxLength={2}
+                      maxLength={3}
                       value={editHours}
                       aria-label="Horas"
                       onFocus={(e) => e.currentTarget.select()}
-                      onChange={(e) => setEditHours(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      onChange={(e) => {
+                        const clean = e.target.value.replace(/\D/g, '');
+                        const val = clean.length > 2 ? clean.slice(-2) : clean;
+                        setEditHours(val);
+                        if (val.length === 2) {
+                          minutesInputRef.current?.focus();
+                          minutesInputRef.current?.select();
+                        }
+                      }}
                       onKeyDown={(e) => handleSegmentKeyDown(e, 'hh')}
                       className={`w-[2.6ch] px-1.5 py-0.5 text-center bg-transparent overflow-visible leading-none font-mono font-black tracking-widest text-white rounded-xl outline-none selection:bg-transparent selection:text-white ${
                         currentMode === 'foco'
@@ -1037,11 +1060,21 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                       ref={minutesInputRef}
                       type="text"
                       inputMode="numeric"
-                      maxLength={2}
+                      maxLength={3}
                       value={editMinutes}
                       aria-label="Minutos"
                       onFocus={(e) => e.currentTarget.select()}
-                      onChange={(e) => setEditMinutes(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      onChange={(e) => {
+                        const clean = e.target.value.replace(/\D/g, '');
+                        const val = clean.length > 2 ? clean.slice(-2) : clean;
+                        const num = parseInt(val, 10);
+                        const finalVal = num >= 60 ? '59' : val;
+                        setEditMinutes(finalVal);
+                        if (val.length === 2) {
+                          secondsInputRef.current?.focus();
+                          secondsInputRef.current?.select();
+                        }
+                      }}
                       onKeyDown={(e) => handleSegmentKeyDown(e, 'mm')}
                       className={`w-[2.6ch] px-1.5 py-0.5 text-center bg-transparent overflow-visible leading-none font-mono font-black tracking-widest text-white rounded-xl outline-none selection:bg-transparent selection:text-white ${
                         currentMode === 'foco'
@@ -1055,11 +1088,17 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                       ref={secondsInputRef}
                       type="text"
                       inputMode="numeric"
-                      maxLength={2}
+                      maxLength={3}
                       value={editSeconds}
                       aria-label="Segundos"
                       onFocus={(e) => e.currentTarget.select()}
-                      onChange={(e) => setEditSeconds(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      onChange={(e) => {
+                        const clean = e.target.value.replace(/\D/g, '');
+                        const val = clean.length > 2 ? clean.slice(-2) : clean;
+                        const num = parseInt(val, 10);
+                        const finalVal = num >= 60 ? '59' : val;
+                        setEditSeconds(finalVal);
+                      }}
                       onKeyDown={(e) => handleSegmentKeyDown(e, 'ss')}
                       className={`w-[2.6ch] px-1.5 py-0.5 text-center bg-transparent overflow-visible leading-none font-mono font-black tracking-widest text-white rounded-xl outline-none selection:bg-transparent selection:text-white ${
                         currentMode === 'foco'

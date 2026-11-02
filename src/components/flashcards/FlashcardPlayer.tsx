@@ -22,6 +22,7 @@ import { Button } from '../../design-system/Button';
 import { DatabaseService } from '../../services/db';
 import { useTimerAlarm } from '../../hooks/useTimerAlarm';
 import { RingtoneSelectorButton, SoundVolumeControlButton } from '../estudos/RingtoneSelectorModal';
+import { FlashcardRichContent } from './GmailRichTextEditor';
 
 export interface FlashcardPlayerProps {
   cards: Flashcard[];
@@ -149,7 +150,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
       nextReviewDate.setDate(nextReviewDate.getDate() + 8);
     }
 
-    // 3. Atualizar cartão no localStorage (@gabarita:flashcards)
+    // 3. Atualizar cartão no localStorage e DatabaseService (@gabarita:flashcards)
     try {
       const stored = localStorage.getItem('@gabarita:flashcards');
       if (stored) {
@@ -167,6 +168,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
           return c;
         });
         localStorage.setItem('@gabarita:flashcards', JSON.stringify(updated));
+        DatabaseService.saveFlashcards(updated);
       }
 
       // Se respondeu bom ou fácil, diminuir a contagem de pendências do baralho em @gabarita:decks
@@ -184,6 +186,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
             return d;
           });
           localStorage.setItem('@gabarita:decks', JSON.stringify(updatedDecks));
+          DatabaseService.saveDecks(updatedDecks);
         }
       }
     } catch (e) {
@@ -366,9 +369,9 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
               <div className="py-6 sm:py-8 flex-1 flex flex-col justify-center">
                 {!isFlipped ? (
                   <div className="space-y-4 animate-fadeIn text-center sm:text-left">
-                    <h3 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 leading-snug tracking-tight">
-                      {currentCard.frente}
-                    </h3>
+                    <div className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 leading-snug tracking-tight">
+                      <FlashcardRichContent content={currentCard.frente} />
+                    </div>
                     <p className="text-xs text-slate-400 font-medium pt-2">
                       Pressione <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-[11px] font-mono">Espaço</kbd> ou clique abaixo para ver a resposta.
                     </p>
@@ -378,8 +381,8 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
                     <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                       Resposta & Explicação:
                     </div>
-                    <div className="text-base sm:text-xl font-medium text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line bg-slate-50/80 dark:bg-slate-800/40 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
-                      {currentCard.verso}
+                    <div className="text-base sm:text-xl font-medium text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-50/80 dark:bg-slate-800/40 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <FlashcardRichContent content={currentCard.verso} />
                     </div>
                   </div>
                 )}

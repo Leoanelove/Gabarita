@@ -35,6 +35,7 @@ import { Modal } from '../../design-system/Modal';
 import { PlannerService } from '../../services/plannerService';
 import { DatabaseService } from '../../services/db';
 import { SessionActionModal } from './SessionActionModal';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface CalendarViewProps {
   plan: StudyPlan;
@@ -53,6 +54,8 @@ interface CalendarViewProps {
   onPlanCreated?: (newPlan: StudyPlan) => Promise<void>;
   onSwitchMethod?: (method: StudyMethod) => Promise<void> | void;
   onNavigateTab?: (tab: any) => void;
+  onRemovePlan?: () => Promise<void>;
+  onOpenCreateSchedule?: () => void;
 }
 
 export type CalendarViewMode = 'diario' | 'semanal' | 'mensal';
@@ -74,7 +77,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onPlanCreated,
   onSwitchMethod,
   onNavigateTab,
+  onRemovePlan,
+  onOpenCreateSchedule,
 }) => {
+  const { palette } = useTheme();
   const [viewMode, setViewMode] = useState<CalendarViewMode>('semanal');
   const todayStr = useMemo(() => PlannerService.formatLocalDate(new Date()), []);
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
@@ -90,6 +96,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [isRemoveScheduleModalOpen, setIsRemoveScheduleModalOpen] = useState(false);
   const [batchTargetDate, setBatchTargetDate] = useState<string>(todayStr);
   const [batchMode, setBatchMode] = useState<'today' | 'spread'>('spread');
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -97,6 +104,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const showFeedback = (msg: string) => {
     setFeedback(msg);
     setTimeout(() => setFeedback(null), 4000);
+  };
+
+  const handleConfirmRemoveSchedule = async () => {
+    setIsSubmitting(true);
+    try {
+      if (onRemovePlan) {
+        await onRemovePlan();
+      } else {
+        await DatabaseService.removeStudyPlan(plan.concursoId);
+      }
+      setIsRemoveScheduleModalOpen(false);
+      showFeedback('Cronograma de estudos excluído com sucesso.');
+    } catch (err) {
+      console.error('Erro ao excluir cronograma:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSessionClick = (session: PlannedSession) => {
@@ -197,6 +221,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const dailySessions = useMemo(() => {
     const existing = sessionsByDate[selectedDateStr] || [];
     if (existing.length > 0) return existing;
+    if (!plan.sessions || plan.sessions.length === 0) return [];
     if (disciplinas.length === 0) return [];
 
     const d1 = disciplinas[0];
@@ -291,7 +316,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
       )}
 
-      <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between shadow-xs">
+      <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-2 flex-wrap shadow-xs">
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5">
             <button onClick={handlePrev} className="p-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /></button>
@@ -304,12 +329,56 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {viewMode === 'mensal' && monthData.monthLabel}
           </span>
         </div>
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
-          <button onClick={() => setViewMode('diario')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'diario' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Diário</button>
-          <button onClick={() => setViewMode('semanal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'semanal' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Semanal</button>
-          <button onClick={() => setViewMode('mensal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'mensal' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Mensal</button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
+            <button onClick={() => setViewMode('diario')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'diario' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Diário</button>
+            <button onClick={() => setViewMode('semanal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'semanal' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Semanal</button>
+            <button onClick={() => setViewMode('mensal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'mensal' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Mensal</button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsRemoveScheduleModalOpen(true)}
+            className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600 group"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
+            <span>Excluir Cronograma</span>
+          </button>
         </div>
       </div>
+
+      {(!plan.sessions || plan.sessions.length === 0) && (
+        <div className="p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm text-center max-w-xl mx-auto my-2 space-y-4">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border"
+            style={{
+              backgroundColor: `${palette.primary}18`,
+              borderColor: `${palette.primary}40`,
+              color: palette.primary,
+            }}
+          >
+            <CalendarIcon className="w-7 h-7 opacity-80" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              Nenhum cronograma criado
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+              Crie seu cronograma semanal e organize seus horários de estudo no calendário.
+            </p>
+          </div>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => onOpenCreateSchedule && onOpenCreateSchedule()}
+              style={{ backgroundColor: palette.primary }}
+              className="text-white rounded-lg px-6 py-2.5 font-semibold inline-flex items-center gap-2 cursor-pointer shadow-md hover:brightness-110 active:scale-95 transition-all text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Incluir novo cronograma</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           1. VISÃO DIÁRIA: Lista de sessões ou blocos de horários focados no dia atual
@@ -568,6 +637,48 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal: Excluir Cronograma de Estudos */}
+      <Modal
+        isOpen={isRemoveScheduleModalOpen}
+        onClose={() => setIsRemoveScheduleModalOpen(false)}
+        title="Excluir Cronograma de Estudos?"
+        description="Esta ação removerá todas as sessões agendadas no calendário deste concurso. O edital e as matérias cadastradas serão preservados."
+        maxWidth="md"
+      >
+        <div className="space-y-4 pt-2 text-xs sm:text-sm">
+          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold text-red-800 dark:text-red-200">
+                Tem certeza que deseja apagar este cronograma?
+              </p>
+              <p className="text-xs text-red-700 dark:text-red-400">
+                Esta ação removerá todo o planejamento do calendário atual e reiniciará as métricas do cronograma deste concurso. O edital e as matérias cadastradas serão preservados.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRemoveScheduleModalOpen(false)}
+              className="cursor-pointer border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConfirmRemoveSchedule}
+              isLoading={isSubmitting}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer shadow-sm border border-red-700"
+            >
+              Sim, Excluir Cronograma
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal Intermediário: Detalhes da Sessão Planejada */}
       <SessionActionModal

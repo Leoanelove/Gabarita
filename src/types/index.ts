@@ -716,6 +716,8 @@ export interface Notificacao {
 export interface Flashcard {
   id: string;
   deckId: string;
+  concursoId?: string;
+  concurso_id?: string;
   disciplina: string;
   topico?: string;
   frente: string;
@@ -729,6 +731,8 @@ export interface Flashcard {
 
 export interface Deck {
   id: string;
+  concursoId?: string;
+  concurso_id?: string;
   disciplina: string;
   nome: string;
   totalCards: number;

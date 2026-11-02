@@ -59,11 +59,11 @@ const MAX_CONCURSOS = 3;
 
 // Banners da aba "Concursos" (desacoplados de PROVAS_BANNER_THEMES)
 export const CONCURSOS_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_verde1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc192ZXJkZTEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjcxNDQyNCwiZXhwIjo0OTQ2MzE0NDI0fQ.F8HP8MPwVx06i71AbmZOvAa91tnrTT0Nf0oV3IVB_rLBYmcX0nFtPkg5x7AAohTeAp_XHR7bvXtlyCU9wKZOzQ',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_azul1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19henVsMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNzE0NDQ3LCJleHAiOjQ5NDYzMTQ0NDd9.9hNobfF7M1HQbJd91D_dGFhkD1SYU3QvnK0EiteEkWfpL7W92AYqotqFMUAuMEvqq1c3iRgkfiQDcdBa-TpTqw',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_rosa1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19yb3NhMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNzE0NDU5LCJleHAiOjQ5NDYzMTQ0NTl9.Ba9bbYq-JFffZ7jJ9jM9Nh1lVGjF7MwhqckRScp5fZPcxgaEX1ga4Y0T9pLWN1RovuJoWTqdl_QYjwXsAC-ABg',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_roxo1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19yb3hvMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNzE0NDcwLCJleHAiOjQ5NDYzMTQ0NzB9.nvgYD0oFPQlFanTEU_WIqX76RB3AQ9GHfEX1_60pbrKRpGA26K44Pni0Qc7V7EnpR7TQGEb-yyKGuH0UCcH3DQ',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_laranja1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19sYXJhbmphMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNzE0NDg0LCJleHAiOjQ5NDYzMTQ0ODR9.eE6t5WTlHZaPFLnAhilxUHQcLO6JJJ8OZF3795HftoDVgSK2h614XmYWbsbJfxk_gbZ2i_eR522RlemlWSxN1w',
+  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_verde1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc192ZXJkZTEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzYyNTM4OSwiZXhwIjo0OTQ3MjI1Mzg5fQ.BE9nGP7j0J3YoIF5Dmy_VIaPZCiTYJG3Z6-he1e24Of79amHeMI7GpANiCk3sGTBtiOmyK-mAo6btuyI5YppSQ',
+  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_azul1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19henVsMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI1OTc5LCJleHAiOjQ5NDcyMjU5Nzl9.t8LyR9U0gCQmroY6dsh7AZec81Fjba5IkqnOLHeYhZ7WJWJP4gVGJFRgfLCsIclEBt6yWx3yp73sW8of8IvwsA',
+  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_rosa1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19yb3NhMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI1OTk4LCJleHAiOjQ5NDcyMjU5OTh9.SqYjY4UaNPQadGVXSPE306jtukUjzn2bAqkcTrFtj0LuipegRqVuGsEeG3E5qdGw4sQXDhVTyrBD4stRnaohGw',
+  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_roxo1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19yb3hvMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI2MDExLCJleHAiOjQ5NDcyMjYwMTF9.gShzy95wv-OQh_enqzIca3vcbRa0WF8IL3od1UZGLtdMDomUxGudxortHe5ttmghYN1lrLa4Uff3hs-BZIgIag',
+  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_laranja1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19sYXJhbmphMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI2MDI3LCJleHAiOjQ5NDcyMjYwMjd9.Xg506W1uoN2wMYBl9jtO0ofsjwLelCLKdfYQVb-0r2LhLhopwzrBK4XZlmGW9b6DgLLdUJcf77RrEQ-Pn81N_g',
 };
 
 const PALETTE_COLORS = [
@@ -81,6 +81,7 @@ interface ConcursosViewProps {
   concursos: Concurso[];
   provas: Prova[];
   user: UserProfile;
+  activeConcursoId?: string;
   disciplinas?: Disciplina[];
   assuntos?: Assunto[];
   onAddConcurso: (concurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -115,6 +116,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   concursos,
   provas,
   user,
+  activeConcursoId,
   disciplinas = [],
   assuntos = [],
   onAddConcurso,
@@ -194,6 +196,15 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
         };
     }
   }, [currentTheme]);
+
+  // Identificação unificada do concurso com Foco Ativo (Single Source of Truth)
+  const currentActiveConcursoId = useMemo(() => {
+    return activeConcursoId || 
+      (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : '') ||
+      user?.targetConcursoId || 
+      concursos.find(c => (c.active || c.isAtivo || c.isFocoAtivo) && c.status !== 'arquivado' && !c.isArquivado)?.id || 
+      '';
+  }, [activeConcursoId, user?.targetConcursoId, concursos]);
 
   // Navigation: Hub vs Drill-Down (Painel do Concurso)
   const [selectedConcursoId, setSelectedConcursoId] = useState<string | null>(null);
@@ -651,7 +662,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   // =========================================================================
   if (selectedConcurso) {
     const isArchived = selectedConcurso.status === 'arquivado' || Boolean(selectedConcurso.isArquivado);
-    const isSelectedActive = !isArchived && Boolean(selectedConcurso.active || selectedConcurso.isAtivo || selectedConcurso.isFocoAtivo || user.targetConcursoId === selectedConcurso.id);
+    const isSelectedActive = !isArchived && String(selectedConcurso.id) === String(currentActiveConcursoId);
     const diffDays = selectedConcurso.examDate 
       ? Math.ceil((new Date(selectedConcurso.examDate).getTime() - new Date().getTime()) / 86400000)
       : null;
@@ -1368,9 +1379,9 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
             alt="Banner Concursos"
             minHeight="min-h-[190px] md:min-h-[220px]"
             className="w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
-            bgWrapperClassName="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
-            imgClassName="w-full h-full object-cover object-center scale-110 pointer-events-none select-none"
-            overlayClassName="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent pointer-events-none"
+            bgWrapperClassName="absolute -inset-4 overflow-hidden pointer-events-none select-none z-0"
+            imgClassName="w-full h-full object-cover object-center scale-[1.38] md:scale-[1.40] pointer-events-none select-none transition-transform duration-300"
+            overlayClassName="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent pointer-events-none"
             contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4"
           >
             <div className="space-y-2">
@@ -1444,7 +1455,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Cards dos Concursos Cadastrados */}
             {filteredConcursosAtivos.map(concurso => {
-              const isActive = Boolean(concurso.active || concurso.isAtivo || user.targetConcursoId === concurso.id);
+              const isActive = String(concurso.id) === String(currentActiveConcursoId);
               const diffDays = concurso.examDate 
                 ? Math.ceil((new Date(concurso.examDate).getTime() - new Date().getTime()) / 86400000)
                 : null;

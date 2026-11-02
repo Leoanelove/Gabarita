@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { 
@@ -42,6 +42,9 @@ import { GezinhoLogo } from './components/common/GezinhoLogo';
 import { Sidebar } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
 import { MobileNav } from './components/layout/MobileNav';
+import { StudySessionModal } from './components/estudos/StudySessionModal';
+import { StudyTimerProvider, useStudyTimer } from './contexts/StudyTimerContext';
+import { Loader2 } from 'lucide-react';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { SessaoEstudoView } from './components/estudos/SessaoEstudoView';
 import { ConcursosView } from './components/concursos/ConcursosView';
@@ -59,9 +62,6 @@ import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { AIAssistantView } from './components/ai/AIAssistantView';
 import { AdminView } from './components/admin/AdminView';
 import { PlanosAssinaturaView } from './components/planos/PlanosAssinaturaView';
-import { StudySessionModal } from './components/estudos/StudySessionModal';
-import { StudyTimerProvider, useStudyTimer } from './contexts/StudyTimerContext';
-import { Loader2 } from 'lucide-react';
 
 const THEME_LIGHT_BACKGROUNDS: Record<string, string> = {
   verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Planos%20de%20Fundo/Plano-de-fundo-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvUGxhbm9zIGRlIEZ1bmRvL1BsYW5vLWRlLWZ1bmRvLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI3MDQzMTUsImV4cCI6NDk0NjMwNDMxNX0.IXqoE7lZeJNc1yIkv9v1q9IYyTHIJ0zXcMtRyUsx0vnfnw4syvdRLJxbM5ILlH42zaQ246GJyrP_hef4dO6RhQ',
@@ -118,13 +118,17 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
+  const [activeConcursoId, setActiveConcursoId] = useState<string>(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : '') || '';
+  });
+
   const loadData = async () => {
     setIsDataLoading(true);
     setDataError(null);
     try {
       await DatabaseService.purgeDuplicateGhostSessions();
       await DatabaseService.sanitizeOrphanData();
-      const [c, p, d, a, ses, r, srsSettings, q, bq, errs, m, achs, mrcs, st, s, pl, cy, sm] = await Promise.all([
+      const [c, p, d, a, ses, r, srsSettings, q, bq, errs, m, achs, mrcs, st, s, sm] = await Promise.all([
         DatabaseService.getConcursos(),
         DatabaseService.getProvas(),
         DatabaseService.getDisciplinas(),
@@ -140,10 +144,28 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         DatabaseService.getMarcos(),
         DatabaseService.getEstatisticasProgressoReal(user?.id || 'user_demo_01'),
         DatabaseService.getSimulados(),
-        DatabaseService.getStudyPlan(),
-        DatabaseService.getStudyCycle(),
         DatabaseService.getStudyMethod(),
       ]);
+
+      const activeConcursos = c.filter(item => item.status !== 'arquivado' && !item.isArquivado);
+      const savedActiveId = (typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') : '') || user?.targetConcursoId || '';
+      const resolvedActive = (savedActiveId ? activeConcursos.find(item => item.id === savedActiveId) : null) ||
+                             activeConcursos.find(item => item.active || item.isAtivo) ||
+                             activeConcursos[0] || null;
+      const targetId = resolvedActive?.id || '';
+
+      if (targetId && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('gabarita_active_concurso_id', targetId);
+        } catch {}
+      }
+      setActiveConcursoId(targetId);
+
+      const [pl, cy] = await Promise.all([
+        targetId ? DatabaseService.getStudyPlan(targetId) : DatabaseService.getStudyPlan(),
+        targetId ? DatabaseService.getStudyCycle(targetId) : DatabaseService.getStudyCycle(),
+      ]);
+
       setConcursos(c);
       setProvas(p);
       setDisciplinas(d);
@@ -159,14 +181,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
       setMarcos(mrcs);
       setStats(st);
       setSimulados(s);
-      setPlan(pl);
-      const activeC = c.find(item => item.active || item.isAtivo) || c[0];
-      const targetId = activeC?.id || '';
-      if (targetId && cy && cy.concursoId !== targetId) {
-        DatabaseService.getStudyCycle(targetId).then(setCycle);
-      } else {
-        setCycle(cy);
-      }
+      setPlan(pl && pl.concursoId === targetId && pl.sessions && pl.sessions.length > 0 ? pl : null);
+      setCycle(cy && cy.concursoId === targetId && cy.blocks && cy.blocks.length > 0 ? cy : null);
       setStudyMethod(sm || 'ciclo');
       setIsDataLoading(false);
     } catch (err) {
@@ -193,6 +209,26 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     }
   }, [isAuthenticated, user?.id]);
 
+  const activeConcursos = useMemo(() => {
+    return concursos.filter((c: Concurso) => c.status !== 'arquivado' && !c.isArquivado);
+  }, [concursos]);
+
+  const activeConcurso = useMemo(() => {
+    if (activeConcursoId) {
+      const match = activeConcursos.find((c: Concurso) => String(c.id) === String(activeConcursoId));
+      if (match) return match;
+    }
+    if (user?.targetConcursoId) {
+      const match = activeConcursos.find((c: Concurso) => String(c.id) === String(user.targetConcursoId));
+      if (match) return match;
+    }
+    const marked = activeConcursos.find((c: Concurso) => c.active || c.isAtivo || c.isFocoAtivo);
+    if (marked) return marked;
+    return activeConcursos[0] || null;
+  }, [activeConcursos, activeConcursoId, user?.targetConcursoId]);
+
+  const effectiveActiveConcursoId = activeConcurso?.id || activeConcursoId || '';
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
@@ -208,12 +244,6 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   if (!isAuthenticated || !user || isLoginTransitioning) {
     return <AuthPage />;
   }
-
-  const activeConcursos = concursos.filter(c => c.status !== 'arquivado' && !c.isArquivado);
-  const activeConcurso = activeConcursos.find(c => c.active || c.isAtivo || c.isFocoAtivo) || 
-    activeConcursos.find(c => c.id === user.targetConcursoId) || 
-    activeConcursos[0] || null;
-  const activeConcursoId = activeConcurso?.id || '';
 
   const handleOpenStudyTimer = (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual') => {
     openStudyTimer(disciplinaId, assuntoId, durationMinutes, mode);
@@ -303,19 +333,29 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   };
 
   const handleSetActiveConcurso = async (id: string) => {
-    const { concursos: updatedList, activeConcurso } = await DatabaseService.setActiveConcurso(id);
+    setActiveConcursoId(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('gabarita_active_concurso_id', id);
+      } catch {}
+    }
+    // Limpeza imediata de ciclo e plano em memória do concurso anterior para isolamento estrito
+    setCycle(null);
+    setPlan(null);
+
+    const { concursos: updatedList, activeConcurso: updatedActive } = await DatabaseService.setActiveConcurso(id);
     setConcursos(updatedList);
     refreshProfile({
-      targetConcursoId: activeConcurso.id,
-      targetConcursoTitle: `${activeConcurso.organ} - ${activeConcurso.role}`,
+      targetConcursoId: updatedActive.id,
+      targetConcursoTitle: `${updatedActive.organ} - ${updatedActive.role}`,
     });
     try {
       const [newCycle, newPlan] = await Promise.all([
-        DatabaseService.getStudyCycle(activeConcurso.id),
-        DatabaseService.getStudyPlan(activeConcurso.id),
+        DatabaseService.getStudyCycle(updatedActive.id),
+        DatabaseService.getStudyPlan(updatedActive.id),
       ]);
-      setCycle(newCycle);
-      setPlan(newPlan);
+      setCycle(newCycle && newCycle.concursoId === updatedActive.id && newCycle.blocks && newCycle.blocks.length > 0 ? newCycle : null);
+      setPlan(newPlan && newPlan.concursoId === updatedActive.id && newPlan.sessions && newPlan.sessions.length > 0 ? newPlan : null);
     } catch (e) {
       console.warn('Erro ao atualizar ciclo e plano do concurso ativo:', e);
     }
@@ -1009,26 +1049,29 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-12 max-w-7xl w-full mx-auto">
           {currentTab === 'dashboard' && (
-            <DashboardView
-              user={user}
-              concursos={concursos}
-              disciplinas={disciplinas}
-              assuntos={assuntos}
-              sessoes={sessoes}
-              revisoes={revisoes}
-              metas={metas}
-              plan={plan}
-              cycle={cycle}
-              provas={provas}
-              isLoading={isDataLoading}
-              errorMessage={dataError}
-              onNavigateTab={setCurrentTab}
-              onOpenStudyTimer={handleOpenStudyTimer}
-              onOpenStudyRegister={handleOpenStudyRegister}
-              onCompleteRevisao={handleCompleteRevisao}
-              onRetry={loadData}
-            />
-          )}
+              <DashboardView
+                user={user}
+                concursos={concursos}
+                disciplinas={disciplinas}
+                assuntos={assuntos}
+                sessoes={sessoes}
+                revisoes={revisoes}
+                metas={metas}
+                plan={plan}
+                cycle={cycle}
+                provas={provas}
+                activeConcursoId={effectiveActiveConcursoId}
+                isLoading={isDataLoading}
+                errorMessage={dataError}
+                onNavigateTab={setCurrentTab}
+                onOpenStudyTimer={handleOpenStudyTimer}
+                onOpenStudyRegister={handleOpenStudyRegister}
+                onCompleteRevisao={handleCompleteRevisao}
+                onUpdateRevisao={handleUpdateRevisao}
+                onDeleteRevisao={handleDeleteRevisao}
+                onRetry={loadData}
+              />
+            )}
 
           {currentTab === 'sessao' && (
             <SessaoEstudoView
@@ -1053,6 +1096,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               concursos={concursos}
               provas={provas}
               user={user}
+              activeConcursoId={effectiveActiveConcursoId}
               disciplinas={disciplinas}
               assuntos={assuntos}
               onAddConcurso={handleAddConcurso}
@@ -1109,6 +1153,11 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
                 setCycle(cleared);
               }}
               onSaveCycle={setCycle}
+              onRemovePlan={async () => {
+                const cleared = await DatabaseService.removeStudyPlan(effectiveActiveConcursoId);
+                setPlan(cleared);
+              }}
+              onSavePlan={setPlan}
             />
           )}
 
@@ -1182,6 +1231,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             <FlashcardsView
               disciplinas={disciplinas}
               assuntos={assuntos}
+              concursos={concursos}
+              activeConcursoId={effectiveActiveConcursoId}
+              onSelectConcurso={handleSetActiveConcurso}
               onNavigateTab={setCurrentTab}
               onSaveStudySession={handleSaveStudySession}
             />
@@ -1190,8 +1242,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
           {currentTab === 'questoes' && (
             <QuestoesView
               questoes={questoes}
-              disciplinas={disciplinas}
+              disciplinas={effectiveActiveConcursoId ? disciplinas.filter(d => d.concursoId === effectiveActiveConcursoId) : disciplinas}
               assuntos={assuntos}
+              activeConcursoId={effectiveActiveConcursoId}
               blocosQuestoes={blocosQuestoes}
               cadernoErros={cadernoErros}
               onNavigateTab={setCurrentTab}
@@ -1212,8 +1265,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             <div className="max-w-7xl mx-auto pb-12">
               <CadernoErrosView
                 cadernoErros={cadernoErros}
-                disciplinas={disciplinas}
+                disciplinas={effectiveActiveConcursoId ? disciplinas.filter(d => d.concursoId === effectiveActiveConcursoId) : disciplinas}
                 assuntos={assuntos}
+                activeConcursoId={effectiveActiveConcursoId}
                 questoes={questoes}
                 blocosQuestoes={blocosQuestoes}
                 onNavigateTab={setCurrentTab}
