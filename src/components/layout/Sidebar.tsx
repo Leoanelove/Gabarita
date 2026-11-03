@@ -22,7 +22,8 @@ import {
   Crown,
   BookX,
   Layers,
-  History
+  History,
+  NotebookPen
 } from 'lucide-react';
 import { NavigationTab, StudyMethod, Concurso } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -220,6 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'plano', label: 'Plano de Estudos', icon: CalendarClock },
     { id: 'estudos', label: 'Edital Verticalizado', icon: BookOpen },
     { id: 'revisoes', label: 'Revisões', icon: Repeat, badge: revisoesCountHoje > 0 ? `${revisoesCountHoje} hoje` : undefined },
+    { id: 'resumos', label: 'Resumos', icon: NotebookPen },
     { id: 'historico', label: 'Histórico', icon: History },
     { id: 'flashcards', label: 'Flashcards', icon: Layers },
     { id: 'caderno_erros', label: 'Caderno de Erros', icon: BookX },

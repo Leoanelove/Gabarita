@@ -62,6 +62,7 @@ import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { AIAssistantView } from './components/ai/AIAssistantView';
 import { AdminView } from './components/admin/AdminView';
 import { PlanosAssinaturaView } from './components/planos/PlanosAssinaturaView';
+import { ResumosView } from './components/resumos/ResumosView';
 
 const THEME_LIGHT_BACKGROUNDS: Record<string, string> = {
   verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Planos%20de%20Fundo/Plano-de-fundo-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvUGxhbm9zIGRlIEZ1bmRvL1BsYW5vLWRlLWZ1bmRvLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI3MDQzMTUsImV4cCI6NDk0NjMwNDMxNX0.IXqoE7lZeJNc1yIkv9v1q9IYyTHIJ0zXcMtRyUsx0vnfnw4syvdRLJxbM5ILlH42zaQ246GJyrP_hef4dO6RhQ',
@@ -1205,6 +1206,19 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               onBatchRescheduleOverdue={handleBatchRescheduleOverdueRevisoes}
               onUpdateSettings={handleUpdateRevisionSettings}
               onOpenStudyTimer={handleOpenStudyTimer}
+            />
+          )}
+
+          {currentTab === 'resumos' && (
+            <ResumosView
+              userId={user.id}
+              concursos={concursos}
+              disciplinas={disciplinas}
+              assuntos={assuntos}
+              activeConcursoId={effectiveActiveConcursoId}
+              onNavigateTab={setCurrentTab}
+              onSaveSession={handleSaveStudySession}
+              onUpdateAssuntoStatus={handleUpdateAssuntoStatus}
             />
           )}
 

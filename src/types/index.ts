@@ -740,6 +740,39 @@ export interface Deck {
   icone?: string;
 }
 
+export type ResumoStatus = 'rascunho' | 'em_revisao' | 'finalizado';
+
+export interface ResumoVersaoHistorico {
+  id: string;
+  savedAt: string;
+  wordCount: number;
+  previewText: string;
+  contentHtml: string;
+}
+
+export interface ResumoEstudo {
+  id: string;
+  userId: string;
+  concursoId: string;
+  disciplinaId: string;
+  disciplinaName: string;
+  assuntoId?: string; // Vinculado a um tópico do Edital Verticalizado (ou vazio se for nota avulsa da disciplina)
+  assuntoName: string;
+  title: string;
+  contentHtml: string; // Conteúdo rico formatado (HTML seguro)
+  plainText: string;   // Texto puro indexado para busca instantânea e contagem de palavras
+  status: ResumoStatus;
+  isFavorite: boolean; // Marcado como "Resumo de Véspera / Importante"
+  tags: string[];      // Ex: ['Lei Seca', 'Jurisprudência STF', 'Pegadinha', 'Prazo']
+  wordCount: number;
+  readingTimeMinutes: number;
+  totalStudySeconds: number; // Tempo acumulado escrevendo/estudando este resumo
+  lastStudiedAt?: string;
+  versions?: ResumoVersaoHistorico[]; // Histórico das últimas 5 versões salvas para recuperação segura
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type NavigationTab = 
   | 'dashboard'
   | 'sessao'
@@ -749,6 +782,7 @@ export type NavigationTab =
   | 'cronograma'
   | 'estudos'
   | 'revisoes'
+  | 'resumos'
   | 'historico'
   | 'flashcards'
   | 'questoes'

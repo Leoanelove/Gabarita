@@ -39,7 +39,10 @@ import {
   EstatisticasProgressoReal,
   StudyMethod,
   Deck,
-  Flashcard
+  Flashcard,
+  ResumoEstudo,
+  ResumoStatus,
+  ResumoVersaoHistorico
 } from '../types';
 import { 
   INITIAL_USER, 
@@ -87,6 +90,7 @@ const STORAGE_KEYS = {
   STUDY_CYCLE: 'gabarita_study_cycle',
   DECKS: '@gabarita:decks',
   FLASHCARDS: '@gabarita:flashcards',
+  RESUMOS: 'gabarita_resumos_v1',
 };
 
 function getCurrentUserScopeSync(): string {
@@ -1702,6 +1706,15 @@ export class DatabaseService {
       );
     }
 
+    // 5b. Limpar resumos vinculados ao concurso ou suas disciplinas
+    const resumos = loadStored<ResumoEstudo[]>(STORAGE_KEYS.RESUMOS, []);
+    if (resumos.length > 0) {
+      saveStored(
+        STORAGE_KEYS.RESUMOS,
+        resumos.filter(r => r.concursoId !== id && !discIdsToDelete.has(r.disciplinaId))
+      );
+    }
+
     // 6. Limpar metas semanais, plano de estudos e ciclo de estudos deste concurso
     try {
       localStorage.removeItem(`gabarita_metas_semanais_${id}`);
@@ -2496,6 +2509,17 @@ export class DatabaseService {
       erros.filter(e => e.disciplinaId !== id && (!e.assuntoId || !assuntoIdsToDelete.has(e.assuntoId)))
     );
 
+    const resumos = loadStored<ResumoEstudo[]>(STORAGE_KEYS.RESUMOS, []);
+    const resumoIdsToDelete = resumos
+      .filter(r => r.disciplinaId === id || (r.assuntoId && assuntoIdsToDelete.has(r.assuntoId)))
+      .map(r => r.id);
+    if (resumoIdsToDelete.length > 0) {
+      saveStored(
+        STORAGE_KEYS.RESUMOS,
+        resumos.filter(r => r.disciplinaId !== id && (!r.assuntoId || !assuntoIdsToDelete.has(r.assuntoId)))
+      );
+    }
+
     Promise.resolve().then(async () => {
       try {
         if (sessIdsToDelete.length > 0) {
@@ -2703,6 +2727,14 @@ export class DatabaseService {
       STORAGE_KEYS.CADERNO_ERROS,
       erros.filter(e => e.assuntoId !== id)
     );
+
+    const resumos = loadStored<ResumoEstudo[]>(STORAGE_KEYS.RESUMOS, []);
+    if (resumos.some(r => r.assuntoId === id)) {
+      saveStored(
+        STORAGE_KEYS.RESUMOS,
+        resumos.filter(r => r.assuntoId !== id)
+      );
+    }
 
     Promise.resolve().then(async () => {
       try {
@@ -6047,6 +6079,261 @@ export class DatabaseService {
       }
     });
     return cards;
+  }
+
+  // --- CADERNO DE RESUMOS ---
+  static async getResumos(concursoId?: string): Promise<ResumoEstudo[]> {
+    const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, INITIAL_CONCURSOS);
+    const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
+    const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS);
+    const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+
+    const localResumos = loadStored<ResumoEstudo[]>(STORAGE_KEYS.RESUMOS, []).filter(r => {
+      if (!r || !r.id || !r.disciplinaId) return false;
+      if (validDiscIds.size > 0 && !validDiscIds.has(r.disciplinaId)) return false;
+      if (r.concursoId && validConcursoIds.size > 0 && !validConcursoIds.has(r.concursoId)) return false;
+      return true;
+    });
+
+    try {
+      const uid = await getCurrentUserId();
+      let query = supabase.from('resumos').select('*').order('updated_at', { ascending: false });
+      if (uid && uid !== 'user_demo_01') {
+        query = query.eq('user_id', uid);
+      }
+      if (concursoId) {
+        query = query.eq('concurso_id', concursoId);
+      }
+      const { data, error } = await query;
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const localMap = new Map(localResumos.map(r => [r.id, r]));
+        const mapped: ResumoEstudo[] = data.map((row: any) => {
+          const localMatch = localMap.get(String(row.id));
+          return {
+            id: String(row.id),
+            userId: String(row.user_id || localMatch?.userId || 'user_demo_01'),
+            concursoId: String(row.concurso_id || localMatch?.concursoId || ''),
+            disciplinaId: String(row.disciplina_id || localMatch?.disciplinaId || ''),
+            disciplinaName: String(row.disciplina_name || localMatch?.disciplinaName || ''),
+            assuntoId: row.assunto_id ? String(row.assunto_id) : localMatch?.assuntoId,
+            assuntoName: String(row.assunto_name || localMatch?.assuntoName || 'Nota Avulsa'),
+            title: String(row.title || localMatch?.title || 'Resumo sem título'),
+            contentHtml: String(row.content_html ?? localMatch?.contentHtml ?? ''),
+            plainText: String(row.plain_text ?? localMatch?.plainText ?? ''),
+            status: (row.status || localMatch?.status || 'rascunho') as ResumoStatus,
+            isFavorite: Boolean(row.is_favorite ?? localMatch?.isFavorite ?? false),
+            tags: Array.isArray(row.tags) ? row.tags : (localMatch?.tags || []),
+            wordCount: Number(row.word_count ?? localMatch?.wordCount ?? 0),
+            readingTimeMinutes: Number(row.reading_time_minutes ?? localMatch?.readingTimeMinutes ?? 1),
+            totalStudySeconds: Number(row.total_study_seconds ?? localMatch?.totalStudySeconds ?? 0),
+            lastStudiedAt: row.last_studied_at || localMatch?.lastStudiedAt,
+            versions: Array.isArray(row.versions) ? row.versions : (localMatch?.versions || []),
+            createdAt: String(row.created_at || localMatch?.createdAt || new Date().toISOString()),
+            updatedAt: String(row.updated_at || localMatch?.updatedAt || new Date().toISOString()),
+          };
+        });
+        if (!concursoId) {
+          saveStored(STORAGE_KEYS.RESUMOS, mapped);
+        }
+        return concursoId ? mapped.filter(r => r.concursoId === concursoId) : mapped;
+      }
+    } catch {
+      // Fallback transparente para localStorage caso a tabela resumos ainda não exista no Supabase
+    }
+
+    if (concursoId) {
+      return localResumos.filter(r => r.concursoId === concursoId);
+    }
+    return localResumos;
+  }
+
+  static async saveResumo(
+    resumoInput: Omit<ResumoEstudo, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
+  ): Promise<ResumoEstudo> {
+    const allResumos = loadStored<ResumoEstudo[]>(STORAGE_KEYS.RESUMOS, []);
+    const nowIso = new Date().toISOString();
+
+    // Verifica se já existe pelo id ou pela combinação (concursoId + disciplinaId + assuntoId quando não for nota avulsa)
+    const existingIndex = allResumos.findIndex(r => {
+      if (resumoInput.id && r.id === resumoInput.id) return true;
+      if (
+        !resumoInput.id &&
+        resumoInput.assuntoId &&
+        r.concursoId === resumoInput.concursoId &&
+        r.disciplinaId === resumoInput.disciplinaId &&
+        r.assuntoId === resumoInput.assuntoId
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    let savedItem: ResumoEstudo;
+
+    if (existingIndex >= 0) {
+      const prev = allResumos[existingIndex];
+      const prevVersions = Array.isArray(prev.versions) ? prev.versions : [];
+      let nextVersions: ResumoVersaoHistorico[] = prevVersions;
+
+      // Salva versão anterior no histórico (até 5 versões) quando o conteúdo mudou de forma relevante
+      if (
+        prev.contentHtml &&
+        prev.contentHtml.trim() !== '' &&
+        prev.contentHtml !== resumoInput.contentHtml &&
+        Math.abs((prev.plainText || '').length - (resumoInput.plainText || '').length) > 15
+      ) {
+        const snapshot: ResumoVersaoHistorico = {
+          id: `ver_${Date.now()}`,
+          savedAt: prev.updatedAt || nowIso,
+          wordCount: prev.wordCount || 0,
+          previewText: (prev.plainText || '').slice(0, 140),
+          contentHtml: prev.contentHtml,
+        };
+        nextVersions = [snapshot, ...prevVersions].slice(0, 5);
+      }
+
+      savedItem = {
+        ...prev,
+        ...resumoInput,
+        id: prev.id,
+        versions: resumoInput.versions || nextVersions,
+        updatedAt: nowIso,
+      };
+      allResumos[existingIndex] = savedItem;
+    } else {
+      savedItem = {
+        ...resumoInput,
+        id: resumoInput.id || `resumo_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        versions: resumoInput.versions || [],
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      allResumos.unshift(savedItem);
+    }
+
+    saveStored(STORAGE_KEYS.RESUMOS, allResumos);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = savedItem.userId || uid;
+      if (targetUid) {
+        supabase
+          .from('resumos')
+          .upsert([
+            {
+              id: savedItem.id,
+              user_id: targetUid,
+              concurso_id: savedItem.concursoId,
+              disciplina_id: savedItem.disciplinaId,
+              disciplina_name: savedItem.disciplinaName,
+              assunto_id: savedItem.assuntoId || null,
+              assunto_name: savedItem.assuntoName,
+              title: savedItem.title,
+              content_html: savedItem.contentHtml,
+              plain_text: savedItem.plainText,
+              status: savedItem.status,
+              is_favorite: savedItem.isFavorite,
+              tags: savedItem.tags,
+              word_count: savedItem.wordCount,
+              reading_time_minutes: savedItem.readingTimeMinutes,
+              total_study_seconds: savedItem.totalStudySeconds,
+              last_studied_at: savedItem.lastStudiedAt || null,
+              versions: savedItem.versions || [],
+              created_at: savedItem.createdAt,
+              updated_at: savedItem.updatedAt,
+            },
+          ])
+          .then(() => {});
+      }
+    });
+
+    return savedItem;
+  }
+
+  static async updateResumo(id: string, partial: Partial<ResumoEstudo>): Promise<ResumoEstudo> {
+    const allResumos = loadStored<ResumoEstudo[]>(STORAGE_KEYS.RESUMOS, []);
+    const idx = allResumos.findIndex(r => r.id === id);
+    if (idx < 0) {
+      throw new Error('Resumo não encontrado.');
+    }
+    const prev = allResumos[idx];
+    const nowIso = new Date().toISOString();
+
+    let nextVersions = prev.versions || [];
+    if (
+      partial.contentHtml !== undefined &&
+      prev.contentHtml &&
+      prev.contentHtml.trim() !== '' &&
+      prev.contentHtml !== partial.contentHtml &&
+      Math.abs((prev.plainText || '').length - (partial.plainText || '').length) > 15
+    ) {
+      const snapshot: ResumoVersaoHistorico = {
+        id: `ver_${Date.now()}`,
+        savedAt: prev.updatedAt || nowIso,
+        wordCount: prev.wordCount || 0,
+        previewText: (prev.plainText || '').slice(0, 140),
+        contentHtml: prev.contentHtml,
+      };
+      nextVersions = [snapshot, ...nextVersions].slice(0, 5);
+    }
+
+    const updatedItem: ResumoEstudo = {
+      ...prev,
+      ...partial,
+      versions: partial.versions ?? nextVersions,
+      updatedAt: nowIso,
+    };
+
+    allResumos[idx] = updatedItem;
+    saveStored(STORAGE_KEYS.RESUMOS, allResumos);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = updatedItem.userId || uid;
+      if (targetUid) {
+        supabase
+          .from('resumos')
+          .upsert([
+            {
+              id: updatedItem.id,
+              user_id: targetUid,
+              concurso_id: updatedItem.concursoId,
+              disciplina_id: updatedItem.disciplinaId,
+              disciplina_name: updatedItem.disciplinaName,
+              assunto_id: updatedItem.assuntoId || null,
+              assunto_name: updatedItem.assuntoName,
+              title: updatedItem.title,
+              content_html: updatedItem.contentHtml,
+              plain_text: updatedItem.plainText,
+              status: updatedItem.status,
+              is_favorite: updatedItem.isFavorite,
+              tags: updatedItem.tags,
+              word_count: updatedItem.wordCount,
+              reading_time_minutes: updatedItem.readingTimeMinutes,
+              total_study_seconds: updatedItem.totalStudySeconds,
+              last_studied_at: updatedItem.lastStudiedAt || null,
+              versions: updatedItem.versions || [],
+              created_at: updatedItem.createdAt,
+              updated_at: updatedItem.updatedAt,
+            },
+          ])
+          .then(() => {});
+      }
+    });
+
+    return updatedItem;
+  }
+
+  static async deleteResumo(id: string): Promise<ResumoEstudo[]> {
+    const allResumos = loadStored<ResumoEstudo[]>(STORAGE_KEYS.RESUMOS, []);
+    const filtered = allResumos.filter(r => r.id !== id);
+    saveStored(STORAGE_KEYS.RESUMOS, filtered);
+
+    supabase
+      .from('resumos')
+      .delete()
+      .eq('id', id)
+      .then(() => {});
+
+    return filtered;
   }
 }
 
