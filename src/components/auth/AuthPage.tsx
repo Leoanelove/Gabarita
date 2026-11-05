@@ -12,13 +12,12 @@ import {
   ShieldCheck,
   Sparkles,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Calendar,
   Target,
   Info,
 } from 'lucide-react';
+import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   useTheme,
@@ -32,6 +31,27 @@ import { GezinhoLogo } from '../common/GezinhoLogo';
 type AuthTab = 'login' | 'register';
 
 const REMEMBERED_EMAIL_KEY = 'gabarita_remembered_email';
+
+const resolveGoogleClientId = (): string => {
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GOOGLE_CLIENT_ID) {
+      return String(import.meta.env.VITE_GOOGLE_CLIENT_ID).trim();
+    }
+  } catch {}
+  try {
+    if (typeof process !== 'undefined' && process.env?.VITE_GOOGLE_CLIENT_ID) {
+      return String(process.env.VITE_GOOGLE_CLIENT_ID).trim();
+    }
+  } catch {}
+  try {
+    if (typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_ID) {
+      return String(process.env.GOOGLE_CLIENT_ID).trim();
+    }
+  } catch {}
+  return '';
+};
+
+const GOOGLE_CLIENT_ID = resolveGoogleClientId();
 
 interface LoginThemeStyles {
   primary: string;
@@ -129,13 +149,13 @@ const LOGIN_BG_IMAGES: Record<string, string> = {
   laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTczMTUsImV4cCI6NDk0NjY1NzMxNX0.RiQAaIT2IdZMgutiU2asXnjwLWWj-yUQLgVcGQdMuKeUzKp4gXMTMLlWZ8V0SZh6s7CS2ADOYz1tRwOMKG9a7g',
 };
 
-// Padrão de células para o card de Constância (4x7 = 28 dias)
-const CONSTANCIA_GRID = [
-  [2, 1, 3, 2, 3, 2, 1],
-  [2, 2, 3, 1, 1, 3, 2],
-  [3, 2, 2, 3, 3, 1, 2],
-  [1, 3, 2, 3, 2, 1, 3],
-];
+const LOGIN_BANNERS: Record<string, string> = {
+  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tdmVyZGUucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mzc1OTAxMywiZXhwIjo0OTQ3MzU5MDEzfQ.OUzmcG6S240R8_Q1OoxHsx-YuhyfV9G2sADN_rfdpwmdVmDkCcQz2ciSmrwATkMrHGaIoAZNmVZOcI_kif3BjQ',
+  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tYXp1bC5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDMzLCJleHAiOjQ5NDczNTkwMzN9.zK_SHGAcWTuqs0CXNrmq9uZEhrlLOB1hCIHtpQCMPeBK3yKnDZ5TW8BhkuLK8aXNusd9RWQ4nA3lfQBtQg814Q',
+  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tcm9zYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDQ1LCJleHAiOjQ5NDczNTkwNDV9.ci2W8oD5JWhTCIJdgE_0-Ym2MIdOw2acnBYY15TEY_sKcmvFlN36BGkMI-Rp6MbHac1BljQMfkrPr4rA3UCKmA',
+  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tcm94by5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDU4LCJleHAiOjQ5NDczNTkwNTh9.SJ3mN6o1B5j_k5iiwZwsyJuCgN8YJp1Qn4wLx7t1ZsYsqj2liHQHvpwoe12WpKkV3RXi5JiaIavQW1DdVw4hyg',
+  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tbGFyYW5qYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDcxLCJleHAiOjQ5NDczNTkwNzF9.Vm9pYqQGQ0jBUAjQ7hTTUiMCXyhYslEu5HJh2WAlcUC0QRb_5y9IVhCy3DV7cRxA5NdDusbRNoi8tSzhUFMXOg',
+};
 
 export const AuthPage: React.FC = () => {
   const {
@@ -187,6 +207,7 @@ export const AuthPage: React.FC = () => {
 
   const themeStyles = LOGIN_THEMES[loginSkin] || LOGIN_THEMES.verde;
   const activeBgImage = LOGIN_BG_IMAGES[loginSkin] || LOGIN_BG_IMAGES.verde;
+  const bannerImage = LOGIN_BANNERS[loginSkin] || LOGIN_BANNERS.verde;
 
   const [activeTab, setActiveTab] = useState<AuthTab>('login');
   const [name, setName] = useState('');
@@ -216,18 +237,6 @@ export const AuthPage: React.FC = () => {
   const [isExpanding, setIsExpanding] = useState(false);
   const [transitionProgress, setTransitionProgress] = useState(15);
   const [welcomeUserName, setWelcomeUserName] = useState<string>('Estudante');
-
-  // Carrossel do banner lateral direito
-  const [activeSlide, setActiveSlide] = useState(0);
-  const totalSlides = 4;
-
-  useEffect(() => {
-    if (isExpanding) return;
-    const timer = setInterval(() => {
-      setActiveSlide(prev => (prev + 1) % totalSlides);
-    }, 5500);
-    return () => clearInterval(timer);
-  }, [isExpanding]);
 
   // Dispara a animação de expansão do banner cobrindo 100% do card antes de liberar o dashboard
   const triggerBannerExpansion = async (displayName?: string) => {
@@ -332,18 +341,53 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  const handleGoogleAction = async () => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (isSubmitting || isExpanding) return;
     setErrorMessage(null);
     setSuccessMessage(null);
+
+    const credential = credentialResponse.credential;
+    if (!credential) {
+      setErrorMessage('Não foi possível obter o ID Token (credential) do Google.');
+      return;
+    }
+
     setIsSubmitting(true);
+    setLoginTransitioning(true);
     try {
       touchLastActiveTimestamp();
-      await loginWithGoogle();
+      const loggedUser = await loginWithGoogle(credential);
+      await triggerBannerExpansion(loggedUser?.name || 'Concurseiro(a)');
     } catch (err: any) {
-      console.warn('[AuthPage] Falha no Google Auth:', err.message);
-      setErrorMessage(err.message || 'Erro ao conectar com Google.');
+      console.warn('[AuthPage] Falha no Google ID Token Auth:', err.message);
+      setLoginTransitioning(false);
       setIsSubmitting(false);
+      setIsExpanding(false);
+      setErrorMessage(err.message || 'Erro ao autenticar com o Google.');
+    }
+  };
+
+  const handleGoogleError = () => {
+    setIsSubmitting(false);
+    setLoginTransitioning(false);
+    setErrorMessage('O login com Google foi cancelado ou falhou. Tente novamente.');
+  };
+
+  const handleGoogleFallbackClick = () => {
+    if (isSubmitting || isExpanding) return;
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const gAccounts = (window as any).google?.accounts?.id;
+    if (GOOGLE_CLIENT_ID && gAccounts) {
+      gAccounts.prompt();
+      return;
+    }
+
+    if (!GOOGLE_CLIENT_ID) {
+      setErrorMessage(
+        'Configure a variável VITE_GOOGLE_CLIENT_ID no ambiente com o Client ID do Google Cloud Console para utilizar o login com Google ID Token.'
+      );
     }
   };
 
@@ -465,7 +509,7 @@ export const AuthPage: React.FC = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-center">
+                <div className="p-2 rounded-2xl bg-slate-900 border border-slate-800 shadow-md flex items-center justify-center">
                   <GezinhoLogo size={36} />
                 </div>
                 <span className="text-2xl font-black tracking-tight text-slate-900">
@@ -749,32 +793,51 @@ export const AuthPage: React.FC = () => {
 
             {/* Botões Secundários: Google + Modo Demonstração */}
             <div className="space-y-2.5">
-              <button
-                type="button"
-                disabled={isSubmitting || isExpanding}
-                onClick={handleGoogleAction}
-                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="#EA4335"
-                    d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                  />
-                  <path
-                    fill="#4285F4"
-                    d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
-                  />
-                </svg>
-                <span>Entrar com Google</span>
-              </button>
+              <div className="relative w-full overflow-hidden rounded-xl">
+                <button
+                  type="button"
+                  disabled={isSubmitting || isExpanding}
+                  onClick={handleGoogleFallbackClick}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#EA4335"
+                      d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
+                    />
+                    <path
+                      fill="#4285F4"
+                      d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
+                    />
+                  </svg>
+                  <span>Entrar com Google</span>
+                </button>
+
+                {GOOGLE_CLIENT_ID && !isSubmitting && !isExpanding && (
+                  <div className="absolute inset-0 opacity-[0.01] flex items-center justify-center overflow-hidden cursor-pointer z-10 [&_iframe]:!w-full [&_iframe]:!h-full [&_div]:!w-full">
+                    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        useOneTap={false}
+                        width="400"
+                        size="large"
+                        text="signin_with"
+                        shape="rectangular"
+                        logo_alignment="center"
+                      />
+                    </GoogleOAuthProvider>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"
@@ -815,23 +878,21 @@ export const AuthPage: React.FC = () => {
             isExpanding
               ? 'flex fixed lg:absolute inset-3 sm:inset-3.5 z-40 opacity-100 scale-100'
               : 'hidden lg:flex lg:absolute lg:top-3.5 lg:bottom-3.5 lg:right-3.5 lg:w-[51%] z-20 opacity-100 scale-100'
-          } rounded-[22px] overflow-hidden flex-col justify-between p-7 sm:p-10 text-white shadow-xl`}
+          } rounded-[22px] overflow-hidden flex-col justify-start items-center p-7 sm:p-10 text-white shadow-xl min-h-[520px]`}
           style={{
             background: isExpanding ? themeStyles.expandedGradient : themeStyles.bannerGradient,
             transition: 'all 650ms cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          {/* Textura pontilhada e círculos geométricos sutis */}
-          <div
-            className="absolute inset-0 opacity-20 pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(rgba(255,255,255,0.28) 1px, transparent 1px)',
-              backgroundSize: '20px 20px',
-            }}
+          {/* Imagem de fundo responsiva e imune a distorções de zoom */}
+          <img
+            src={bannerImage}
+            alt="Banner do Gabarita"
+            className="absolute inset-0 w-full h-full object-cover object-center -z-0 pointer-events-none select-none"
           />
-          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full border border-white/15 pointer-events-none" />
-          <div className="absolute -bottom-28 -left-28 w-96 h-96 rounded-full border border-white/15 pointer-events-none" />
-          <div className="absolute top-1/4 right-8 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+
+          {/* Camada de contraste para destacar o texto em todos os 5 temas */}
+          <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
           {/* CONTEÚDO DURANTE A TRANSIÇÃO PÓS-LOGIN (BANNER EXPANDIDO) */}
           {isExpanding ? (
@@ -839,7 +900,7 @@ export const AuthPage: React.FC = () => {
               {/* Cabeçalho de carregamento */}
               <div className="space-y-3">
                 <h2
-                  className="text-xl sm:text-2xl font-extrabold text-white tracking-tight"
+                  className="text-xl sm:text-2xl font-extrabold text-white tracking-tight drop-shadow-md"
                   style={{ color: '#ffffff' }}
                 >
                   Preparando seus estudos...
@@ -851,326 +912,76 @@ export const AuthPage: React.FC = () => {
                   />
                 </div>
               </div>
-
-              {/* Card central de Constância idêntico à referência visual */}
-              <div className="login-glass-card w-full max-w-[330px] rounded-2xl bg-white/12 backdrop-blur-md border border-white/20 p-6 shadow-2xl space-y-4">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/85">
-                  CONSTÂNCIA
-                </p>
-                <div className="grid grid-cols-7 gap-2 justify-items-center">
-                  {CONSTANCIA_GRID.flat().map((level, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-6 h-6 rounded-md transition-all duration-500 ${
-                        level === 3
-                          ? 'bg-white shadow-xs'
-                          : level === 2
-                          ? 'bg-white/55'
-                          : 'bg-white/25'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-white/90 pt-1">
-                  <strong className="font-extrabold text-white">18 dias</strong> seguidos de estudo
-                </p>
-              </div>
-
-              {/* Texto motivacional inferior */}
-              <div className="space-y-1.5 max-w-md">
-                <h3
-                  className="text-lg sm:text-xl font-extrabold text-white"
-                  style={{ color: '#ffffff' }}
-                >
-                  Sua constância, dia após dia
-                </h3>
-                <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
-                  O que sustenta a aprovação não é o dia bom — é a sequência.
-                </p>
-              </div>
-
-              {/* Indicadores de página */}
-              <div className="flex items-center justify-center gap-2 pt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <span className="w-5 h-1.5 rounded-full bg-white" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-              </div>
             </div>
           ) : (
             /* CONTEÚDO PADRÃO DO BANNER DIREITO (PRÉ-LOGIN) */
-            <>
-              {/* Topo do Banner */}
-              <div className="relative z-10 flex flex-col items-center text-center space-y-3 pt-1">
-                <span className="px-4 py-1 rounded-full border border-white/25 bg-white/10 backdrop-blur-xs text-[10px] font-extrabold uppercase tracking-widest text-white/95">
+            <div className="relative z-10 flex flex-col justify-between items-center h-full w-full flex-1 text-center">
+              {/* PARTE SUPERIOR (TOPO) */}
+              <div className="flex flex-col items-center max-w-md">
+                <span
+                  className="px-4 py-1 rounded-full text-xs font-semibold tracking-wider uppercase text-white backdrop-blur-md mb-4 border border-white/25 drop-shadow-md"
+                  style={{
+                    backgroundColor: `${themeStyles.primary}99`,
+                  }}
+                >
                   SUA APROVAÇÃO A UM PASSO
                 </span>
-                <h2
-                  className="text-xl xl:text-[26px] font-extrabold text-white leading-tight max-w-md"
-                  style={{ color: '#ffffff' }}
-                >
-                  Tudo o que sua rotina de estudos precisa, em um só lugar
+                <h2 className="text-xl lg:text-2xl font-extrabold leading-snug drop-shadow-md">
+                  <span className="text-white font-bold" style={{ color: '#ffffff' }}>
+                    Tudo o que sua rotina de estudos precisa{' '}
+                  </span>
+                  <span
+                    className="font-bold whitespace-nowrap"
+                    style={{ color: themeStyles.accentLight }}
+                  >
+                    Em um só lugar!
+                  </span>
                 </h2>
               </div>
 
-              {/* Palco Central de Cards Visuais */}
-              <div className="relative z-10 my-auto py-4 flex flex-col items-center justify-center">
-                {activeSlide === 0 && (
-                  <div className="w-full flex items-center justify-center relative min-h-[230px] animate-fade-in">
-                    {/* Card Esquerdo Secundário: Ciclo de Estudos */}
-                    <div className="login-glass-card-soft hidden xl:flex flex-col justify-between w-44 h-44 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-3.5 -mr-6 opacity-85 scale-95 shadow-lg">
-                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-white/80">
-                        CICLO DE ESTUDOS
-                      </span>
-                      <div className="flex items-center gap-2.5 my-auto">
-                        <svg className="w-16 h-16 -rotate-90 shrink-0" viewBox="0 0 36 36">
-                          <circle
-                            cx="18"
-                            cy="18"
-                            r="13"
-                            fill="none"
-                            stroke="rgba(255,255,255,0.15)"
-                            strokeWidth="5"
-                          />
-                          <circle
-                            cx="18"
-                            cy="18"
-                            r="13"
-                            fill="none"
-                            stroke="#10b981"
-                            strokeWidth="5"
-                            strokeDasharray="32 82"
-                          />
-                          <circle
-                            cx="18"
-                            cy="18"
-                            r="13"
-                            fill="none"
-                            stroke="#8b5cf6"
-                            strokeWidth="5"
-                            strokeDasharray="22 82"
-                            strokeDashoffset="-32"
-                          />
-                          <circle
-                            cx="18"
-                            cy="18"
-                            r="13"
-                            fill="none"
-                            stroke="#f59e0b"
-                            strokeWidth="5"
-                            strokeDasharray="16 82"
-                            strokeDashoffset="-54"
-                          />
-                        </svg>
-                        <div className="space-y-1 text-[9px] text-white/80">
-                          <div className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-xs bg-purple-400" />
-                            <span>Dir. Const.</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-xs bg-emerald-400" />
-                            <span>Português</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-xs bg-amber-400" />
-                            <span>RLM</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Principal Central: Desafio em Andamento */}
-                    <div className="login-glass-card-main relative z-20 w-64 sm:w-72 rounded-2xl bg-white/18 backdrop-blur-md border border-white/30 p-5 shadow-2xl text-center space-y-3">
-                      {/* Selo Insígnia Hexagonal */}
-                      <div className="login-insignia-badge hidden sm:flex absolute -left-7 top-1/2 -translate-y-1/2 w-14 h-14 rounded-2xl bg-white/90 text-slate-900 border-2 border-white shadow-xl items-center justify-center rotate-12">
-                        <span className="-rotate-12 text-[9px] font-black uppercase tracking-tight text-slate-800">
-                          Insígnia
-                        </span>
-                      </div>
-
-                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/80">
-                        DESAFIO EM ANDAMENTO
-                      </p>
-                      <h4
-                        className="text-base font-extrabold text-white"
-                        style={{ color: '#ffffff' }}
-                      >
-                        Sprint de 500 questões
-                      </h4>
-                      <p className="text-xs text-white/85 font-medium">312 de 500 questões</p>
-                      <div className="w-full h-2 rounded-full bg-black/25 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: '64%',
-                            backgroundColor: themeStyles.accentLight,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Card Direito Secundário: Constância */}
-                    <div className="login-glass-card-soft hidden xl:flex flex-col justify-between w-44 h-44 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-3.5 -ml-6 opacity-85 scale-95 shadow-lg">
-                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-white/80 text-right">
-                        CONSTÂNCIA
-                      </span>
-                      <div className="grid grid-cols-5 gap-1.5 my-auto pl-3">
-                        {Array.from({ length: 15 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-4 h-4 rounded-xs"
-                            style={{
-                              backgroundColor:
-                                i % 3 === 0
-                                  ? themeStyles.heatmapActive
-                                  : i % 2 === 0
-                                  ? themeStyles.heatmapMid
-                                  : themeStyles.heatmapSoft,
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-[9px] text-white/75 text-right">
-                        18 dias seguidos de estudo
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {activeSlide === 1 && (
-                  <div className="login-glass-card w-full max-w-[310px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-5 shadow-2xl space-y-3.5 text-center animate-fade-in">
-                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/85">
-                      CONSTÂNCIA
-                    </p>
-                    <div className="grid grid-cols-7 gap-2 justify-items-center">
-                      {CONSTANCIA_GRID.flat().map((level, idx) => (
-                        <div
-                          key={idx}
-                          className={`w-5 h-5 rounded-md ${
-                            level === 3
-                              ? 'bg-white shadow-xs'
-                              : level === 2
-                              ? 'bg-white/55'
-                              : 'bg-white/25'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/90">
-                      <strong className="font-extrabold text-white">18 dias</strong> seguidos de
-                      estudo
-                    </p>
-                  </div>
-                )}
-
-                {activeSlide === 2 && (
-                  <div className="login-glass-card w-full max-w-[310px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-5 shadow-2xl space-y-3.5 animate-fade-in">
-                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/85 text-center">
-                      CICLO INTELIGENTE
-                    </p>
-                    <div className="space-y-2.5 text-xs">
-                      <div className="login-glass-subitem flex items-center justify-between bg-white/10 rounded-xl px-3 py-2">
-                        <span className="font-bold text-white">Dir. Constitucional</span>
-                        <span className="font-mono text-white/85">45 min • 28%</span>
-                      </div>
-                      <div className="login-glass-subitem flex items-center justify-between bg-white/10 rounded-xl px-3 py-2">
-                        <span className="font-bold text-white">Língua Portuguesa</span>
-                        <span className="font-mono text-white/85">45 min • 24%</span>
-                      </div>
-                      <div className="login-glass-subitem flex items-center justify-between bg-white/10 rounded-xl px-3 py-2">
-                        <span className="font-bold text-white">Raciocínio Lógico</span>
-                        <span className="font-mono text-white/85">40 min • 18%</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeSlide === 3 && (
-                  <div className="login-glass-card w-full max-w-[310px] rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-5 shadow-2xl space-y-3.5 text-center animate-fade-in">
-                    <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/85">
-                      REVISÃO ESPAÇADA
-                    </p>
-                    <div className="grid grid-cols-4 gap-2 pt-1">
-                      {['24h', '7d', '15d', '30d'].map((label, idx) => (
-                        <div
-                          key={label}
-                          className="login-glass-pill-box rounded-xl bg-white/15 border border-white/20 py-2.5 px-2 flex flex-col items-center"
-                        >
-                          <span className="text-xs font-black text-white">{label}</span>
-                          <span className="text-[10px] text-white/75 mt-0.5">
-                            {idx < 3 ? 'Concluída' : 'Ativa'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/90">
-                      Retenção média de <strong className="font-extrabold text-white">89%</strong> nos
-                      tópicos revisados
-                    </p>
-                  </div>
-                )}
-
-                {/* Texto descritivo do slide ativo */}
-                <div className="text-center space-y-1.5 mt-6 max-w-sm">
-                  <h3
-                    className="text-lg sm:text-xl font-extrabold text-white"
-                    style={{ color: '#ffffff' }}
-                  >
-                    {activeSlide === 0 && 'Desafios que puxam o seu ritmo'}
-                    {activeSlide === 1 && 'Sua constância, dia após dia'}
-                    {activeSlide === 2 && 'Ciclo adaptado ao seu domínio'}
-                    {activeSlide === 3 && 'Memória blindada até a prova'}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
-                    {activeSlide === 0 &&
-                      'Metas com prazo, insígnia no fim e gente competindo junto.'}
-                    {activeSlide === 1 &&
-                      'O que sustenta a aprovação não é o dia bom — é a sequência.'}
-                    {activeSlide === 2 &&
-                      'Mais blocos para as disciplinas de maior peso e necessidade.'}
-                    {activeSlide === 3 &&
-                      'Ciclos de revisão 24h, 7, 15 e 30 dias agendados automaticamente.'}
+              {/* PARTE INFERIOR (CARD COM BORDA FINA + RODAPÉ) */}
+              <div className="w-full max-w-md flex flex-col items-center space-y-4 mt-auto pt-6">
+                {/* 1. Card Retangular com Borda Fina */}
+                <div
+                  className="w-full rounded-2xl border bg-black/30 backdrop-blur-md p-3.5 sm:p-4 text-center shadow-lg"
+                  style={{
+                    borderColor: themeStyles.accentLight,
+                  }}
+                >
+                  <p className="text-xs sm:text-sm leading-relaxed drop-shadow-md">
+                    <span className="text-white font-medium" style={{ color: '#ffffff' }}>
+                      Transforme disciplina em resultado e chegue mais perto da{' '}
+                    </span>
+                    <span
+                      className="font-bold"
+                      style={{ color: themeStyles.accentLight }}
+                    >
+                      Sua Aprovação!
+                    </span>
                   </p>
                 </div>
-              </div>
 
-              {/* Rodapé do Banner: Navegação do Carrossel */}
-              <div className="relative z-10 flex items-center justify-between pt-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveSlide(prev => (prev - 1 + totalSlides) % totalSlides)}
-                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-colors cursor-pointer"
-                  aria-label="Slide anterior"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: totalSlides }).map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setActiveSlide(idx)}
-                      aria-label={`Ir para slide ${idx + 1}`}
-                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        activeSlide === idx ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'
-                      }`}
+                {/* 2. Rodapé Oficial da Marca (Abaixo do Card) */}
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="flex items-center justify-center gap-2.5">
+                    <img
+                      src="https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/public/configuracoes/logo%20gabarita01.png"
+                      alt="Logo Gabarita"
+                      className="w-7 h-7 object-contain drop-shadow-md"
                     />
-                  ))}
+                    <span
+                      className="text-xl font-black tracking-tight text-white drop-shadow-md"
+                      style={{ color: '#ffffff' }}
+                    >
+                      Gabarita
+                    </span>
+                  </div>
+                  <span className="text-xs tracking-wider text-white/80 font-medium drop-shadow-sm">
+                    Estudo de Alto Rendimento
+                  </span>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveSlide(prev => (prev + 1) % totalSlides)}
-                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-colors cursor-pointer"
-                  aria-label="Próximo slide"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

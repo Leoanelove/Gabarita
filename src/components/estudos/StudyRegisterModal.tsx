@@ -81,6 +81,7 @@ export interface StudyRegisterModalProps {
   initialAssuntoName?: string;
   elapsedSeconds: number; // Tempo líquido capturado do cronômetro
   plannedMinutes?: number;
+  contabilizarPlanejamento?: boolean;
   onSaveSuccess: (savedSession: {
     disciplinaId: string;
     assuntoId?: string;
@@ -93,6 +94,8 @@ export interface StudyRegisterModalProps {
     notes?: string;
     teoriaFinalizada?: boolean;
     programarRevisoes?: boolean;
+    revisaoDays?: number[];
+    contabilizarPlanejamento?: boolean;
     pageIntervals?: PageInterval[];
     videoaulas?: VideoaulaRecord[];
     completedAt?: string;
@@ -110,7 +113,7 @@ const DEFAULT_STUDY_TYPES = [
 ];
 
 const DEFAULT_REVISAO_DAYS = [
-  7, 15, 21, 30, 45, 60, 90, 120, 180, 215, 265, 315, 365, 415
+  1, 7, 15, 21, 30, 45, 60, 90, 120, 180, 215, 265, 315, 365
 ];
 
 export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
@@ -126,6 +129,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   initialAssuntoName,
   elapsedSeconds,
   plannedMinutes = 25,
+  contabilizarPlanejamento = true,
   onSaveSuccess,
   onAdvanceCycle,
   onBackToTimer,
@@ -757,7 +761,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         }
       }
 
-      // 4. Salvar sessão principal via callback
+      // 4. Salvar sessão principal via callback (inclui programação de revisões nos dias selecionados)
       await onSaveSuccess({
         disciplinaId: selectedDisciplinaId,
         assuntoId: selectedAssuntoId || undefined,
@@ -770,6 +774,8 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         notes: enrichedNotes,
         teoriaFinalizada,
         programarRevisoes,
+        revisaoDays: programarRevisoes ? revisaoDays : undefined,
+        contabilizarPlanejamento: contabilizarPlanejamento !== false,
         pageIntervals: validPageIntervals,
         videoaulas: validVideoaulas,
         completedAt: selectedSessionDate.toISOString(),
@@ -784,52 +790,8 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         }
       }
 
-      // 6. Integração Rápida: PROGRAMAR REVISÕES -> Inserir revisões espaçadas
-      if (programarRevisoes && revisaoDays.length > 0) {
-        try {
-          const discObj = disciplinas.find(d => d.id === selectedDisciplinaId);
-          const assObj = assuntos.find(a => a.id === selectedAssuntoId);
-          const activeUser = await DatabaseService.getUserProfile('user_demo_01');
-
-          const gerarDataFutura = (dias: number) => {
-            const d = new Date();
-            d.setDate(d.getDate() + dias);
-            d.setHours(0, 0, 0, 0);
-            const ano = d.getFullYear();
-            const mes = String(d.getMonth() + 1).padStart(2, '0');
-            const dia = String(d.getDate()).padStart(2, '0');
-            return `${ano}-${mes}-${dia}`;
-          };
-
-          for (const rawDays of revisaoDays) {
-            let daysNum = typeof rawDays === 'number' ? rawDays : parseInt(String(rawDays).replace(/\D/g, ''), 10);
-            if (String(rawDays).toLowerCase().includes('24h') || String(rawDays).toLowerCase() === '1d') {
-              daysNum = 1;
-            }
-            if (isNaN(daysNum) || daysNum <= 0) continue;
-
-            const scheduledFor = gerarDataFutura(daysNum);
-
-            await DatabaseService.addRevisao({
-              userId: activeUser.id,
-              disciplinaId: selectedDisciplinaId,
-              assuntoId: selectedAssuntoId || undefined,
-              disciplinaName: discObj?.name || 'Geral',
-              assuntoName: assObj?.name || 'Revisão Programada',
-              method: `${daysNum}d` as any,
-              intervalDays: daysNum,
-              scheduledFor,
-              status: 'pendente',
-              notes: `Revisão agendada (+${daysNum} dias) a partir da sessão de estudo.`,
-            });
-          }
-        } catch (e) {
-          console.warn('Erro ao programar revisões espaçadas:', e);
-        }
-      }
-
-      // 7. Avançar Ciclo se configurado
-      if (onAdvanceCycle) {
+      // 7. Avançar Ciclo somente se o registro contabilizar no planejamento (não for estudo avulso do banner)
+      if (onAdvanceCycle && contabilizarPlanejamento !== false) {
         try {
           await onAdvanceCycle(activeDurationMinutes);
         } catch (e) {

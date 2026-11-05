@@ -74,6 +74,21 @@ import { EmptyContestState } from '../common/EmptyContestState';
 import { Card, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
 import { Modal } from '../../design-system/Modal';
+import {
+  GmailRichTextEditor,
+  stripHtmlToPlainText,
+  sanitizeFlashcardHtml,
+} from '../flashcards/GmailRichTextEditor';
+
+const getConcursoDisplayName = (c?: Concurso): string => {
+  if (!c) return 'Concurso Selecionado';
+  const organ = c.organ || c.orgao || c.nome || c.title || 'Concurso';
+  const role = c.role || c.cargo || '';
+  if (role && !organ.toLowerCase().includes(role.toLowerCase())) {
+    return `${organ} - ${role}`;
+  }
+  return organ;
+};
 
 export const RESUMOS_BANNER_IMAGES: Record<string, string> = {
   verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Resumos/Banner-resumos-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBSZXN1bW9zL0Jhbm5lci1yZXN1bW9zLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTM2NjcwNzgsImV4cCI6NDk0NzI2NzA3OH0.quzfk9QnxPTfDgepL2f_JXderMadoIlj75eDIkVfl90cg6HAGfLM93E-FhExE7JyLcikkaXlwbs2i_CMDecNiQ',
@@ -355,10 +370,16 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
   const [modalCustomTitle, setModalCustomTitle] = useState<string>('');
 
   const [isFlashcardModalOpen, setIsFlashcardModalOpen] = useState<boolean>(false);
-  const [fcFront, setFcFront] = useState<string>('');
-  const [fcBack, setFcBack] = useState<string>('');
-  const [fcDeckName, setFcDeckName] = useState<string>('');
-  const [fcSavedSuccess, setFcSavedSuccess] = useState<boolean>(false);
+  const [allDecks, setAllDecks] = useState<Deck[]>([]);
+  const [allFlashcards, setAllFlashcards] = useState<Flashcard[]>([]);
+  const [fcFormDisciplina, setFcFormDisciplina] = useState<string>('');
+  const [fcFormDeckMode, setFcFormDeckMode] = useState<'existente' | 'novo'>('existente');
+  const [fcFormDeckId, setFcFormDeckId] = useState<string>('');
+  const [fcFormNewDeckName, setFcFormNewDeckName] = useState<string>('');
+  const [fcFormTopico, setFcFormTopico] = useState<string>('');
+  const [fcFormFrente, setFcFormFrente] = useState<string>('');
+  const [fcFormVerso, setFcFormVerso] = useState<string>('');
+  const [fcFormErrors, setFcFormErrors] = useState<Record<string, string>>({});
 
   const [isVersionsModalOpen, setIsVersionsModalOpen] = useState<boolean>(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
@@ -419,13 +440,13 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
   useEffect(() => {
     if (!isReadingMode) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !isFlashcardModalOpen && !isPrintPreviewOpen) {
         setIsReadingMode(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isReadingMode]);
+  }, [isReadingMode, isFlashcardModalOpen]);
 
   // Métricas Globais (KPIs da Visão 1)
   const kpiStats = useMemo(() => {
@@ -1032,76 +1053,226 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
     window.setTimeout(() => setSessionSavedFeedback(''), 4000);
   };
 
-  // Abrir Modal de Gerar Flashcard a partir do Resumo
-  const handleOpenFlashcardGenerator = () => {
+  // Dados do Concurso Ativo, Baralhos e Disciplinas para o Modal "Criar Flashcard" (idêntico ao menu Flashcards)
+  const currentConcursoObj = useMemo(() => {
+    return (
+      concursos.find(c => c.id === activeConcursoId) ||
+      concursos.find(c => c.active || c.isAtivo) ||
+      concursos[0]
+    );
+  }, [concursos, activeConcursoId]);
+
+  const currentConcursoName = useMemo(
+    () => getConcursoDisplayName(currentConcursoObj),
+    [currentConcursoObj]
+  );
+
+  const concursoDecks = useMemo(() => {
+    if (!activeConcursoId) return allDecks;
+    return allDecks.filter(d => {
+      const cid = d.concursoId || d.concurso_id;
+      return cid === activeConcursoId;
+    });
+  }, [allDecks, activeConcursoId]);
+
+  const concursoDeckIds = useMemo(
+    () => new Set(concursoDecks.map(d => d.id)),
+    [concursoDecks]
+  );
+
+  const concursoFlashcards = useMemo(() => {
+    if (!activeConcursoId) return allFlashcards;
+    return allFlashcards.filter(c => {
+      const cid = c.concursoId || c.concurso_id;
+      if (cid) return cid === activeConcursoId;
+      return concursoDeckIds.has(c.deckId);
+    });
+  }, [allFlashcards, activeConcursoId, concursoDeckIds]);
+
+  const availableDisciplinasList = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    activeDisciplinas.forEach(d => {
+      const trimmed = d.name?.trim();
+      if (trimmed && !seen.has(trimmed.toLowerCase())) {
+        seen.add(trimmed.toLowerCase());
+        list.push(trimmed);
+      }
+    });
+    concursoDecks.forEach(d => {
+      const trimmed = d.disciplina?.trim();
+      if (trimmed && !seen.has(trimmed.toLowerCase())) {
+        seen.add(trimmed.toLowerCase());
+        list.push(trimmed);
+      }
+    });
+    return list;
+  }, [activeDisciplinas, concursoDecks]);
+
+  const suggestedTopics = useMemo(() => {
+    if (!fcFormDisciplina) return [];
+    const discObj = activeDisciplinas.find(
+      d => d.name.toLowerCase() === fcFormDisciplina.toLowerCase()
+    );
+    if (!discObj) return [];
+    return activeAssuntos
+      .filter(a => a.disciplinaId === discObj.id)
+      .map(a => a.name);
+  }, [activeDisciplinas, activeAssuntos, fcFormDisciplina]);
+
+  // Abrir Modal "Criar Flashcard" (mesmo modal do menu Flashcards)
+  const handleOpenFlashcardGenerator = async () => {
     const sel = window.getSelection()?.toString().trim() || '';
+    const [loadedDecks, loadedCards] = await Promise.all([
+      DatabaseService.getDecks(),
+      DatabaseService.getFlashcards(),
+    ]);
+    setAllDecks(loadedDecks);
+    setAllFlashcards(loadedCards);
+
+    const cDecks = activeConcursoId
+      ? loadedDecks.filter(d => (d.concursoId || d.concurso_id) === activeConcursoId)
+      : loadedDecks;
+
+    const preselectedDisc =
+      currentDisciplina?.name ||
+      activeDisciplinas[0]?.name ||
+      cDecks[0]?.disciplina ||
+      'Geral';
+
+    setFcFormDisciplina(preselectedDisc);
+
     const matchedTopic = currentDisciplinaTopicos.find(t => t.id === selectedAssuntoId);
-    setFcDeckName(matchedTopic?.name || docTitle || currentDisciplina?.name || 'Resumos');
-    setFcFront(docTitle ? `Sobre ${docTitle}: ` : '');
-    setFcBack(sel || '');
-    setFcSavedSuccess(false);
+    const topicTitle =
+      matchedTopic?.name ||
+      (docTitle && docTitle !== 'Resumo sem título' ? docTitle : '');
+
+    const discDecks = cDecks.filter(
+      d => d.disciplina.toLowerCase() === preselectedDisc.toLowerCase()
+    );
+
+    if (discDecks.length > 0) {
+      const matchingTopicDeck = topicTitle
+        ? discDecks.find(d => d.nome.toLowerCase() === topicTitle.toLowerCase())
+        : undefined;
+      setFcFormDeckId((matchingTopicDeck || discDecks[0]).id);
+      setFcFormDeckMode('existente');
+      setFcFormNewDeckName('');
+    } else {
+      setFcFormDeckMode('novo');
+      setFcFormDeckId('');
+      setFcFormNewDeckName('');
+    }
+
+    setFcFormTopico(topicTitle || '');
+    setFcFormFrente('');
+    setFcFormVerso(sel ? `<p>${sel}</p>` : '');
+    setFcFormErrors({});
     setIsFlashcardModalOpen(true);
   };
 
   const handleSaveGeneratedFlashcard = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentDisciplina || !fcFront.trim() || !fcBack.trim()) return;
+    const errors: Record<string, string> = {};
 
-    const decks = await DatabaseService.getDecks();
-    const cards = await DatabaseService.getFlashcards();
-    const deckTitle = fcDeckName.trim() || docTitle || 'Caderno de Resumos';
+    const plainFrente = stripHtmlToPlainText(fcFormFrente).trim();
+    const plainVerso = stripHtmlToPlainText(fcFormVerso).trim();
 
-    let targetDeck = decks.find(
-      d =>
-        (d.concursoId === activeConcursoId || d.concurso_id === activeConcursoId) &&
-        d.disciplina === currentDisciplina.name &&
-        d.nome.toLowerCase() === deckTitle.toLowerCase()
-    );
-
-    let updatedDecks = [...decks];
-    if (!targetDeck) {
-      targetDeck = {
-        id: `deck_${Date.now()}`,
-        concursoId: activeConcursoId,
-        concurso_id: activeConcursoId,
-        disciplina: currentDisciplina.name,
-        nome: deckTitle,
-        totalCards: 1,
-        pendentesHoje: 1,
-        icone: 'Layers',
-      };
-      updatedDecks = [targetDeck, ...updatedDecks];
-    } else {
-      updatedDecks = updatedDecks.map(d =>
-        d.id === targetDeck!.id
-          ? { ...d, totalCards: (d.totalCards || 0) + 1, pendentesHoje: (d.pendentesHoje || 0) + 1 }
-          : d
-      );
+    if (!fcFormDisciplina.trim()) {
+      errors.disciplina = 'Selecione ou informe a disciplina.';
+    }
+    if (fcFormDeckMode === 'novo' && !fcFormNewDeckName.trim()) {
+      errors.deck = 'Informe o nome do novo baralho.';
+    }
+    if (fcFormDeckMode === 'existente' && !fcFormDeckId) {
+      errors.deck = 'Selecione um baralho existente.';
+    }
+    if (!plainFrente) {
+      errors.frente = 'A pergunta/frente do cartão é obrigatória.';
+    }
+    if (!plainVerso) {
+      errors.verso = 'A resposta/verso do cartão é obrigatória.';
     }
 
-    const todayIso = new Date().toISOString().split('T')[0];
-    const newCard: Flashcard = {
-      id: `fc_${Date.now()}`,
-      deckId: targetDeck.id,
-      concursoId: activeConcursoId,
-      concurso_id: activeConcursoId,
-      disciplina: currentDisciplina.name,
-      topico: deckTitle,
-      frente: fcFront.trim(),
-      verso: fcBack.trim(),
+    if (Object.keys(errors).length > 0) {
+      setFcFormErrors(errors);
+      return;
+    }
+
+    const [loadedDecks, loadedCards] = await Promise.all([
+      DatabaseService.getDecks(),
+      DatabaseService.getFlashcards(),
+    ]);
+
+    let targetDeckId = fcFormDeckId;
+    let targetDeckName = '';
+    const targetConcursoId = activeConcursoId || currentConcursoObj?.id || 'default';
+    const sanitizedFrente = sanitizeFlashcardHtml(fcFormFrente);
+    const sanitizedVerso = sanitizeFlashcardHtml(fcFormVerso);
+
+    let updatedDecks: Deck[] = [];
+    if (fcFormDeckMode === 'novo') {
+      targetDeckId = `deck-${Date.now()}`;
+      targetDeckName = fcFormNewDeckName.trim();
+      const newDeck: Deck = {
+        id: targetDeckId,
+        concursoId: targetConcursoId,
+        concurso_id: targetConcursoId,
+        nome: targetDeckName,
+        disciplina: fcFormDisciplina.trim(),
+        totalCards: 1,
+        pendentesHoje: 1,
+      };
+      updatedDecks = [newDeck, ...loadedDecks];
+    } else {
+      const curDeck = loadedDecks.find(d => d.id === targetDeckId);
+      targetDeckName = curDeck ? curDeck.nome : 'Baralho';
+      updatedDecks = loadedDecks.map(d => {
+        if (d.id === targetDeckId) {
+          return {
+            ...d,
+            concursoId: d.concursoId || d.concurso_id || targetConcursoId,
+            concurso_id: d.concurso_id || d.concursoId || targetConcursoId,
+            totalCards: (d.totalCards || 0) + 1,
+            pendentesHoje: (d.pendentesHoje || 0) + 1,
+          };
+        }
+        return d;
+      });
+    }
+
+    const newFlashcard: Flashcard = {
+      id: `card-${Date.now()}`,
+      deckId: targetDeckId,
+      concursoId: targetConcursoId,
+      concurso_id: targetConcursoId,
+      disciplina: fcFormDisciplina.trim(),
+      topico: fcFormTopico.trim() || undefined,
+      frente: sanitizedFrente,
+      verso: sanitizedVerso,
+      dificuldade: 'bom',
       intervaloDias: 1,
-      proximaRevisao: todayIso,
+      proximaRevisao: new Date().toISOString(),
       criadoEm: new Date().toISOString(),
       revisoesTotal: 0,
     };
 
+    const updatedCards = [newFlashcard, ...loadedCards];
+
     await DatabaseService.saveDecks(updatedDecks);
-    await DatabaseService.saveFlashcards([newCard, ...cards]);
-    setFcSavedSuccess(true);
-    window.setTimeout(() => {
-      setIsFlashcardModalOpen(false);
-      setFcSavedSuccess(false);
-    }, 1000);
+    await DatabaseService.saveFlashcards(updatedCards);
+
+    setAllDecks(updatedDecks);
+    setAllFlashcards(updatedCards);
+
+    setFcFormFrente('');
+    setFcFormVerso('');
+    setFcFormTopico('');
+    setFcFormErrors({});
+    setIsFlashcardModalOpen(false);
+
+    setSessionSavedFeedback(`Flashcard adicionado com sucesso ao baralho "${targetDeckName}"!`);
+    window.setTimeout(() => setSessionSavedFeedback(''), 4000);
   };
 
   // Exportar / Imprimir PDF Limpo
@@ -2245,7 +2416,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
                 )}
               </button>
 
-              {/* Botão + Nota Avulsa */}
+              {/* Botão Nota Avulsa */}
               <button
                 type="button"
                 onClick={handleCreateNotaAvulsaInWorkspace}
@@ -2253,7 +2424,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
                 style={{ backgroundColor: themeGlowStyles.color }}
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Nota Avulsa</span>
+                <span>Nota Avulsa</span>
               </button>
             </div>
           </div>
@@ -3082,71 +3253,222 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
         </form>
       </Modal>
 
-      {/* MODAL: ✨ GERAR FLASHCARD A PARTIR DO RESUMO */}
+      {/* MODAL: CRIAR FLASHCARD (IDÊNTICO AO MENU FLASHCARDS) */}
       <Modal
         isOpen={isFlashcardModalOpen}
         onClose={() => setIsFlashcardModalOpen(false)}
-        title="✨ Gerar Flashcard do Resumo"
+        title={`Criar Flashcard • ${currentConcursoName}`}
+        maxWidth="lg"
       >
         <form onSubmit={handleSaveGeneratedFlashcard} className="space-y-4">
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
-            <strong>Disciplina:</strong> {currentDisciplina?.name}
+          {/* Seleção de Disciplina */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+              Disciplina do Edital / Plano *
+            </label>
+            {availableDisciplinasList.length > 0 ? (
+              <select
+                value={fcFormDisciplina}
+                onChange={e => {
+                  const val = e.target.value;
+                  setFcFormDisciplina(val);
+                  const discDecks = concursoDecks.filter(
+                    d => d.disciplina.toLowerCase() === val.toLowerCase()
+                  );
+                  if (discDecks.length > 0) {
+                    setFcFormDeckId(discDecks[0].id);
+                    setFcFormDeckMode('existente');
+                  } else {
+                    setFcFormDeckMode('novo');
+                    setFcFormDeckId('');
+                  }
+                }}
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
+              >
+                {availableDisciplinasList.map(dName => (
+                  <option key={dName} value={dName}>
+                    {dName}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={fcFormDisciplina}
+                onChange={e => setFcFormDisciplina(e.target.value)}
+                placeholder="Ex: Direito Constitucional, Língua Portuguesa..."
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
+              />
+            )}
+            {fcFormErrors.disciplina && (
+              <span className="text-[11px] text-rose-500 font-semibold mt-1 block">
+                {fcFormErrors.disciplina}
+              </span>
+            )}
           </div>
 
+          {/* Seleção de Baralho (Existente ou Novo) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Baralho (Deck) *
+              </label>
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setFcFormDeckMode('existente')}
+                  className={`px-2 py-0.5 rounded cursor-pointer font-semibold ${
+                    fcFormDeckMode === 'existente'
+                      ? 'bg-primary text-white'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Existente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFcFormDeckMode('novo')}
+                  className={`px-2 py-0.5 rounded cursor-pointer font-semibold ${
+                    fcFormDeckMode === 'novo'
+                      ? 'bg-primary text-white'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  + Novo Baralho
+                </button>
+              </div>
+            </div>
+
+            {fcFormDeckMode === 'existente' ? (
+              <select
+                value={fcFormDeckId}
+                onChange={e => setFcFormDeckId(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
+              >
+                {concursoDecks
+                  .filter(
+                    d =>
+                      !fcFormDisciplina ||
+                      d.disciplina.toLowerCase() === fcFormDisciplina.toLowerCase()
+                  )
+                  .map(d => (
+                    <option key={d.id} value={d.id}>
+                      {d.nome} ({concursoFlashcards.filter(c => c.deckId === d.id).length} cards)
+                    </option>
+                  ))}
+                {concursoDecks.filter(
+                  d =>
+                    !fcFormDisciplina ||
+                    d.disciplina.toLowerCase() === fcFormDisciplina.toLowerCase()
+                ).length === 0 && (
+                  <option value="" disabled>
+                    Nenhum baralho cadastrado nesta disciplina
+                  </option>
+                )}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={fcFormNewDeckName}
+                onChange={e => setFcFormNewDeckName(e.target.value)}
+                placeholder="Ex: Direitos Individuais (Art. 5º)"
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
+              />
+            )}
+            {fcFormErrors.deck && (
+              <span className="text-[11px] text-rose-500 font-semibold mt-1 block">
+                {fcFormErrors.deck}
+              </span>
+            )}
+          </div>
+
+          {/* Campo de Tópico / Assunto (Opcional) */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Baralho (Deck) *
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Tópico / Assunto do Edital (Opcional)
             </label>
             <input
               type="text"
-              value={fcDeckName}
-              onChange={e => setFcDeckName(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm text-slate-900 dark:text-white"
-              required
+              list="resumos-topicos-sugestoes"
+              value={fcFormTopico}
+              onChange={e => setFcFormTopico(e.target.value)}
+              placeholder="Ex: Habeas Corpus, Crase, Atos Administrativos..."
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-slate-100"
             />
+            {suggestedTopics.length > 0 && (
+              <datalist id="resumos-topicos-sugestoes">
+                {suggestedTopics.map(t => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            )}
           </div>
 
+          {/* Pergunta / Conceito (Frente) - Editor de Texto Rico Estilo Gmail */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
               Pergunta / Conceito (Frente) *
             </label>
-            <textarea
-              rows={3}
-              value={fcFront}
-              onChange={e => setFcFront(e.target.value)}
-              placeholder="Digite a pergunta direta ou conceito para memorização ativa..."
-              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm text-slate-900 dark:text-white"
-              required
+            <GmailRichTextEditor
+              value={fcFormFrente}
+              onChange={html => {
+                setFcFormFrente(html);
+                if (fcFormErrors.frente) {
+                  setFcFormErrors(prev => ({ ...prev, frente: '' }));
+                }
+              }}
+              placeholder="Digite o conceito central, pergunta-chave ou caso prático para recordar..."
+              minRows={3}
+              hasError={!!fcFormErrors.frente}
             />
+            {fcFormErrors.frente && (
+              <span className="text-[11px] text-rose-500 font-semibold mt-1 block">
+                {fcFormErrors.frente}
+              </span>
+            )}
           </div>
 
+          {/* Resposta / Explicação (Verso) - Editor de Texto Rico Estilo Gmail */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
               Resposta / Explicação (Verso) *
             </label>
-            <textarea
-              rows={4}
-              value={fcBack}
-              onChange={e => setFcBack(e.target.value)}
-              placeholder="Digite a resposta fundamentada no seu resumo..."
-              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm text-slate-900 dark:text-white"
-              required
+            <GmailRichTextEditor
+              value={fcFormVerso}
+              onChange={html => {
+                setFcFormVerso(html);
+                if (fcFormErrors.verso) {
+                  setFcFormErrors(prev => ({ ...prev, verso: '' }));
+                }
+              }}
+              placeholder="Digite a resposta objetiva, fundamentação legal, súmula ou mnemônico..."
+              minRows={3}
+              hasError={!!fcFormErrors.verso}
             />
+            {fcFormErrors.verso && (
+              <span className="text-[11px] text-rose-500 font-semibold mt-1 block">
+                {fcFormErrors.verso}
+              </span>
+            )}
           </div>
 
-          {fcSavedSuccess && (
-            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Flashcard salvo com sucesso no seu baralho!</span>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" type="button" onClick={() => setIsFlashcardModalOpen(false)}>
+          {/* Ações do Formulário */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => setIsFlashcardModalOpen(false)}
+            >
               Cancelar
             </Button>
-            <Button variant="primary" type="submit">
-              Salvar nos Flashcards
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              leftIcon={<Check className="w-4 h-4" />}
+            >
+              Salvar Flashcard
             </Button>
           </div>
         </form>

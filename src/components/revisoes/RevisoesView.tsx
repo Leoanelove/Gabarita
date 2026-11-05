@@ -32,7 +32,7 @@ import {
   PageInterval,
   VideoaulaRecord
 } from '../../types';
-import { Card, CardHeader, CardBody } from '../../design-system/Card';
+import { Card, CardBody } from '../../design-system/Card';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { Modal } from '../../design-system/Modal';
@@ -89,13 +89,13 @@ interface RevisoesViewProps {
     intervalDays?: number;
   }) => Promise<void>;
   onUpdateRevisao?: (id: string, partial: Partial<Revisao>) => Promise<void>;
-  onDeleteRevisao?: (id: string) => Promise<void>;
+  onDeleteRevisao?: (idOrIds: string | string[]) => Promise<void>;
   onBatchRescheduleOverdue?: (targetDateStr?: string) => Promise<void>;
   onUpdateSettings?: (settings: Partial<RevisionSettings>) => Promise<void>;
   onOpenStudyTimer?: (disciplinaId?: string, assuntoId?: string) => void;
 }
 
-type TimelineTab = 'hoje' | 'atrasadas' | 'proximas' | 'ignoradas' | 'concluidas' | 'config';
+type TimelineTab = 'hoje' | 'atrasadas' | 'proximas' | 'ignoradas' | 'concluidas';
 
 const WEEKDAY_SHORT_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -167,7 +167,29 @@ const FILTER_PERIOD_PILLS: { id: string; label: string; days?: number }[] = [
   { id: '120d', label: '120d', days: 120 },
 ];
 
-const DEFAULT_PRESET_INTERVALS = [1, 7, 15, 21, 30, 60, 90, 120, 180, 365, 415];
+const DEFAULT_REVISION_TYPE_INTERVALS = [
+  1, 7, 15, 21, 30, 45, 60, 90, 120, 180, 215, 265, 315, 365
+];
+
+const DEFAULT_PRESET_INTERVALS = [
+  1, 7, 15, 21, 30, 45, 60, 90, 120, 180, 215, 265, 315, 365
+];
+
+export function resolveRevisionIntervalDays(rev: Revisao): number | undefined {
+  if (typeof rev.intervalDays === 'number' && !isNaN(rev.intervalDays) && rev.intervalDays > 0) {
+    return rev.intervalDays;
+  }
+  if (rev.method) {
+    const methodStr = String(rev.method).trim().toLowerCase();
+    if (methodStr === '24h') return 1;
+    const match = methodStr.match(/(\d+)/);
+    if (match) {
+      const parsed = parseInt(match[1], 10);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+  }
+  return undefined;
+}
 
 interface StudyRegisterModalData {
   revisaoId: string;
@@ -254,9 +276,12 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
   const [filterStartDate, setFilterStartDate] = useState<string>('');
   const [filterEndDate, setFilterEndDate] = useState<string>('');
   const [selectedDiscFilter, setSelectedDiscFilter] = useState<string>('todas');
+  const [selectedIntervalTypes, setSelectedIntervalTypes] = useState<number[]>([]);
 
   // Menu de 3 pontinhos ativo
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteTargetReview, setDeleteTargetReview] = useState<Revisao | null>(null);
+  const [isDeletingReview, setIsDeletingReview] = useState<boolean>(false);
 
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -305,17 +330,6 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
   const [formNotes, setFormNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Aba de Configurações SRS
-  const [configAutoStudy, setConfigAutoStudy] = useState(settings.autoScheduleOnStudy);
-  const [configAutoQuestions, setConfigAutoQuestions] = useState(settings.autoScheduleOnQuestions);
-  const [configAdaptive, setConfigAdaptive] = useState(settings.performanceAdaptive);
-  const [configIntervalsList, setConfigIntervalsList] = useState<number[]>(
-    settings.intervalDays && settings.intervalDays.length > 0 ? settings.intervalDays : [1, 7, 15, 30, 60]
-  );
-  const [configIntervalsStr, setConfigIntervalsStr] = useState(settings.intervalDays.join(', '));
-  const [newConfigIntervalInput, setNewConfigIntervalInput] = useState('');
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
-
   const filterPopoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -350,6 +364,29 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
     return assuntos.filter(a => a.disciplinaId === formDisciplinaId);
   }, [assuntos, formDisciplinaId]);
 
+  const availableRevisionTypeDays = useMemo(() => {
+    const set = new Set<number>(DEFAULT_REVISION_TYPE_INTERVALS);
+    if (Array.isArray(settings?.intervalDays)) {
+      settings.intervalDays.forEach(d => {
+        const num = Number(d);
+        if (!isNaN(num) && num > 0) set.add(num);
+      });
+    }
+    revisoes.forEach(r => {
+      const d = resolveRevisionIntervalDays(r);
+      if (d && d > 0) set.add(d);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [revisoes, settings?.intervalDays]);
+
+  const handleToggleIntervalType = (days: number) => {
+    setSelectedIntervalTypes(prev =>
+      prev.includes(days)
+        ? prev.filter(d => d !== days)
+        : [...prev, days].sort((a, b) => a - b)
+    );
+  };
+
   const handleSelectPeriodPill = (pillId: string, days?: number) => {
     if (filterPeriodPreset === pillId) {
       setFilterPeriodPreset('todos');
@@ -371,14 +408,26 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
     setFilterStartDate('');
     setFilterEndDate('');
     setSelectedDiscFilter('todas');
+    setSelectedIntervalTypes([]);
   };
 
-  const hasActiveFilters = selectedDiscFilter !== 'todas' || filterStartDate !== '' || filterEndDate !== '' || filterPeriodPreset !== 'todos';
+  const hasActiveFilters =
+    selectedDiscFilter !== 'todas' ||
+    filterStartDate !== '' ||
+    filterEndDate !== '' ||
+    filterPeriodPreset !== 'todos' ||
+    selectedIntervalTypes.length > 0;
 
   const categorized = useMemo(() => {
     const list = revisoes.filter(r => {
       if (selectedDiscFilter !== 'todas' && r.disciplinaId !== selectedDiscFilter) {
         return false;
+      }
+      if (selectedIntervalTypes.length > 0) {
+        const revDays = resolveRevisionIntervalDays(r);
+        if (!revDays || !selectedIntervalTypes.includes(revDays)) {
+          return false;
+        }
       }
       const sDate = r.scheduledFor.includes('T') ? r.scheduledFor.split('T')[0] : r.scheduledFor;
       if (filterStartDate && sDate < filterStartDate) {
@@ -430,7 +479,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
     concluidas.sort(sortByScheduledDesc);
 
     return { hoje, atrasadas, proximas, ignoradas, concluidas };
-  }, [revisoes, selectedDiscFilter, filterStartDate, filterEndDate, todayStr]);
+  }, [revisoes, selectedDiscFilter, selectedIntervalTypes, filterStartDate, filterEndDate, todayStr]);
 
   const srsStats = useMemo(() => {
     const total = revisoes.length;
@@ -561,16 +610,94 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
     showFeedback('Revisão restaurada para a fila ativa!');
   };
 
-  const handleDeleteReview = async (rev: Revisao) => {
+  const getRelatedFutureRevisions = (target: Revisao): Revisao[] => {
+    const targetDate = target.scheduledFor.includes('T')
+      ? target.scheduledFor.split('T')[0]
+      : target.scheduledFor;
+    const targetTopicNorm = (target.assuntoName || '').trim().toLowerCase();
+
+    // Se pertencer a um lote gerado junto (ex: rev_srs_1730000000000_0)
+    const batchPrefixMatch = target.id.match(/^(rev_srs_\d+_)/);
+    const batchPrefix = batchPrefixMatch ? batchPrefixMatch[1] : null;
+
+    return revisoes.filter(r => {
+      if (r.id === target.id) return true;
+      if (r.status === 'concluida') return false;
+
+      const rDate = r.scheduledFor.includes('T')
+        ? r.scheduledFor.split('T')[0]
+        : r.scheduledFor;
+
+      const isFutureOrSameDate =
+        rDate > targetDate ||
+        (rDate === targetDate && (r.intervalDays || 0) >= (target.intervalDays || 0));
+      if (!isFutureOrSameDate) return false;
+
+      if (batchPrefix && r.id.startsWith(batchPrefix)) {
+        return true;
+      }
+
+      if (r.disciplinaId !== target.disciplinaId) return false;
+      const sameAssunto =
+        (target.assuntoId && r.assuntoId && r.assuntoId === target.assuntoId) ||
+        ((r.assuntoName || '').trim().toLowerCase() === targetTopicNorm && targetTopicNorm !== '');
+      if (!sameAssunto) return false;
+
+      if (target.originalStudyDate && r.originalStudyDate && r.originalStudyDate !== target.originalStudyDate) {
+        return false;
+      }
+      if (target.originalCategory && r.originalCategory && r.originalCategory !== target.originalCategory) {
+        return false;
+      }
+      if (
+        target.originalDurationMinutes !== undefined &&
+        r.originalDurationMinutes !== undefined &&
+        r.originalDurationMinutes !== target.originalDurationMinutes
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  };
+
+  const handleDeleteReview = (rev: Revisao) => {
     setOpenMenuId(null);
-    const confirmed = typeof window !== 'undefined' && typeof window.confirm === 'function'
-      ? window.confirm('Deseja excluir esta revisão agendada?')
-      : true;
-    if (!confirmed) return;
-    if (onDeleteRevisao) {
-      await onDeleteRevisao(rev.id);
+    setDeleteTargetReview(rev);
+  };
+
+  const handleConfirmDeleteSingleReview = async () => {
+    if (!deleteTargetReview) return;
+    setIsDeletingReview(true);
+    try {
+      if (onDeleteRevisao) {
+        await onDeleteRevisao(deleteTargetReview.id);
+      }
+      setDeleteTargetReview(null);
+      showFeedback('Revisão excluída com sucesso!');
+    } finally {
+      setIsDeletingReview(false);
     }
-    showFeedback('Revisão excluída com sucesso!');
+  };
+
+  const handleConfirmDeleteFutureRelatedReviews = async () => {
+    if (!deleteTargetReview) return;
+    setIsDeletingReview(true);
+    try {
+      const related = getRelatedFutureRevisions(deleteTargetReview);
+      const idsToDelete = Array.from(new Set([deleteTargetReview.id, ...related.map(r => r.id)]));
+      if (onDeleteRevisao) {
+        await onDeleteRevisao(idsToDelete);
+      }
+      setDeleteTargetReview(null);
+      showFeedback(
+        idsToDelete.length > 1
+          ? `${idsToDelete.length} revisões relacionadas foram excluídas com sucesso!`
+          : 'Revisão excluída com sucesso!'
+      );
+    } finally {
+      setIsDeletingReview(false);
+    }
   };
 
   // PASSO 4: Salvar estudo na modal "Registro de estudo" e sincronizar Revisões, Histórico, Edital e Estatísticas
@@ -705,46 +832,6 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
       setFormNotes('');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleAddConfigInterval = () => {
-    const parsed = parseInt(newConfigIntervalInput.trim(), 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      const next = Array.from(new Set([...configIntervalsList, parsed])).sort((a, b) => a - b);
-      setConfigIntervalsList(next);
-      setConfigIntervalsStr(next.join(', '));
-      setNewConfigIntervalInput('');
-    }
-  };
-
-  const handleRemoveConfigInterval = (dayToRemove: number) => {
-    const next = configIntervalsList.filter(d => d !== dayToRemove);
-    setConfigIntervalsList(next);
-    setConfigIntervalsStr(next.join(', '));
-  };
-
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!onUpdateSettings) return;
-    setIsSavingConfig(true);
-    try {
-      const parsedFromStr = configIntervalsStr
-        .split(',')
-        .map(s => parseInt(s.trim(), 10))
-        .filter(n => !isNaN(n) && n > 0);
-      const finalIntervals = parsedFromStr.length > 0 ? parsedFromStr : (configIntervalsList.length > 0 ? configIntervalsList : [1, 7, 15, 30, 60]);
-      setConfigIntervalsList(finalIntervals);
-      setConfigIntervalsStr(finalIntervals.join(', '));
-      await onUpdateSettings({
-        autoScheduleOnStudy: configAutoStudy,
-        autoScheduleOnQuestions: configAutoQuestions,
-        performanceAdaptive: configAdaptive,
-        intervalDays: finalIntervals,
-      });
-      showFeedback('Configurações atualizadas!');
-    } finally {
-      setIsSavingConfig(false);
     }
   };
 
@@ -1032,17 +1119,6 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
           >
             Concluídas ({categorized.concluidas.length})
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('config')}
-            className={`px-4 py-2 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'config'
-                ? 'bg-slate-900 text-white shadow-xs revisao-tab-active-dark'
-                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-            }`}
-          >
-            Configurações
-          </button>
         </div>
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
@@ -1079,7 +1155,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
                 </div>
 
                 {/* Seção PERÍODO */}
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     PERÍODO
                   </label>
@@ -1109,23 +1185,39 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
                       />
                     </div>
                   </div>
+                </div>
 
-                  {/* Pílulas rápidas */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    {FILTER_PERIOD_PILLS.map(pill => {
-                      const active = filterPeriodPreset === pill.id;
+                {/* Seção TIPO DE REVISÃO */}
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      TIPO DE REVISÃO
+                    </label>
+                    {selectedIntervalTypes.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedIntervalTypes([])}
+                        className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                      >
+                        Limpar ({selectedIntervalTypes.length})
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {availableRevisionTypeDays.map(days => {
+                      const isSelected = selectedIntervalTypes.includes(days);
                       return (
                         <button
-                          key={pill.id}
+                          key={days}
                           type="button"
-                          onClick={() => handleSelectPeriodPill(pill.id, pill.days)}
-                          className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer border ${
-                            active
+                          onClick={() => handleToggleIntervalType(days)}
+                          className={`px-2.5 py-1 rounded-lg font-bold text-[11px] tabular-nums whitespace-nowrap shrink-0 transition-all cursor-pointer border ${
+                            isSelected
                               ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
                               : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-purple-400'
                           }`}
                         >
-                          {pill.label}
+                          {days}d
                         </button>
                       );
                     })}
@@ -1133,7 +1225,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
                 </div>
 
                 {/* Seção DISCIPLINA */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     DISCIPLINA
                   </label>
@@ -1176,15 +1268,6 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
 
           <Button
             type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setActiveTab('config')}
-            className="bg-white dark:bg-white/10 text-slate-700 dark:text-white border-slate-200 dark:border-white/20 text-xs"
-          >
-            Configurar
-          </Button>
-          <Button
-            type="button"
             variant="primary"
             size="sm"
             onClick={() => setIsAddModalOpen(true)}
@@ -1195,167 +1278,58 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
         </div>
       </div>
 
-      {/* Aba de Configurações SRS */}
-      {activeTab === 'config' && (
-        <Card>
-          <CardHeader
-            title="Configuração de Intervalos SRS"
-            subtitle="Personalize os prazos de repetição espaçada (de 1d a 415d ou adicione novos prazos)"
-          />
-          <CardBody className="p-6">
-            <form onSubmit={handleSaveSettings} className="space-y-5 max-w-xl text-xs">
-              <div className="space-y-2.5">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={configAutoStudy}
-                    onChange={(e) => setConfigAutoStudy(e.target.checked)}
-                    className="rounded border-slate-300"
-                  />
-                  <span className="font-medium text-slate-700 dark:text-slate-200">
-                    Gerar ciclo de revisões automaticamente ao concluir sessão de estudo
-                  </span>
-                </label>
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={configAutoQuestions}
-                    onChange={(e) => setConfigAutoQuestions(e.target.checked)}
-                    className="rounded border-slate-300"
-                  />
-                  <span className="font-medium text-slate-700 dark:text-slate-200">
-                    Ajustar intervalos automaticamente com base na bateria de questões
-                  </span>
-                </label>
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={configAdaptive}
-                    onChange={(e) => setConfigAdaptive(e.target.checked)}
-                    className="rounded border-slate-300"
-                  />
-                  <span className="font-medium text-slate-700 dark:text-slate-200">
-                    Modo adaptativo por retenção (Fácil amplia prazo, Difícil antecipa)
-                  </span>
-                </label>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block font-bold text-slate-800 dark:text-slate-200">
-                  Prazos Ativos do Ciclo (em dias)
-                </label>
-                <div className="flex flex-wrap items-center gap-2">
-                  {configIntervalsList.map(days => (
-                    <span
-                      key={days}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold"
-                    >
-                      {days}d
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveConfigInterval(days)}
-                        className="text-purple-400 hover:text-rose-500 cursor-pointer"
-                        title="Remover prazo"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <div className="inline-flex items-center gap-1">
-                    <input
-                      type="number"
-                      min={1}
-                      max={1000}
-                      value={newConfigIntervalInput}
-                      onChange={(e) => setNewConfigIntervalInput(e.target.value)}
-                      placeholder="+ Novo prazo (dias)"
-                      className="w-36 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAddConfigInterval}
-                    >
-                      + Novo prazo
-                    </Button>
-                  </div>
-                </div>
-                <div className="pt-2">
-                  <label className="block text-[11px] text-slate-500 mb-1">
-                    Ou edite os dias separados por vírgula (ex: 1, 7, 15, 30, 60, 120, 415):
-                  </label>
-                  <input
-                    type="text"
-                    value={configIntervalsStr}
-                    onChange={(e) => setConfigIntervalsStr(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" variant="primary" isLoading={isSavingConfig}>
-                Salvar Configurações
-              </Button>
-            </form>
-          </CardBody>
-        </Card>
-      )}
-
       {/* Listagem Agrupada por Data para Hoje, Atrasadas, Próximas, Ignoradas e Concluídas */}
-      {activeTab !== 'config' && (
-        <div className="space-y-6">
-          {activeTab === 'atrasadas' && categorized.atrasadas.length > 0 && onBatchRescheduleOverdue && (
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 text-xs">
-              <div className="text-rose-800 dark:text-rose-200 font-medium">
-                Você possui <strong>{categorized.atrasadas.length}</strong>{' '}
-                {categorized.atrasadas.length === 1 ? 'revisão atrasada' : 'revisões atrasadas'}. Deseja reagendar todas para hoje?
-              </div>
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => onBatchRescheduleOverdue(todayStr)}
-                className="bg-rose-600 hover:bg-rose-700 text-white shrink-0"
-              >
-                Reagendar para Hoje
-              </Button>
+      <div className="space-y-6">
+        {activeTab === 'atrasadas' && categorized.atrasadas.length > 0 && onBatchRescheduleOverdue && (
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 text-xs">
+            <div className="text-rose-800 dark:text-rose-200 font-medium">
+              Você possui <strong>{categorized.atrasadas.length}</strong>{' '}
+              {categorized.atrasadas.length === 1 ? 'revisão atrasada' : 'revisões atrasadas'}. Deseja reagendar todas para hoje?
             </div>
-          )}
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => onBatchRescheduleOverdue(todayStr)}
+              className="bg-rose-600 hover:bg-rose-700 text-white shrink-0"
+            >
+              Reagendar para Hoje
+            </Button>
+          </div>
+        )}
 
-          {activeTabGroupedByDate.length === 0 ? (
-            <Card>
-              <CardBody className="p-12 text-center text-slate-400 text-xs">
-                {activeTab === 'hoje' && 'Tudo em dia para hoje! Nenhuma revisão pendente para esta data.'}
-                {activeTab === 'atrasadas' && 'Nenhuma revisão atrasada! Seu ciclo está em dia.'}
-                {activeTab === 'proximas' && 'Nenhuma revisão futura agendada para os filtros selecionados.'}
-                {activeTab === 'ignoradas' && 'Nenhuma revisão ignorada.'}
-                {activeTab === 'concluidas' && 'Nenhuma revisão concluída registrada até o momento.'}
-              </CardBody>
-            </Card>
-          ) : (
-            activeTabGroupedByDate.map(group => (
-              <div key={group.dateStr} className="space-y-3">
-                {/* Cabeçalho do Grupo de Data */}
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
-                      {group.headerLabel}
-                    </span>
-                  </div>
-                  <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
-                    {group.items.length} {group.items.length === 1 ? 'revisão' : 'revisões'}
+        {activeTabGroupedByDate.length === 0 ? (
+          <Card>
+            <CardBody className="p-12 text-center text-slate-400 text-xs">
+              {activeTab === 'hoje' && 'Tudo em dia para hoje! Nenhuma revisão pendente para esta data.'}
+              {activeTab === 'atrasadas' && 'Nenhuma revisão atrasada! Seu ciclo está em dia.'}
+              {activeTab === 'proximas' && 'Nenhuma revisão futura agendada para os filtros selecionados.'}
+              {activeTab === 'ignoradas' && 'Nenhuma revisão ignorada.'}
+              {activeTab === 'concluidas' && 'Nenhuma revisão concluída registrada até o momento.'}
+            </CardBody>
+          </Card>
+        ) : (
+          activeTabGroupedByDate.map(group => (
+            <div key={group.dateStr} className="space-y-3">
+              {/* Cabeçalho do Grupo de Data */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
+                    {group.headerLabel}
                   </span>
                 </div>
-
-                {/* Lista de Cards Ricos dentro da Data */}
-                <div className="space-y-3">
-                  {group.items.map(rev => renderRevisionCard(rev))}
-                </div>
+                <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                  {group.items.length} {group.items.length === 1 ? 'revisão' : 'revisões'}
+                </span>
               </div>
-            ))
-          )}
-        </div>
-      )}
+
+              {/* Lista de Cards Ricos dentro da Data */}
+              <div className="space-y-3">
+                {group.items.map(rev => renderRevisionCard(rev))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
       {/* =========================================================================
           PASSO 1 & 2: CRONÔMETRO DE FOCO CONECTADO À REVISÃO SELECIONADA
@@ -1994,6 +1968,102 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal de Confirmação de Exclusão de Revisão (Única vs. Futuras Relacionadas) */}
+      <Modal
+        isOpen={Boolean(deleteTargetReview)}
+        onClose={() => {
+          if (!isDeletingReview) setDeleteTargetReview(null);
+        }}
+        title="Excluir Revisão"
+        maxWidth="md"
+      >
+        {deleteTargetReview && (() => {
+          const relatedList = getRelatedFutureRevisions(deleteTargetReview);
+          const extraFutureCount = Math.max(0, relatedList.length - 1);
+          const intervalLabel = deleteTargetReview.intervalDays
+            ? `Revisão de ${deleteTargetReview.intervalDays} ${deleteTargetReview.intervalDays === 1 ? 'dia' : 'dias'}`
+            : deleteTargetReview.method
+            ? `Revisão ${String(deleteTargetReview.method).toUpperCase()}`
+            : 'Revisão programada';
+
+          return (
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                    {deleteTargetReview.assuntoName}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-200/70 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                    {intervalLabel}
+                  </span>
+                </div>
+                <div className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {deleteTargetReview.disciplinaName}
+                </div>
+              </div>
+
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                Deseja excluir <strong>somente esta revisão</strong> ou também <strong>todas as revisões no futuro</strong> relacionadas a este estudo?
+              </p>
+
+              <div className="space-y-2.5 pt-1">
+                <button
+                  type="button"
+                  disabled={isDeletingReview}
+                  onClick={handleConfirmDeleteSingleReview}
+                  className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-rose-400 dark:hover:border-rose-500 bg-white dark:bg-slate-900 hover:bg-rose-50/40 dark:hover:bg-rose-950/20 text-left transition-all flex items-start gap-3 cursor-pointer disabled:opacity-60"
+                >
+                  <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                      Excluir somente esta revisão
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Remove apenas este agendamento ({intervalLabel}), mantendo as demais revisões futuras na fila.
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isDeletingReview}
+                  onClick={handleConfirmDeleteFutureRelatedReviews}
+                  className="w-full p-3.5 rounded-xl border border-rose-200 dark:border-rose-800/80 hover:border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100/60 dark:hover:bg-rose-950/50 text-left transition-all flex items-start gap-3 cursor-pointer disabled:opacity-60"
+                >
+                  <div className="p-2 rounded-lg bg-rose-600 text-white shrink-0 mt-0.5">
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-rose-700 dark:text-rose-300 text-xs sm:text-sm">
+                      Excluir esta e todas as revisões futuras relacionadas
+                    </div>
+                    <div className="text-[11px] text-rose-600/80 dark:text-rose-300/80 leading-relaxed">
+                      {extraFutureCount > 0
+                        ? `Remove esta revisão e mais ${extraFutureCount} ${extraFutureCount === 1 ? 'revisão futura relacionada' : 'revisões futuras relacionadas'} deste ciclo.`
+                        : 'Remove esta revisão e quaisquer agendamentos futuros vinculados a ela.'}
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isDeletingReview}
+                  onClick={() => setDeleteTargetReview(null)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );

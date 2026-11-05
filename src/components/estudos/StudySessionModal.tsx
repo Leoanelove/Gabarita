@@ -15,16 +15,21 @@ export interface StudySessionModalProps {
   initialAssuntoId?: string;
   initialDurationMinutes?: number;
   initialMode?: 'cronometro' | 'manual';
+  contabilizarPlanejamento?: boolean;
   onSaveSession: (session: {
     disciplinaId: string;
     assuntoId?: string;
     durationMinutes: number;
+    durationSeconds?: number;
     plannedMinutes?: number;
     type: StudySessionType;
     questionsAttempted?: number;
     questionsCorrect?: number;
     notes?: string;
     teoriaFinalizada?: boolean;
+    programarRevisoes?: boolean;
+    revisaoDays?: number[];
+    contabilizarPlanejamento?: boolean;
     pageIntervals?: PageInterval[];
     videoaulas?: VideoaulaRecord[];
     completedAt?: string;
@@ -47,6 +52,7 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
   initialAssuntoId,
   initialDurationMinutes,
   initialMode = 'cronometro',
+  contabilizarPlanejamento = true,
   onSaveSession,
   onAdvanceCycle,
 }) => {
@@ -109,8 +115,9 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
         initialAssuntoId={initialAssuntoId}
         elapsedSeconds={elapsedSeconds}
         plannedMinutes={savedMetaMinutes}
+        contabilizarPlanejamento={contabilizarPlanejamento}
         onSaveSuccess={onSaveSession}
-        onAdvanceCycle={onAdvanceCycle}
+        onAdvanceCycle={contabilizarPlanejamento === false ? undefined : onAdvanceCycle}
         onBackToTimer={currentModo === 'manual' ? undefined : handleBackToTimer}
       />
     </>

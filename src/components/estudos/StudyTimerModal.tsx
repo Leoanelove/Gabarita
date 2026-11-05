@@ -811,10 +811,10 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
       <div className="relative w-full max-w-[560px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]">
         
         {/* Cabeçalho */}
-        <div className="relative z-50 flex items-center justify-between gap-3 px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="relative z-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3 px-4 py-3.5 sm:px-6 sm:py-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-full sm:flex-1">
             <div 
-              className="w-10 h-10 rounded-full border flex items-center justify-center shrink-0 transition-all duration-300"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border flex items-center justify-center shrink-0 transition-all duration-300"
               style={{
                 backgroundColor: `${palette.primary}15`,
                 borderColor: `${palette.primary}30`,
@@ -822,10 +822,10 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
                 boxShadow: isDarkMode ? `0 0 16px ${themeToken.subtleGlow}` : undefined,
               }}
             >
-              <Target className="w-5 h-5" />
+              <Target className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white tracking-tight leading-tight whitespace-nowrap">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white tracking-tight leading-tight truncate">
                 Cronômetro de Foco
               </h2>
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 font-normal truncate">
@@ -834,10 +834,10 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t border-slate-200/60 dark:border-slate-800/70 sm:border-t-0">
             {/* Ciclo Pomodoro */}
             <div 
-              className="font-mono text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-semibold border transition-all duration-300 whitespace-nowrap shrink-0"
+              className="mr-auto sm:mr-0 font-mono text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-semibold border transition-all duration-300 whitespace-nowrap shrink-0"
               style={{
                 backgroundColor: `${palette.primary}15`,
                 borderColor: `${palette.primary}30`,

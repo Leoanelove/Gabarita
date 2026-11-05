@@ -6,8 +6,9 @@ interface StudyTimerContextType {
   timerInitialAssuntoId?: string;
   timerInitialDurationMinutes?: number;
   timerInitialMode?: 'cronometro' | 'manual';
-  openStudyTimer: (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual') => void;
-  openStudyRegister: (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string }) => void;
+  timerContabilizarPlanejamento?: boolean;
+  openStudyTimer: (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual', contabilizarPlanejamento?: boolean) => void;
+  openStudyRegister: (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string; contabilizarPlanejamento?: boolean }) => void;
   closeStudyTimer: () => void;
 }
 
@@ -19,6 +20,7 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [timerInitialAssuntoId, setTimerInitialAssuntoId] = useState<string | undefined>();
   const [timerInitialDurationMinutes, setTimerInitialDurationMinutes] = useState<number | undefined>();
   const [timerInitialMode, setTimerInitialMode] = useState<'cronometro' | 'manual'>('cronometro');
+  const [timerContabilizarPlanejamento, setTimerContabilizarPlanejamento] = useState<boolean>(true);
 
   // Auxiliar para converter duração numérica ou string (ex: "1h 13min", "45min", 73) em minutos
   const parseDurationToMinutes = (val?: number | string): number | undefined => {
@@ -58,13 +60,15 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     disciplinaId?: string, 
     assuntoId?: string, 
     durationMinutes?: number | string,
-    mode: 'cronometro' | 'manual' = 'cronometro'
+    mode: 'cronometro' | 'manual' = 'cronometro',
+    contabilizarPlanejamento: boolean = true
   ) => {
     setTimerInitialDisciplinaId(disciplinaId);
     setTimerInitialAssuntoId(assuntoId);
     const parsedMins = parseDurationToMinutes(durationMinutes);
     setTimerInitialDurationMinutes(parsedMins);
     setTimerInitialMode(mode);
+    setTimerContabilizarPlanejamento(contabilizarPlanejamento);
     setIsStudyTimerOpen(true);
   }, []);
 
@@ -73,12 +77,16 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     disciplinaId?: string;
     assuntoId?: string;
     durationMinutes?: number | string;
+    contabilizarPlanejamento?: boolean;
   }) => {
     setTimerInitialDisciplinaId(options?.disciplinaId);
     setTimerInitialAssuntoId(options?.assuntoId);
     const parsedMins = parseDurationToMinutes(options?.durationMinutes);
     setTimerInitialDurationMinutes(parsedMins);
     setTimerInitialMode(options?.modo || 'manual');
+    setTimerContabilizarPlanejamento(
+      options?.contabilizarPlanejamento !== undefined ? options.contabilizarPlanejamento : true
+    );
     setIsStudyTimerOpen(true);
   }, []);
 
@@ -94,6 +102,7 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         timerInitialAssuntoId,
         timerInitialDurationMinutes,
         timerInitialMode,
+        timerContabilizarPlanejamento,
         openStudyTimer,
         openStudyRegister,
         closeStudyTimer,

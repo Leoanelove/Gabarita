@@ -223,28 +223,6 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
     return assuntos.filter(a => discIds.has(a.disciplinaId));
   }, [assuntos, activeDisciplinas]);
 
-  if (concursos.length === 0) {
-    return (
-      <EmptyContestState
-        title="Você ainda não possui um concurso ativo"
-        description="Cadastre seu concurso foco e importe o conteúdo programático do edital com auxílio da IA para liberar a montagem do seu Ciclo de Estudos e Cronograma Semanal."
-        actionText="Cadastrar Concurso Foco"
-        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
-      />
-    );
-  }
-
-  if (activeDisciplinas.length === 0) {
-    return (
-      <EmptyContestState
-        title="Nenhuma disciplina cadastrada no concurso ativo"
-        description="Extraia as disciplinas do edital com IA ou adicione manualmente no menu 'Concursos & Provas' para iniciar o Ciclo de Estudos."
-        actionText="Importar Matérias do Concurso"
-        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
-      />
-    );
-  }
-
   // Leitura síncrona imediata do localStorage para o concurso ativo
   const readStoredCycle = (targetConcursoId: string): StudyCycle | null => {
     if (!targetConcursoId) return null;
@@ -424,6 +402,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
 
   const lastPromptedConcursoRef = useRef<string | null>(null);
   useEffect(() => {
+    if (concursos.length === 0 || activeDisciplinas.length === 0) return;
     const cid = effectiveActiveConcursoId || 'default';
     try {
       if (sessionStorage.getItem('gabarita_open_method_modal') === 'true') {
@@ -439,7 +418,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
     } else if (hasConfiguredStudyMethod) {
       lastPromptedConcursoRef.current = cid;
     }
-  }, [hasConfiguredStudyMethod, effectiveActiveConcursoId]);
+  }, [hasConfiguredStudyMethod, effectiveActiveConcursoId, concursos.length, activeDisciplinas.length]);
 
   const [formDisciplinaId, setFormDisciplinaId] = useState(disciplinas[0]?.id || '');
   const [formAssuntoId, setFormAssuntoId] = useState('');
@@ -600,13 +579,34 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
     if (onSavePlan) {
       onSavePlan(newPlan);
     }
-    await onRecalculatePlan(newPlan.weeklyAvailability, newPlan.targetExamDate);
     setActiveTab('cronograma');
     if (onSwitchMethod) {
       await onSwitchMethod('cronograma');
     }
     showFeedback('success', 'Novo Cronograma gerado e integrado com sucesso!');
   };
+
+  if (concursos.length === 0) {
+    return (
+      <EmptyContestState
+        title="Você ainda não possui um concurso ativo"
+        description="Cadastre seu concurso foco e importe o conteúdo programático do edital com auxílio da IA para liberar a montagem do seu Ciclo de Estudos e Cronograma Semanal."
+        actionText="Cadastrar Concurso Foco"
+        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
+      />
+    );
+  }
+
+  if (activeDisciplinas.length === 0) {
+    return (
+      <EmptyContestState
+        title="Nenhuma disciplina cadastrada no concurso ativo"
+        description="Extraia as disciplinas do edital com IA ou adicione manualmente no menu 'Concursos & Provas' para iniciar o Ciclo de Estudos."
+        actionText="Importar Matérias do Concurso"
+        onAction={() => onNavigateTab ? onNavigateTab('concursos') : null}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">

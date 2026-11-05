@@ -51,7 +51,15 @@ export class AuthService {
           ...INITIAL_USER,
           id: u.id,
           email: u.email || '',
-          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Concurseiro(a)',
+          name:
+            u.user_metadata?.full_name ||
+            u.user_metadata?.name ||
+            u.email?.split('@')[0] ||
+            'Concurseiro(a)',
+          photoURL:
+            u.user_metadata?.avatar_url ||
+            u.user_metadata?.picture ||
+            INITIAL_USER.photoURL,
         };
         // Libera a renderização da aplicação imediatamente
         this.persistSession(profile);
@@ -88,7 +96,15 @@ export class AuthService {
           ...INITIAL_USER,
           id: u.id,
           email: u.email || '',
-          name: u.user_metadata?.name || u.email?.split('@')[0] || 'Concurseiro(a)',
+          name:
+            u.user_metadata?.full_name ||
+            u.user_metadata?.name ||
+            u.email?.split('@')[0] ||
+            'Concurseiro(a)',
+          photoURL:
+            u.user_metadata?.avatar_url ||
+            u.user_metadata?.picture ||
+            INITIAL_USER.photoURL,
         };
         
         // Garante que o listener force a renderização imediata do dashboard
@@ -380,26 +396,59 @@ export class AuthService {
     };
   }
 
-  static async loginWithGoogle(): Promise<void> {
+  static async loginWithGoogle(credential: string): Promise<UserProfile> {
     if (!isSupabaseConfigured) {
       const msg = 'Configuração do Supabase pendente. Verifique se VITE_SUPABASE_URL e VITE_SUPABASE_KEY estão configuradas no ambiente.';
       console.error("Erro Supabase Auth:", msg);
       this.updateState({ isLoading: false, error: msg });
       throw new Error(msg);
     }
+
+    if (!credential) {
+      const msg = 'Token de credencial do Google não recebido.';
+      this.updateState({ isLoading: false, error: msg });
+      throw new Error(msg);
+    }
+
     this.updateState({ error: null });
-    const { error } = await supabase.auth.signInWithOAuth({
+
+    const { data, error } = await supabase.auth.signInWithIdToken({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
+      token: credential,
     });
+
     if (error) {
-      console.warn("[Gabarita Auth] Falha Google OAuth:", error.message);
+      console.warn("[Gabarita Auth] Falha Google ID Token:", error.message);
       const translated = this.translateAuthError(error.message);
       this.updateState({ isLoading: false, error: translated });
       throw new Error(translated);
     }
+
+    if (!data?.user) {
+      const msg = 'Não foi possível autenticar sua conta Google no Supabase.';
+      this.updateState({ isLoading: false, error: msg });
+      throw new Error(msg);
+    }
+
+    const u = data.user;
+    const profile: UserProfile = {
+      ...INITIAL_USER,
+      id: u.id,
+      email: u.email || '',
+      name:
+        u.user_metadata?.full_name ||
+        u.user_metadata?.name ||
+        u.email?.split('@')[0] ||
+        'Concurseiro(a)',
+      photoURL:
+        u.user_metadata?.avatar_url ||
+        u.user_metadata?.picture ||
+        INITIAL_USER.photoURL,
+    };
+
+    this.persistSession(profile);
+    this.syncProfileInBackground(u.id);
+    return profile;
   }
 
   static async resetPassword(email: string): Promise<void> {

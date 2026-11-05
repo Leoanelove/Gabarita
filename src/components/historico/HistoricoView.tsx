@@ -94,6 +94,7 @@ export interface HistoricoViewProps {
     notes?: string;
     teoriaFinalizada?: boolean;
     programarRevisoes?: boolean;
+    revisaoDays?: number[];
     contabilizarPlanejamento?: boolean;
     pageIntervals?: PageInterval[];
     videoaulas?: VideoaulaRecord[];
@@ -384,6 +385,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
   assuntos,
   concursos,
   activeConcursoId,
+  revisoes = [],
   onSaveSession,
   onUpdateSession,
   onDeleteSession,
@@ -546,8 +548,12 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
   const [modalTimeStr, setModalTimeStr] = useState<string>('00:25:00');
   const [modalAssuntoId, setModalAssuntoId] = useState<string>('');
   const [modalMaterial, setModalMaterial] = useState<string>('');
+  const DEFAULT_REVISAO_DAYS = [1, 7, 15, 21, 30, 45, 60, 90, 120, 180, 215, 265, 315, 365];
   const [modalTopicFinished, setModalTopicFinished] = useState<boolean>(false);
   const [modalScheduleRevisions, setModalScheduleRevisions] = useState<boolean>(false);
+  const [modalRevisaoDays, setModalRevisaoDays] = useState<number[]>(DEFAULT_REVISAO_DAYS);
+  const [isAddingModalRevisaoDay, setIsAddingModalRevisaoDay] = useState<boolean>(false);
+  const [newModalRevisaoDayInput, setNewModalRevisaoDayInput] = useState<string>('');
   const [modalCountInPlan, setModalCountInPlan] = useState<boolean>(true);
   const [modalCorrect, setModalCorrect] = useState<string>('');
   const [modalWrong, setModalWrong] = useState<string>('');
@@ -561,6 +567,21 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
   const [modalError, setModalError] = useState<string | null>(null);
   const [isSavingModal, setIsSavingModal] = useState<boolean>(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const handleRemoveModalRevisaoDay = (dayToRemove: number) => {
+    setModalRevisaoDays(prev => prev.filter(d => d !== dayToRemove));
+  };
+
+  const handleConfirmAddModalRevisaoDay = () => {
+    const num = parseInt(newModalRevisaoDayInput.replace(/\D/g, ''), 10);
+    if (!isNaN(num) && num > 0 && num <= 730) {
+      if (!modalRevisaoDays.includes(num)) {
+        setModalRevisaoDays(prev => [...prev, num].sort((a, b) => a - b));
+      }
+      setNewModalRevisaoDayInput('');
+      setIsAddingModalRevisaoDay(false);
+    }
+  };
 
   // Abrir modal para Novo Registro
   const handleOpenCreateModal = (preselectedDiscId?: string, preselectedAssuntoId?: string) => {
@@ -583,6 +604,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
     setModalMaterial('');
     setModalTopicFinished(false);
     setModalScheduleRevisions(false);
+    setModalRevisaoDays([...DEFAULT_REVISAO_DAYS]);
+    setIsAddingModalRevisaoDay(false);
+    setNewModalRevisaoDayInput('');
     setModalCountInPlan(true);
     setModalCorrect('');
     setModalWrong('');
@@ -617,6 +641,44 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
     const { normalizedIntervals } = normalizeSessionPages(session);
 
+    const linkedRevs = (revisoes || []).filter(r => {
+      if (!r) return false;
+      if (r.sourceSessionId && r.sourceSessionId === session.id) return true;
+      if (!r.isAutomatic) return false;
+      if (r.disciplinaId !== session.disciplinaId) return false;
+      if ((r.assuntoId || '') !== (session.assuntoId || '')) return false;
+      if (!session.assuntoId) {
+        const rAssName = (r.assuntoName || '').trim().toLowerCase();
+        const sAssName = (session.assuntoName || 'Estudo Geral').trim().toLowerCase();
+        if (rAssName !== sAssName) return false;
+      }
+      const revStudyDate = r.originalStudyDate ? r.originalStudyDate.split('T')[0] : '';
+      return Boolean(revStudyDate && revStudyDate === sessionYMD);
+    });
+
+    const linkedIntervalDays = Array.from(
+      new Set(
+        linkedRevs
+          .map(r => Number(r.intervalDays))
+          .filter(d => !isNaN(d) && d > 0)
+      )
+    ).sort((a, b) => a - b);
+
+    const hasScheduledRevisions =
+      session.programarRevisoes === false
+        ? false
+        : session.programarRevisoes === true
+        ? true
+        : linkedIntervalDays.length > 0;
+
+    const resolvedRevisaoDays = hasScheduledRevisions
+      ? session.revisaoDays && session.revisaoDays.length > 0
+        ? [...session.revisaoDays].sort((a, b) => a - b)
+        : linkedIntervalDays.length > 0
+        ? linkedIntervalDays
+        : [...DEFAULT_REVISAO_DAYS]
+      : [...DEFAULT_REVISAO_DAYS];
+
     setEditingSession(session);
     setDateMode(detectedMode);
     setModalCustomDate(sessionYMD);
@@ -626,7 +688,10 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
     setModalAssuntoId(session.assuntoId || '');
     setModalMaterial(session.material || '');
     setModalTopicFinished(Boolean(session.teoriaFinalizada));
-    setModalScheduleRevisions(Boolean(session.programarRevisoes));
+    setModalScheduleRevisions(hasScheduledRevisions);
+    setModalRevisaoDays(resolvedRevisaoDays);
+    setIsAddingModalRevisaoDay(false);
+    setNewModalRevisaoDayInput('');
     setModalCountInPlan(
       session.contabilizarPlanejamento !== undefined ? session.contabilizarPlanejamento : true
     );
@@ -772,12 +837,17 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
           notes: modalComments.trim() || undefined,
           teoriaFinalizada: modalTopicFinished,
           programarRevisoes: modalScheduleRevisions,
+          revisaoDays: modalScheduleRevisions ? modalRevisaoDays : undefined,
           contabilizarPlanejamento: modalCountInPlan,
           pageIntervals: validPages,
           videoaulas: validVideos,
           completedAt: targetDate.toISOString(),
         });
-        setToastMessage('Registro de estudo atualizado com sucesso!');
+        setToastMessage(
+          modalScheduleRevisions && modalRevisaoDays.length > 0
+            ? `Registro atualizado e ${modalRevisaoDays.length} revisões vinculadas no menu Revisões!`
+            : 'Registro de estudo atualizado com sucesso!'
+        );
       } else {
         await onSaveSession({
           concursoId: activeConcurso?.id,
@@ -796,12 +866,17 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
           notes: modalComments.trim() || undefined,
           teoriaFinalizada: modalTopicFinished,
           programarRevisoes: modalScheduleRevisions,
+          revisaoDays: modalScheduleRevisions ? modalRevisaoDays : undefined,
           contabilizarPlanejamento: modalCountInPlan,
           pageIntervals: validPages,
           videoaulas: validVideos,
           completedAt: targetDate.toISOString(),
         });
-        setToastMessage('Novo estudo registrado com sucesso no histórico!');
+        setToastMessage(
+          modalScheduleRevisions && modalRevisaoDays.length > 0
+            ? `Novo estudo registrado e ${modalRevisaoDays.length} revisões programadas!`
+            : 'Novo estudo registrado com sucesso no histórico!'
+        );
       }
 
       if (modalTopicFinished && modalAssuntoId && onUpdateAssuntoStatus) {
@@ -2574,7 +2649,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                 <label
                   className={`p-4 rounded-2xl border flex flex-col justify-between gap-2.5 cursor-pointer select-none transition-all h-full ${
                     modalScheduleRevisions
-                      ? 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-500/50 shadow-xs'
+                      ? 'bg-purple-50/70 dark:bg-purple-950/25 border-purple-500 dark:border-purple-500/70 shadow-xs'
                       : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
@@ -2584,21 +2659,14 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                         type="checkbox"
                         checked={modalScheduleRevisions}
                         onChange={e => setModalScheduleRevisions(e.target.checked)}
-                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 cursor-pointer shrink-0"
-                        style={{ accentColor: palette.primary }}
+                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 cursor-pointer shrink-0 accent-purple-600"
                       />
                       <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">
-                        <CalendarClock className="w-4 h-4 shrink-0" style={{ color: palette.primary }} />
+                        <CalendarClock className="w-4 h-4 shrink-0 text-purple-600 dark:text-purple-400" />
                         <span>Programar Revisões</span>
                       </span>
                     </div>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0"
-                      style={{
-                        backgroundColor: `${palette.primary}15`,
-                        color: palette.primary,
-                      }}
-                    >
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0 bg-purple-500/15 text-purple-700 dark:text-purple-300">
                       SRS Ativo
                     </span>
                   </div>
@@ -2607,6 +2675,85 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   </p>
                 </label>
               </div>
+
+              {/* Expansão dinâmica das tags de revisões quando "Programar Revisões" estiver marcado */}
+              {modalScheduleRevisions && (
+                <div className="p-3.5 rounded-2xl border border-purple-500/30 bg-purple-50/40 dark:bg-purple-950/15 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300">
+                      Prazos de retorno ({modalRevisaoDays.length} revisões programadas):
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Clique no 'x' para remover ou '+' para novo prazo
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {modalRevisaoDays.map(day => (
+                      <span
+                        key={day}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-purple-500/30 text-xs font-bold text-purple-700 dark:text-purple-300 shadow-2xs"
+                      >
+                        {day}d
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveModalRevisaoDay(day)}
+                          className="text-purple-400 hover:text-rose-500 transition-colors cursor-pointer"
+                          title={`Remover revisão de ${day} dias`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+
+                    {!isAddingModalRevisaoDay ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingModalRevisaoDay(true)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-dashed border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 text-xs font-bold transition-all cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" /> Novo prazo
+                      </button>
+                    ) : (
+                      <div className="inline-flex items-center gap-1 bg-white dark:bg-slate-900 border border-purple-500 rounded-lg px-2 py-0.5">
+                        <input
+                          type="number"
+                          min="1"
+                          max="730"
+                          value={newModalRevisaoDayInput}
+                          onChange={e => setNewModalRevisaoDayInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleConfirmAddModalRevisaoDay();
+                            }
+                          }}
+                          placeholder="Dias"
+                          className="w-14 text-xs font-bold bg-transparent text-slate-900 dark:text-white focus:outline-none"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleConfirmAddModalRevisaoDay}
+                          className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline px-1 cursor-pointer"
+                        >
+                          OK
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingModalRevisaoDay(false);
+                            setNewModalRevisaoDayInput('');
+                          }}
+                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Grid de 3 Cards de Métricas Detalhadas (Questões | Páginas | Videoaulas) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">

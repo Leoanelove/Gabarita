@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   CalendarDays, 
+  Calendar,
   Check, 
   ArrowRight, 
   ArrowLeft, 
@@ -11,6 +12,7 @@ import {
   Plus, 
   Minus, 
   AlertCircle,
+  AlertTriangle,
   BarChart2
 } from 'lucide-react';
 import { 
@@ -27,6 +29,7 @@ import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { PlannerService } from '../../services/plannerService';
 import { DatabaseService } from '../../services/db';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export interface CriarCronogramaModalProps {
   isOpen: boolean;
@@ -47,6 +50,89 @@ interface DayConfig {
   hours: number;
 }
 
+type StartDateOption = 'hoje' | 'amanha' | 'outro';
+type EndDateOption = 'vespera' | 'custom' | 'sem_termino';
+
+const SHORT_WEEKDAYS_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const FULL_WEEKDAYS_PT = [
+  'domingo',
+  'segunda-feira',
+  'terça-feira',
+  'quarta-feira',
+  'quinta-feira',
+  'sexta-feira',
+  'sábado',
+];
+const SHORT_MONTHS_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const FULL_MONTHS_PT = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
+
+function addDaysToDateStr(dateStr: string, days: number): string {
+  const dt = PlannerService.parseLocalDate(dateStr);
+  dt.setDate(dt.getDate() + days);
+  return PlannerService.formatLocalDate(dt);
+}
+
+function formatCardShortDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const dt = PlannerService.parseLocalDate(dateStr);
+  const wd = SHORT_WEEKDAYS_PT[dt.getDay()] || '';
+  const day = dt.getDate();
+  const month = SHORT_MONTHS_PT[dt.getMonth()] || '';
+  return `${wd}, ${day} ${month}`;
+}
+
+function formatFullExamDateBanner(dateStr: string): string {
+  if (!dateStr) return '';
+  const dt = PlannerService.parseLocalDate(dateStr);
+  const wd = FULL_WEEKDAYS_PT[dt.getDay()] || '';
+  const day = dt.getDate();
+  const month = FULL_MONTHS_PT[dt.getMonth()] || '';
+  return `${wd}, ${day} de ${month}`;
+}
+
+function formatSummaryPillDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const dt = PlannerService.parseLocalDate(dateStr);
+  const day = String(dt.getDate()).padStart(2, '0');
+  const month = SHORT_MONTHS_PT[dt.getMonth()] || '';
+  const year = dt.getFullYear();
+  const currentYear = new Date().getFullYear();
+  return year !== currentYear ? `${day} de ${month}. de ${year}` : `${day} de ${month}.`;
+}
+
+function formatStudyHoursCompact(hours: number): string {
+  const totalMins = Math.round(hours * 60);
+  if (totalMins <= 0) return '0h';
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h${m}m`;
+}
+
+function formatStudyHoursLabel(hours: number): string {
+  const totalMins = Math.round(hours * 60);
+  if (totalMins <= 0) return '0h';
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  if (h === 0) return `${m} minutos`;
+  if (m === 0) return `${h} ${h === 1 ? 'hora' : 'horas'}`;
+  return `${h}h e ${m}min`;
+}
+
 export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
   isOpen,
   onClose,
@@ -57,6 +143,12 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
   activeConcursoId,
   onPlanCreated,
 }) => {
+  const { palette } = useTheme();
+  const primaryColor = palette?.primary || '#10b981';
+
+  const todayStr = useMemo(() => PlannerService.formatLocalDate(new Date()), []);
+  const tomorrowStr = useMemo(() => addDaysToDateStr(todayStr, 1), [todayStr]);
+
   // Concurso ativo resolvido
   const resolvedActiveConcursoId = useMemo(() => {
     if (activeConcursoId) return activeConcursoId;
@@ -68,6 +160,34 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
     if (plan?.concursoId) return plan.concursoId;
     return disciplinas[0]?.concursoId || '';
   }, [activeConcursoId, concursos, plan, disciplinas]);
+
+  const activeConcurso = useMemo(() => {
+    if (!concursos || concursos.length === 0) return undefined;
+    return concursos.find(c => c.id === resolvedActiveConcursoId) || concursos.find(c => c.active) || concursos[0];
+  }, [concursos, resolvedActiveConcursoId]);
+
+  const examDateStr = useMemo(() => {
+    const raw =
+      activeConcurso?.examDate ||
+      activeConcurso?.dataProva ||
+      (activeConcurso as any)?.data_prova ||
+      '';
+    if (!raw) return '';
+    const clean = String(raw).includes('T') ? String(raw).split('T')[0] : String(raw).trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(clean) ? clean : '';
+  }, [activeConcurso]);
+
+  // Verifica se o concurso possui data de prova FUTURA (estritamente após hoje)
+  const hasFutureExamDate = useMemo(() => {
+    return Boolean(examDateStr && examDateStr > todayStr);
+  }, [examDateStr, todayStr]);
+
+  // Véspera da prova (1 dia antes da prova)
+  const examEveDateStr = useMemo(() => {
+    if (!hasFutureExamDate || !examDateStr) return '';
+    const eve = addDaysToDateStr(examDateStr, -1);
+    return eve >= todayStr ? eve : examDateStr;
+  }, [hasFutureExamDate, examDateStr, todayStr]);
 
   // Filtro estrito de disciplinas pelo concurso ativo
   const materiasDoConcursoAtivo = useMemo(() => {
@@ -81,8 +201,8 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
     return disciplinas.filter(d => d.concursoId === resolvedActiveConcursoId);
   }, [disciplinas, resolvedActiveConcursoId]);
 
-  // Stepper com os 3 passos solicitados: Seleção de Disciplinas, Relevância e Horários
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // Stepper com 4 passos: 1. Disciplinas | 2. Relevância | 3. Horários | 4. Período
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Passo 1: Seleção de Disciplinas Reais
   const [selectedDisciplinaIds, setSelectedDisciplinaIds] = useState<string[]>(() => {
@@ -106,7 +226,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
     return initial;
   });
 
-  // Passo 3: Horários (Checkboxes de DOM a SÁB com seletor numérico de incremento/decremento + e -)
+  // Passo 3: Horários (Checkboxes de DOM a SÁB com seletor numérico de incremento/decremento + e - de 30 em 30 min)
   const [daysConfig, setDaysConfig] = useState<DayConfig[]>(() => {
     const currentAvail = plan?.weeklyAvailability || {
       dom: 180,
@@ -130,11 +250,11 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
 
     return daysOrder.map(d => {
       const mins = currentAvail[d.id] || 0;
-      const hours = Math.max(1, Math.round(mins / 60)) || 3;
+      const hoursFromMins = Math.max(0.5, Math.round(mins / 30) * 0.5);
       return {
         ...d,
-        enabled: mins > 0 || (d.id !== 'dom'), // Padrão ativo nos dias úteis e sábado
-        hours: mins > 0 ? Math.round(mins / 60) : 3,
+        enabled: mins > 0 || (d.id !== 'dom'),
+        hours: mins > 0 ? hoursFromMins : 3,
       };
     });
   });
@@ -144,6 +264,17 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
   const [maxBlockDuration, setMaxBlockDuration] = useState<number>(60);
 
   const DURATION_OPTIONS = [15, 20, 25, 30, 40, 45, 50, 60, 75, 90, 120];
+
+  // Passo 4: Período ("Quando começa e até quando vai?")
+  const [startDateOption, setStartDateOption] = useState<StartDateOption>('hoje');
+  const [customStartDate, setCustomStartDate] = useState<string>(() => addDaysToDateStr(todayStr, 2));
+  const [endDateOption, setEndDateOption] = useState<EndDateOption>(() =>
+    hasFutureExamDate ? 'vespera' : 'custom'
+  );
+  const [customEndDate, setCustomEndDate] = useState<string>(() => {
+    if (hasFutureExamDate && examEveDateStr) return examEveDateStr;
+    return addDaysToDateStr(todayStr, 90);
+  });
 
   const handleMinChange = (val: number) => {
     setMinBlockDuration(val);
@@ -167,6 +298,15 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
       setStep(1);
       setErrorMessage(null);
       setIsSaving(false);
+      setStartDateOption('hoje');
+      setCustomStartDate(addDaysToDateStr(todayStr, 2));
+      setEndDateOption(hasFutureExamDate ? 'vespera' : 'custom');
+      setCustomEndDate(
+        hasFutureExamDate && examEveDateStr
+          ? examEveDateStr
+          : addDaysToDateStr(todayStr, 90)
+      );
+
       if (plan?.disciplinasDistribution && plan.disciplinasDistribution.length > 0 && plan.concursoId === resolvedActiveConcursoId) {
         const existingIds = plan.disciplinasDistribution.map(d => d.disciplinaId);
         const valid = existingIds.filter(id => materiasDoConcursoAtivo.some(m => m.id === id));
@@ -179,7 +319,62 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
         setSelectedDisciplinaIds(materiasDoConcursoAtivo.map(d => d.id));
       }
     }
-  }, [isOpen, plan, resolvedActiveConcursoId, materiasDoConcursoAtivo]);
+  }, [isOpen, plan, resolvedActiveConcursoId, materiasDoConcursoAtivo, hasFutureExamDate, examEveDateStr, todayStr]);
+
+  // Data de início resolvida
+  const resolvedStartDateStr = useMemo(() => {
+    if (startDateOption === 'hoje') return todayStr;
+    if (startDateOption === 'amanha') return tomorrowStr;
+    const cleanCustom = customStartDate ? customStartDate.trim() : '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(cleanCustom) ? cleanCustom : todayStr;
+  }, [startDateOption, todayStr, tomorrowStr, customStartDate]);
+
+  // Limite máximo de 1 ano (365 dias) a partir da data de início
+  const maxOneYearEndDateStr = useMemo(() => {
+    return addDaysToDateStr(resolvedStartDateStr, 365);
+  }, [resolvedStartDateStr]);
+
+  // Garante que customEndDate nunca fique antes de resolvedStartDateStr nem acima de 1 ano
+  useEffect(() => {
+    if (customEndDate < resolvedStartDateStr) {
+      setCustomEndDate(addDaysToDateStr(resolvedStartDateStr, 30));
+    } else if (customEndDate > maxOneYearEndDateStr) {
+      setCustomEndDate(maxOneYearEndDateStr);
+    }
+  }, [resolvedStartDateStr, maxOneYearEndDateStr, customEndDate]);
+
+  // Data de término resolvida
+  const resolvedEndDateStr = useMemo(() => {
+    if (endDateOption === 'vespera' && hasFutureExamDate && examEveDateStr) {
+      return examEveDateStr >= resolvedStartDateStr ? examEveDateStr : resolvedStartDateStr;
+    }
+    if (endDateOption === 'sem_termino') {
+      return maxOneYearEndDateStr;
+    }
+    if (!customEndDate || customEndDate < resolvedStartDateStr) {
+      return addDaysToDateStr(resolvedStartDateStr, 30);
+    }
+    return customEndDate > maxOneYearEndDateStr ? maxOneYearEndDateStr : customEndDate;
+  }, [endDateOption, hasFutureExamDate, examEveDateStr, resolvedStartDateStr, maxOneYearEndDateStr, customEndDate]);
+
+  // Cálculo de dias e semanas do período selecionado
+  const periodMetrics = useMemo(() => {
+    const startObj = PlannerService.parseLocalDate(resolvedStartDateStr);
+    const endObj = PlannerService.parseLocalDate(resolvedEndDateStr);
+    const totalDays = Math.max(1, Math.round((endObj.getTime() - startObj.getTime()) / 86400000) + 1);
+    const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+    const exceedsExamDate = Boolean(
+      hasFutureExamDate &&
+      examDateStr &&
+      endDateOption !== 'vespera' &&
+      resolvedEndDateStr >= examDateStr
+    );
+    return {
+      totalDays,
+      totalWeeks,
+      exceedsExamDate,
+    };
+  }, [resolvedStartDateStr, resolvedEndDateStr, hasFutureExamDate, examDateStr, endDateOption]);
 
   // Manipulação de Seleção de Disciplinas (Passo 1)
   const toggleDisciplina = (discId: string) => {
@@ -214,8 +409,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
     }));
   };
 
-  // Lógica Matemática do Passo 2:
-  // Calcula o percentual fechando em exatos 100.0%
+  // Lógica Matemática do Passo 2: Calcula o percentual fechando em exatos 100.0%
   const calculatedDistribution = useMemo(() => {
     const selected = materiasDoConcursoAtivo.filter(d => selectedDisciplinaIds.includes(d.id));
     if (selected.length === 0) return [];
@@ -262,7 +456,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
     }
 
     return withPercentages;
-  }, [disciplinas, selectedDisciplinaIds, relevancias]);
+  }, [materiasDoConcursoAtivo, selectedDisciplinaIds, relevancias]);
 
   // Manipulação de Horários (Passo 3): Checkboxes e Incremento/Decremento
   const handleToggleDay = (dayId: DayOfWeek) => {
@@ -277,7 +471,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
   const handleIncrementHours = (dayId: DayOfWeek) => {
     setDaysConfig(prev => prev.map(d => {
       if (d.id === dayId) {
-        return { ...d, hours: Math.min(14, d.hours + 1) };
+        return { ...d, hours: Math.min(14, Math.round((d.hours + 0.5) * 10) / 10) };
       }
       return d;
     }));
@@ -286,7 +480,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
   const handleDecrementHours = (dayId: DayOfWeek) => {
     setDaysConfig(prev => prev.map(d => {
       if (d.id === dayId) {
-        return { ...d, hours: Math.max(1, d.hours - 1) };
+        return { ...d, hours: Math.max(0.5, Math.round((d.hours - 0.5) * 10) / 10) };
       }
       return d;
     }));
@@ -314,13 +508,19 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
       setStep(2);
     } else if (step === 2) {
       setStep(3);
+    } else if (step === 3) {
+      if (totalWeeklyHours === 0 || activeDaysCount === 0) {
+        setErrorMessage('Marque pelo menos um dia da semana com horas de estudo.');
+        return;
+      }
+      setStep(4);
     }
   };
 
   const handleBack = () => {
     setErrorMessage(null);
     if (step > 1) {
-      setStep((step - 1) as 1 | 2 | 3);
+      setStep((step - 1) as 1 | 2 | 3 | 4);
     }
   };
 
@@ -336,6 +536,9 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
       if (totalWeeklyHours === 0 || activeDaysCount === 0) {
         throw new Error('Marque pelo menos um dia da semana com horas de estudo.');
       }
+      if (resolvedEndDateStr < resolvedStartDateStr) {
+        throw new Error('A data de término deve ser igual ou posterior à data de início.');
+      }
 
       // 1. Constrói nova disponibilidade semanal em minutos
       const newAvailability: WeeklyAvailability = {
@@ -349,10 +552,10 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
       };
 
       daysConfig.forEach(d => {
-        newAvailability[d.id] = d.enabled ? d.hours * 60 : 0;
+        newAvailability[d.id] = d.enabled ? Math.round(d.hours * 60) : 0;
       });
 
-      const totalWeeklyMinutes = totalWeeklyHours * 60;
+      const totalWeeklyMinutes = Math.round(totalWeeklyHours * 60);
 
       // 2. Constrói a distribuição proporcional baseada nos percentuais fechados em 100%
       const newDistribution: DisciplinaAllocation[] = calculatedDistribution.map(item => {
@@ -373,21 +576,21 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
       });
 
       // 3. Recupera dados complementares para gerar as sessões reais
-      const [revisoes, questoes] = await Promise.all([
+      const [revisoes] = await Promise.all([
         DatabaseService.getRevisoes(),
-        DatabaseService.getQuestoes(),
       ]);
 
       const selectedDisciplinasList = materiasDoConcursoAtivo.filter(d => selectedDisciplinaIds.includes(d.id));
-      const todayStr = PlannerService.formatLocalDate(new Date());
 
-      // 4. Gera as novas sessões do calendário preservando sessões concluídas existentes
-      const preservedCompleted = plan?.sessions ? plan.sessions.filter(s => s.status === 'concluida') : [];
+      // 4. Gera as novas sessões do calendário ao longo de todas as semanas de startDate até endDate
+      const preservedCompleted = plan?.sessions
+        ? plan.sessions.filter(s => s.status === 'concluida' && s.date >= resolvedStartDateStr)
+        : [];
       const generated = PlannerService.generateSessions(
         plan?.id || `plan_${Date.now()}`,
         resolvedActiveConcursoId || plan?.concursoId || 'concurso_default',
-        todayStr,
-        plan?.targetExamDate || '2026-12-31',
+        resolvedStartDateStr,
+        resolvedEndDateStr,
         newAvailability,
         selectedDisciplinasList,
         assuntos,
@@ -397,17 +600,23 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
         { minMinutes: minBlockDuration, maxMinutes: maxBlockDuration }
       );
 
-      const activeMatch = concursos.find(c => c.id === resolvedActiveConcursoId);
-      const resolvedTitle = activeMatch 
-        ? `${activeMatch.organ || activeMatch.orgao || activeMatch.title} - ${activeMatch.role}`
+      const resolvedTitle = activeConcurso 
+        ? `${activeConcurso.organ || activeConcurso.orgao || activeConcurso.title}${activeConcurso.role ? ` - ${activeConcurso.role}` : ''}`
         : plan?.concursoTitle || 'Plano Personalizado';
+
+      const totalPlannedMinutes = generated.sessions.reduce((acc, s) => acc + s.durationMinutes, 0);
 
       // 5. Monta o objeto StudyPlan final completo
       const updatedPlan: StudyPlan = {
         ...plan,
         concursoId: resolvedActiveConcursoId || plan.concursoId,
         concursoTitle: resolvedTitle,
+        startDate: resolvedStartDateStr,
+        targetExamDate: resolvedEndDateStr,
         weeklyAvailability: newAvailability,
+        dailyAverageMinutes: Math.round(totalWeeklyMinutes / 7),
+        totalWeeks: periodMetrics.totalWeeks,
+        totalPlannedHours: Math.round(totalPlannedMinutes / 60),
         disciplinasDistribution: newDistribution,
         sessions: generated.sessions,
         conflicts: generated.conflicts,
@@ -417,7 +626,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
             planId: plan.id,
             action: 'recalculo',
             timestamp: new Date().toISOString(),
-            description: `Cronograma recalculado: ${activeDaysCount} dias ativos, ${totalWeeklyHours}h semanais em ${selectedDisciplinasList.length} disciplinas.`,
+            description: `Cronograma gerado (${formatSummaryPillDate(resolvedStartDateStr)} a ${formatSummaryPillDate(resolvedEndDateStr)}): ${periodMetrics.totalWeeks} semana(s), ${activeDaysCount} dias ativos, ${formatStudyHoursCompact(totalWeeklyHours)}/semana em ${selectedDisciplinasList.length} disciplinas.`,
             preservedCompletedCount: preservedCompleted.length,
             totalStudyMinutes: preservedCompleted.reduce((acc, s) => acc + s.durationMinutes, 0),
           },
@@ -438,39 +647,50 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
     }
   };
 
+  const contestDisplayName = useMemo(() => {
+    if (!activeConcurso) return 'Seu Concurso';
+    return activeConcurso.organ || activeConcurso.orgao || activeConcurso.title || 'Seu Concurso';
+  }, [activeConcurso]);
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Criar Cronograma de Estudos"
-      description="Configure suas disciplinas, importância e dias com horários para sua agenda."
+      description="Configure suas disciplinas, relevância, rotina semanal e o período do seu planejamento."
       maxWidth="xl"
     >
       <div className="space-y-6">
-        {/* Barra de Progresso / Stepper Visual (3 Passos) */}
+        {/* Barra de Progresso / Stepper Visual (4 Passos) */}
         <div className="relative">
           <div className="flex items-center justify-between">
-            {/* Passo 1 */}
+            {/* Etapa 1 */}
             <div className="flex flex-col items-center z-10">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
                   step === 1
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20 ring-4 ring-emerald-500/20'
                     : step > 1
-                    ? 'bg-emerald-500 text-white cursor-pointer'
+                    ? 'bg-emerald-500 text-white'
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
                 }`}
+                style={step >= 1 ? { backgroundColor: primaryColor } : undefined}
               >
                 {step > 1 ? <Check className="w-4 h-4 stroke-[3]" /> : '1'}
               </button>
-              <span className={`text-[11px] font-bold mt-1.5 ${step === 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+              <span
+                className={`text-[11px] font-bold mt-1.5 ${
+                  step === 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+                }`}
+                style={step === 1 ? { color: primaryColor } : undefined}
+              >
                 Disciplinas
               </span>
             </div>
 
-            {/* Passo 2 */}
+            {/* Etapa 2 */}
             <div className="flex flex-col items-center z-10">
               <button
                 type="button"
@@ -482,15 +702,21 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                     ? 'bg-emerald-500 text-white cursor-pointer'
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
                 }`}
+                style={step >= 2 ? { backgroundColor: primaryColor } : undefined}
               >
                 {step > 2 ? <Check className="w-4 h-4 stroke-[3]" /> : '2'}
               </button>
-              <span className={`text-[11px] font-bold mt-1.5 ${step === 2 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
-                Relevância (100%)
+              <span
+                className={`text-[11px] font-bold mt-1.5 ${
+                  step === 2 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+                }`}
+                style={step === 2 ? { color: primaryColor } : undefined}
+              >
+                Relevância
               </span>
             </div>
 
-            {/* Passo 3 */}
+            {/* Etapa 3 */}
             <div className="flex flex-col items-center z-10">
               <button
                 type="button"
@@ -498,13 +724,49 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
                   step === 3
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20 ring-4 ring-emerald-500/20'
+                    : step > 3
+                    ? 'bg-emerald-500 text-white cursor-pointer'
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
                 }`}
+                style={step >= 3 ? { backgroundColor: primaryColor } : undefined}
               >
-                3
+                {step > 3 ? <Check className="w-4 h-4 stroke-[3]" /> : '3'}
               </button>
-              <span className={`text-[11px] font-bold mt-1.5 ${step === 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
-                Horários (DOM a SÁB)
+              <span
+                className={`text-[11px] font-bold mt-1.5 ${
+                  step === 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+                }`}
+                style={step === 3 ? { color: primaryColor } : undefined}
+              >
+                Horários
+              </span>
+            </div>
+
+            {/* Etapa 4 */}
+            <div className="flex flex-col items-center z-10">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedDisciplinaIds.length > 0 && activeDaysCount > 0 && totalWeeklyHours > 0) {
+                    setStep(4);
+                  }
+                }}
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                  step === 4
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20 ring-4 ring-emerald-500/20'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                }`}
+                style={step === 4 ? { backgroundColor: primaryColor } : undefined}
+              >
+                4
+              </button>
+              <span
+                className={`text-[11px] font-bold mt-1.5 ${
+                  step === 4 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+                }`}
+                style={step === 4 ? { color: primaryColor } : undefined}
+              >
+                Período
               </span>
             </div>
           </div>
@@ -512,7 +774,17 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
           <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 dark:bg-slate-800 -z-0">
             <div 
               className="h-full bg-emerald-500 transition-all duration-300"
-              style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }}
+              style={{
+                width:
+                  step === 1
+                    ? '0%'
+                    : step === 2
+                    ? '33.33%'
+                    : step === 3
+                    ? '66.66%'
+                    : '100%',
+                backgroundColor: primaryColor,
+              }}
             />
           </div>
         </div>
@@ -531,7 +803,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-500" />
+                  <BookOpen className="w-4 h-4 text-emerald-500" style={{ color: primaryColor }} />
                   Disciplinas no Cronograma
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -543,6 +815,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                   type="button"
                   onClick={selectAllDisciplinas}
                   className="text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                  style={{ color: primaryColor }}
                 >
                   Selecionar Todas
                 </button>
@@ -627,7 +900,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-emerald-500" />
+                  <Sliders className="w-4 h-4 text-emerald-500" style={{ color: primaryColor }} />
                   Balanceamento de Carga (100%)
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -739,16 +1012,16 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4 text-emerald-500" />
+                  <CalendarDays className="w-4 h-4 text-emerald-500" style={{ color: primaryColor }} />
                   Disponibilidade Diária (DOM a SÁB)
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Marque os dias de estudo e use os botões (+) e (-) para definir as horas diárias.
+                  Marque os dias de estudo e use os botões (+) e (-) para ajustar o tempo de 30 em 30 minutos.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs font-bold font-mono">
                 <Clock className="w-3.5 h-3.5" />
-                <span>{totalWeeklyHours}h / semana</span>
+                <span>{formatStudyHoursCompact(totalWeeklyHours)} / semana</span>
               </div>
             </div>
 
@@ -781,26 +1054,26 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-400">
-                        {day.enabled ? `${day.hours} hora(s) programadas` : 'Dia de descanso / livre'}
+                        {day.enabled ? `${formatStudyHoursLabel(day.hours)} programadas` : 'Dia de descanso / livre'}
                       </span>
                     </div>
                   </label>
 
-                  {/* Seletor Numérico com Botões + e - */}
+                  {/* Seletor Numérico com Botões + e - (de 30 em 30 min) */}
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      disabled={!day.enabled || day.hours <= 1}
+                      disabled={!day.enabled || day.hours <= 0.5}
                       onClick={() => handleDecrementHours(day.id)}
                       className="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
-                      title="Diminuir 1 hora"
-                      aria-label={`Diminuir horas de ${day.name}`}
+                      title="Diminuir 30 minutos"
+                      aria-label={`Diminuir 30 minutos de ${day.name}`}
                     >
                       <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                     </button>
 
-                    <div className="w-16 py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-center font-mono font-black text-xs text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
-                      {day.enabled ? `${day.hours}h` : '0h'}
+                    <div className="min-w-[4.5rem] py-1 px-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-center font-mono font-black text-xs text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+                      {day.enabled ? formatStudyHoursCompact(day.hours) : '0h'}
                     </div>
 
                     <button
@@ -808,8 +1081,8 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                       disabled={!day.enabled || day.hours >= 14}
                       onClick={() => handleIncrementHours(day.id)}
                       className="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
-                      title="Aumentar 1 hora"
-                      aria-label={`Aumentar horas de ${day.name}`}
+                      title="Aumentar 30 minutos"
+                      aria-label={`Aumentar 30 minutos de ${day.name}`}
                     >
                       <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                     </button>
@@ -822,7 +1095,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
             <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
               <div>
                 <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                  <Clock className="w-3.5 h-3.5 text-emerald-500" style={{ color: primaryColor }} />
                   De quanto tempo é cada sessão de estudo?
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -876,11 +1149,355 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                   <Sparkles className="w-4 h-4 text-emerald-500" />
                   Meta Semanal Total:
                 </span>
-                <span className="font-mono text-sm">{totalWeeklyHours} horas ({totalWeeklyHours * 60} min)</span>
+                <span className="font-mono text-sm">{formatStudyHoursLabel(totalWeeklyHours)} ({Math.round(totalWeeklyHours * 60)} min)</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400">
                 Distribuídas em {activeDaysCount} dia(s) na semana. As matérias serão intercaladas automaticamente na grade.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* PASSO 4: Período ("Quando começa e até quando vai?") */}
+        {step === 4 && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
+                Quando começa e até quando vai?
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Defina o período para distribuirmos seus blocos de estudo ao longo das semanas.
+              </p>
+            </div>
+
+            {/* A. TOPO: DATA DE INÍCIO DOS ESTUDOS ("Quando começa?") */}
+            <div className="space-y-2.5">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                Quando começa?
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Card 1: Hoje */}
+                <button
+                  type="button"
+                  onClick={() => setStartDateOption('hoje')}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    startDateOption === 'hoje'
+                      ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-xs ring-1 ring-emerald-500/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                  style={
+                    startDateOption === 'hoje'
+                      ? { borderColor: primaryColor, backgroundColor: `${primaryColor}12` }
+                      : undefined
+                  }
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                      Hoje
+                    </span>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                        startDateOption === 'hoje'
+                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                      style={
+                        startDateOption === 'hoje'
+                          ? { borderColor: primaryColor, backgroundColor: primaryColor }
+                          : undefined
+                      }
+                    >
+                      {startDateOption === 'hoje' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    {formatCardShortDate(todayStr)}
+                  </span>
+                </button>
+
+                {/* Card 2: Amanhã */}
+                <button
+                  type="button"
+                  onClick={() => setStartDateOption('amanha')}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    startDateOption === 'amanha'
+                      ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-xs ring-1 ring-emerald-500/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                  style={
+                    startDateOption === 'amanha'
+                      ? { borderColor: primaryColor, backgroundColor: `${primaryColor}12` }
+                      : undefined
+                  }
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                      Amanhã
+                    </span>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                        startDateOption === 'amanha'
+                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                      style={
+                        startDateOption === 'amanha'
+                          ? { borderColor: primaryColor, backgroundColor: primaryColor }
+                          : undefined
+                      }
+                    >
+                      {startDateOption === 'amanha' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    {formatCardShortDate(tomorrowStr)}
+                  </span>
+                </button>
+
+                {/* Card 3: Outro dia */}
+                <button
+                  type="button"
+                  onClick={() => setStartDateOption('outro')}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    startDateOption === 'outro'
+                      ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-xs ring-1 ring-emerald-500/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                  style={
+                    startDateOption === 'outro'
+                      ? { borderColor: primaryColor, backgroundColor: `${primaryColor}12` }
+                      : undefined
+                  }
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                      Outro dia
+                    </span>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                        startDateOption === 'outro'
+                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          : 'border-slate-300 dark:border-slate-700'
+                      }`}
+                      style={
+                        startDateOption === 'outro'
+                          ? { borderColor: primaryColor, backgroundColor: primaryColor }
+                          : undefined
+                      }
+                    >
+                      {startDateOption === 'outro' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    {startDateOption === 'outro' && customStartDate
+                      ? formatCardShortDate(customStartDate)
+                      : 'Escolher data'}
+                  </span>
+                </button>
+              </div>
+
+              {startDateOption === 'outro' && (
+                <div className="pt-1 animate-in fade-in duration-150">
+                  <div className="relative max-w-xs">
+                    <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="date"
+                      min={todayStr}
+                      max={addDaysToDateStr(todayStr, 365)}
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* B. CORPO: DATA DE TÉRMINO ("Até quando vai o planejamento?") */}
+            <div className="space-y-3 pt-1">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                Até quando vai o planejamento?
+              </label>
+
+              {/* Cenário 1: Banner informativo se o concurso possui data de prova FUTURA */}
+              {hasFutureExamDate && examDateStr && (
+                <div
+                  className="p-3 rounded-2xl border flex items-center gap-2.5 text-xs"
+                  style={{
+                    borderColor: `${primaryColor}35`,
+                    backgroundColor: `${primaryColor}10`,
+                  }}
+                >
+                  <span className="text-base leading-none shrink-0">📅</span>
+                  <span className="text-slate-700 dark:text-slate-200 font-medium">
+                    Encontramos sua prova: <strong className="font-bold text-slate-900 dark:text-white">{contestDisplayName}</strong> em{' '}
+                    <strong className="font-bold text-slate-900 dark:text-white">{formatFullExamDateBanner(examDateStr)}</strong>
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-2.5">
+                {/* Opção 1 (Apenas Cenário 1): Até a véspera da prova [RECOMENDADO] */}
+                {hasFutureExamDate && examEveDateStr && (
+                  <div
+                    onClick={() => setEndDateOption('vespera')}
+                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                      endDateOption === 'vespera'
+                        ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-xs ring-1 ring-emerald-500/30'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                    style={
+                      endDateOption === 'vespera'
+                        ? { borderColor: primaryColor, backgroundColor: `${primaryColor}12` }
+                        : undefined
+                    }
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="endDateOption"
+                        checked={endDateOption === 'vespera'}
+                        onChange={() => setEndDateOption('vespera')}
+                        className="mt-0.5 w-4 h-4 cursor-pointer accent-emerald-600"
+                        style={{ accentColor: primaryColor }}
+                      />
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                            Até a véspera da prova
+                          </span>
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider text-white"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            RECOMENDADO
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Termina um dia antes ({formatCardShortDate(examEveDateStr)}), para você chegar descansado
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Opção Escolher outra data / Escolher uma data */}
+                <div
+                  onClick={() => setEndDateOption('custom')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-3 ${
+                    endDateOption === 'custom'
+                      ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-xs ring-1 ring-emerald-500/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                  style={
+                    endDateOption === 'custom'
+                      ? { borderColor: primaryColor, backgroundColor: `${primaryColor}12` }
+                      : undefined
+                  }
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="endDateOption"
+                      checked={endDateOption === 'custom'}
+                      onChange={() => setEndDateOption('custom')}
+                      className="mt-0.5 w-4 h-4 cursor-pointer accent-emerald-600"
+                      style={{ accentColor: primaryColor }}
+                    />
+                    <div className="space-y-0.5 flex-1">
+                      <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100 block">
+                        {hasFutureExamDate ? 'Escolher outra data' : 'Escolher uma data'}
+                      </span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Por exemplo, para deixar as últimas semanas só para revisão
+                      </p>
+                    </div>
+                  </div>
+
+                  {endDateOption === 'custom' && (
+                    <div
+                      className="pl-7 pt-0.5 animate-in fade-in duration-150"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="relative max-w-xs">
+                        <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="date"
+                          min={resolvedStartDateStr}
+                          max={maxOneYearEndDateStr}
+                          value={customEndDate}
+                          onChange={(e) => setCustomEndDate(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Opção Sem data de término */}
+                <div
+                  onClick={() => setEndDateOption('sem_termino')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 ${
+                    endDateOption === 'sem_termino'
+                      ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-xs ring-1 ring-emerald-500/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                  style={
+                    endDateOption === 'sem_termino'
+                      ? { borderColor: primaryColor, backgroundColor: `${primaryColor}12` }
+                      : undefined
+                  }
+                >
+                  <input
+                    type="radio"
+                    name="endDateOption"
+                    checked={endDateOption === 'sem_termino'}
+                    onChange={() => setEndDateOption('sem_termino')}
+                    className="mt-0.5 w-4 h-4 cursor-pointer accent-emerald-600"
+                    style={{ accentColor: primaryColor }}
+                  />
+                  <div className="space-y-0.5">
+                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100 block">
+                      Sem data de término
+                    </span>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      O planejamento segue até você encerrar
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* C. RESUMO DO PERÍODO & VALIDAÇÕES */}
+            <div className="space-y-2.5 pt-1">
+              {/* Pill de Resumo Dinâmico */}
+              <div
+                className="px-4 py-3 rounded-2xl border text-xs font-bold flex items-center justify-between flex-wrap gap-2"
+                style={{
+                  borderColor: `${primaryColor}35`,
+                  backgroundColor: `${primaryColor}10`,
+                  color: primaryColor,
+                }}
+              >
+                <span>
+                  → De {formatSummaryPillDate(resolvedStartDateStr)} a {formatSummaryPillDate(resolvedEndDateStr)} ·{' '}
+                  {periodMetrics.totalWeeks} {periodMetrics.totalWeeks === 1 ? 'semana de estudo' : 'semanas de estudo'}
+                </span>
+                <span className="text-[11px] font-mono opacity-85">
+                  ({periodMetrics.totalDays} {periodMetrics.totalDays === 1 ? 'dia' : 'dias'})
+                </span>
+              </div>
+
+              {/* Alerta de Data Ultrapassada */}
+              {periodMetrics.exceedsExamDate && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/70 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>
+                    ⚠️ Essa data passa do dia da prova. Recomendamos terminar até a véspera.
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -911,7 +1528,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {step < 3 ? (
+            {step < 4 ? (
               <Button
                 variant="primary"
                 size="sm"
@@ -929,7 +1546,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                 leftIcon={<Check className="w-4 h-4" />}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                Concluir & Gerar Cronograma
+                Criar planejamento
               </Button>
             )}
           </div>

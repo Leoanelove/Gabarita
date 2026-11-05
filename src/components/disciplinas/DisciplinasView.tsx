@@ -1352,7 +1352,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                   <div className="pl-3 sm:pl-4 flex-1 space-y-2 min-w-0">
                     <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
                       <h3 className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2 shrink-0">
-                        <span className="text-[12px]" style={{ fontSize: '12px' }}>{disc.name}</span>
+                        <span className="text-[14px]" style={{ fontSize: '14px' }}>{disc.name}</span>
                       </h3>
 
                       {/* Questões Resolvidas (redimensionado e ao lado do nome) */}
@@ -1485,11 +1485,11 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
 
                 {/* 3. VISÃO EXPANDIDA (Lista de Tópicos pertencentes àquela disciplina) */}
                 {isExpanded && (
-                  <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 sm:p-5 space-y-2.5">
+                  <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 sm:p-5 space-y-2.5">
                     {/* Cabeçalho da grade expandida */}
                     <div className="flex items-center justify-between pb-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800/80 px-2 sm:px-3">
                       <span>Tópicos da Disciplina ({visibleAssuntos.length})</span>
-                      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                      <div className="hidden md:flex items-center gap-2 sm:gap-4 shrink-0">
                         {/* Subdivisão de Métricas de Questões (Estilo Estudei) */}
                         <div className="flex items-center gap-1 sm:gap-2">
                           {/* Coluna 1: Certas */}
@@ -1551,8 +1551,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                         </Button>
                       </div>
                     ) : (
-                      <div className="divide-y divide-slate-200/60 dark:divide-slate-800/60 space-y-1">
-                        {visibleAssuntos.map((assunto) => {
+                      <div className="space-y-3 md:space-y-1 md:divide-y md:divide-slate-200/60 md:dark:divide-slate-800/60">
+                        {visibleAssuntos.map((assunto, idx) => {
                           const isCompleted = assunto.completed || assunto.status === 'dominado' || assunto.status === 'revisado';
                           
                           const certas = Number(assunto.questoesCertas ?? assunto.correctQuestionsSolved ?? 0);
@@ -1563,180 +1563,368 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                           const total = certas + erradas;
                           const taxa = total > 0 ? Math.min(100, Math.round((certas / total) * 100)) : null;
 
+                          const rawDate = assunto.lastStudiedAt || ((isCompleted || total > 0) ? assunto.createdAt : undefined);
+                          let lastStudiedFormatted = '--/--/--';
+                          if (rawDate) {
+                            const parsedDate = new Date(rawDate);
+                            if (!isNaN(parsedDate.getTime())) {
+                              const dd = String(parsedDate.getDate()).padStart(2, '0');
+                              const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                              const yy = String(parsedDate.getFullYear()).slice(-2);
+                              lastStudiedFormatted = `${dd}/${mm}/${yy}`;
+                            }
+                          }
+
+                          const topicIndexNumber = assunto.order || (idx + 1);
+
+                          const handleOpenEditTopic = () => {
+                            setIsAddAssuntoOpen(false);
+                            setEditingAssunto(assunto);
+                            setTargetDisciplinaIdForAssunto(assunto.disciplinaId);
+                            setTopicName(assunto.name);
+                            setTopicImportance(assunto.importance || 'alta');
+                            setTopicDifficulty(assunto.difficulty || 'media');
+                            setTopicStatus(assunto.status || 'nao_iniciado');
+                            setTopicNotes(assunto.notes || '');
+                            setTopicLink(assunto.link || '');
+                            const c = assunto.questoesCertas ?? assunto.correctQuestionsSolved ?? 0;
+                            const t = assunto.questoesTotal ?? assunto.totalQuestionsSolved ?? 0;
+                            const e = assunto.questoesErradas ?? Math.max(0, t - c);
+                            setTopicCorrectQuestions(c);
+                            setTopicWrongQuestions(e);
+                          };
+
                           return (
-                            <div
-                              key={assunto.id}
-                              className={`py-3 px-2 sm:px-3 rounded-xl flex items-center justify-between gap-3 transition-colors ${
-                                isCompleted 
-                                  ? 'bg-emerald-500/5 dark:bg-emerald-950/15' 
-                                  : 'hover:bg-white/80 dark:hover:bg-slate-900/60'
-                              }`}
-                            >
-                              {/* Checkbox (para marcar como concluído) + Nome Limpo do Tópico (sem badge de relevância) */}
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleAssuntoCompletion(assunto)}
-                                  className="shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md transition-transform active:scale-95"
-                                  title={isCompleted ? 'Desmarcar conclusão do tópico' : 'Marcar tópico como concluído'}
-                                >
-                                  {isCompleted ? (
-                                    <div className="w-5 h-5 rounded-md bg-emerald-500 text-white flex items-center justify-center shadow-xs">
-                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <React.Fragment key={assunto.id}>
+                              {/* =========================================================
+                                  MODO MOBILE (< md): Card Empilhado Completo (Estilo Estudei)
+                                  ========================================================= */}
+                              <div
+                                className={`md:hidden rounded-[14px] p-4 space-y-3.5 transition-all shadow-xs ${
+                                  isCompleted
+                                    ? 'edital-mobile-topic-completed bg-emerald-50/90 dark:bg-[#0d4a42] border border-emerald-300 dark:border-emerald-600/50'
+                                    : 'edital-mobile-topic-pending bg-white dark:bg-[#333a4d] border border-slate-200 dark:border-slate-600/50'
+                                }`}
+                              >
+                                {/* Linha Superior: Checkbox + Número + Nome Completo do Tópico + Ações */}
+                                <div className="flex items-start justify-between gap-2.5">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleAssuntoCompletion(assunto)}
+                                      className="shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md transition-transform active:scale-95"
+                                      title={isCompleted ? 'Desmarcar conclusão do tópico' : 'Marcar tópico como concluído'}
+                                    >
+                                      {isCompleted ? (
+                                        <div className="w-6 h-6 rounded-md bg-emerald-400 text-slate-950 flex items-center justify-center shadow-xs">
+                                          <Check className="w-4 h-4 stroke-[3]" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-6 h-6 rounded-md border-2 border-emerald-400/80 dark:border-emerald-400/80 bg-transparent transition-colors" />
+                                      )}
+                                    </button>
+
+                                    <span className="text-base font-bold text-slate-700 dark:text-slate-200 shrink-0">
+                                      {topicIndexNumber}
+                                    </span>
+
+                                    <div className="min-w-0 flex-1">
+                                      <span className="text-[15px] font-bold leading-snug text-slate-900 dark:text-white break-words block">
+                                        {assunto.name}
+                                      </span>
                                     </div>
-                                  ) : (
-                                    <div className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-600 hover:border-emerald-500 dark:hover:border-emerald-400 bg-white dark:bg-slate-900 transition-colors" />
-                                  )}
-                                </button>
+                                  </div>
 
-                                <div className="min-w-0 flex-1">
-                                  <span 
-                                    className={`text-sm font-semibold truncate block transition-colors ${
-                                      isCompleted 
-                                        ? 'text-slate-600 dark:text-slate-400 line-through decoration-emerald-500/60' 
-                                        : 'text-slate-900 dark:text-slate-100'
-                                    }`}
-                                    title={assunto.name}
-                                  >
-                                    {assunto.name}
-                                  </span>
+                                  {/* Botões de Ação do Tópico (Editar / Excluir) */}
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={handleOpenEditTopic}
+                                      className="p-1.5 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                      title="Editar Tópico"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteTopico(disc.id, assunto.id);
+                                      }}
+                                      className="p-1.5 rounded-lg text-slate-500 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                      title="Excluir Tópico"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
 
-                              {/* Colunas à direita: Subdivisão de Questões, Link e Ações */}
-                              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                                {/* Visualização das 4 Colunas Métricas de Questões */}
-                                <div className="flex items-center gap-1.5 sm:gap-2.5 p-1 -m-1 rounded-lg select-none">
-                                  {/* Coluna 1 (Certas): Classes fixas verde emerald nativas do Tailwind */}
-                                  <div className="w-10 sm:w-14 text-center">
-                                    <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold text-center bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 metric-certas">
-                                      {certas}
-                                    </span>
+                                {/* Linha Intermediária: Total de Questões + Certas, Erradas e % Acerto */}
+                                <div className="space-y-1.5">
+                                  <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-200">
+                                    TOTAL DE QUESTÕES: <strong className="font-bold text-slate-900 dark:text-white">{total}</strong>
                                   </div>
 
-                                  {/* Coluna 2 (Erradas): Classes fixas vermelho rose nativas do Tailwind */}
-                                  <div className="w-10 sm:w-14 text-center">
-                                    <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold text-center bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 metric-erradas">
-                                      {erradas}
+                                  <div className="flex items-center gap-3.5 flex-wrap">
+                                    {/* Certas */}
+                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                                      <span>{certas}</span>
                                     </span>
-                                  </div>
 
-                                  {/* Coluna 3 (Total): Classes fixas neutro slate nativas do Tailwind */}
-                                  <div className="w-10 sm:w-14 text-center">
-                                    <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold text-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 metric-total">
-                                      {total}
+                                    {/* Erradas */}
+                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400">
+                                      <X className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400 stroke-[2.5] shrink-0" />
+                                      <span>{erradas}</span>
                                     </span>
-                                  </div>
 
-                                  {/* Coluna 4 (% de Acerto): Renderização condicional estrita baseada na taxa real */}
-                                  <div className="w-16 sm:w-20 flex justify-center">
+                                    {/* Badge % Acerto */}
                                     {taxa === null ? (
-                                      <span className="px-2 py-1 rounded-lg text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 metric-acerto-sem-dados">
-                                        -
+                                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold text-slate-500 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-700/80 border border-slate-300 dark:border-slate-600 metric-acerto-sem-dados">
+                                        0%
                                       </span>
                                     ) : taxa <= 50 ? (
-                                      <span className="px-2 py-1 rounded-lg text-xs font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 metric-acerto-alerta">
+                                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 metric-acerto-alerta">
                                         {taxa}%
                                       </span>
                                     ) : taxa >= 51 && taxa <= 75 ? (
-                                      <span className="px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 metric-acerto-medio">
+                                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 metric-acerto-medio">
                                         {taxa}%
                                       </span>
                                     ) : taxa >= 76 && taxa <= 90 ? (
-                                      <span className="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 metric-acerto-bom">
+                                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 metric-acerto-bom">
                                         {taxa}%
                                       </span>
                                     ) : (
-                                      <span className="px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border border-emerald-400 dark:border-emerald-600 metric-acerto-excelente">
-                                        <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+                                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold inline-flex items-center justify-center gap-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border border-emerald-400 dark:border-emerald-600 metric-acerto-excelente">
+                                        <Crown className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
                                         <span>{taxa}%</span>
                                       </span>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Coluna 'Link' (Atalho para Banco de Questões) */}
-                                <div className="w-20 sm:w-24 text-center flex justify-center items-center">
-                                  {assunto.link && assunto.link.trim() ? (
-                                    <div className="flex items-center justify-center gap-1 group">
-                                      <a
-                                        href={assunto.link.startsWith('http://') || assunto.link.startsWith('https://') ? assunto.link : `https://${assunto.link}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
-                                        title={`Abrir link de questões: ${assunto.link}`}
-                                      >
-                                        <span>Visualizar</span>
-                                        <ExternalLink className="w-3 h-3 text-blue-500 shrink-0" />
-                                      </a>
+                                {/* Linha Inferior: Botão LINKS à esquerda e ÚLTIMO ESTUDO à direita */}
+                                <div className="flex items-center justify-between gap-2 pt-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    {assunto.link && assunto.link.trim() ? (
+                                      <>
+                                        <a
+                                          href={assunto.link.startsWith('http://') || assunto.link.startsWith('https://') ? assunto.link : `https://${assunto.link}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-300/90 dark:border-slate-500/70 bg-slate-100/90 dark:bg-slate-800/75 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors cursor-pointer"
+                                          title={`Abrir link de questões: ${assunto.link}`}
+                                        >
+                                          <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                            LINKS
+                                          </span>
+                                          <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-400 text-slate-950 leading-none">
+                                            1
+                                          </span>
+                                        </a>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenLinkModal(assunto);
+                                          }}
+                                          className="p-1.5 rounded-lg border border-slate-300/80 dark:border-slate-500/60 bg-slate-100/80 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                          title="Editar link de questões"
+                                        >
+                                          <Edit2 className="w-3 h-3" />
+                                        </button>
+                                      </>
+                                    ) : (
                                       <button
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleOpenLinkModal(assunto);
                                         }}
-                                        className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
-                                        title="Editar link de questões"
+                                        className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-300/90 dark:border-slate-500/70 bg-slate-100/90 dark:bg-slate-800/75 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors cursor-pointer"
+                                        title="Adicionar link para este assunto"
                                       >
-                                        <Edit2 className="w-2.5 h-2.5" />
+                                        <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                          LINKS
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-400 text-slate-950 leading-none">
+                                          0
+                                        </span>
                                       </button>
+                                    )}
+                                  </div>
+
+                                  <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-200 text-right shrink-0">
+                                    ÚLTIMO ESTUDO: <strong className="font-bold text-slate-900 dark:text-white">{lastStudiedFormatted}</strong>
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* =========================================================
+                                  MODO PC / DESKTOP (md:flex): Apresentação Original Intacta
+                                  ========================================================= */}
+                              <div
+                                className={`py-3 px-2 sm:px-3 rounded-xl hidden md:flex items-center justify-between gap-3 transition-colors ${
+                                  isCompleted 
+                                    ? 'bg-emerald-500/5 dark:bg-emerald-950/15' 
+                                    : 'hover:bg-white/80 dark:hover:bg-slate-900/60'
+                                }`}
+                              >
+                                {/* Checkbox (para marcar como concluído) + Nome Limpo do Tópico (sem badge de relevância) */}
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleAssuntoCompletion(assunto)}
+                                    className="shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md transition-transform active:scale-95"
+                                    title={isCompleted ? 'Desmarcar conclusão do tópico' : 'Marcar tópico como concluído'}
+                                  >
+                                    {isCompleted ? (
+                                      <div className="w-5 h-5 rounded-md bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-600 hover:border-emerald-500 dark:hover:border-emerald-400 bg-white dark:bg-slate-900 transition-colors" />
+                                    )}
+                                  </button>
+
+                                  <div className="min-w-0 flex-1">
+                                    <span 
+                                      className={`text-sm font-semibold truncate block transition-colors ${
+                                        isCompleted 
+                                          ? 'text-slate-600 dark:text-slate-400 line-through decoration-emerald-500/60' 
+                                          : 'text-slate-900 dark:text-slate-100'
+                                      }`}
+                                      title={assunto.name}
+                                    >
+                                      {assunto.name}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Colunas à direita: Subdivisão de Questões, Link e Ações */}
+                                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                                  {/* Visualização das 4 Colunas Métricas de Questões */}
+                                  <div className="flex items-center gap-1.5 sm:gap-2.5 p-1 -m-1 rounded-lg select-none">
+                                    {/* Coluna 1 (Certas): Classes fixas verde emerald nativas do Tailwind */}
+                                    <div className="w-10 sm:w-14 text-center">
+                                      <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold text-center bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 metric-certas">
+                                        {certas}
+                                      </span>
                                     </div>
-                                  ) : (
+
+                                    {/* Coluna 2 (Erradas): Classes fixas vermelho rose nativas do Tailwind */}
+                                    <div className="w-10 sm:w-14 text-center">
+                                      <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold text-center bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 metric-erradas">
+                                        {erradas}
+                                      </span>
+                                    </div>
+
+                                    {/* Coluna 3 (Total): Classes fixas neutro slate nativas do Tailwind */}
+                                    <div className="w-10 sm:w-14 text-center">
+                                      <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold text-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 metric-total">
+                                        {total}
+                                      </span>
+                                    </div>
+
+                                    {/* Coluna 4 (% de Acerto): Renderização condicional estrita baseada na taxa real */}
+                                    <div className="w-16 sm:w-20 flex justify-center">
+                                      {taxa === null ? (
+                                        <span className="px-2 py-1 rounded-lg text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 metric-acerto-sem-dados">
+                                          -
+                                        </span>
+                                      ) : taxa <= 50 ? (
+                                        <span className="px-2 py-1 rounded-lg text-xs font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 metric-acerto-alerta">
+                                          {taxa}%
+                                        </span>
+                                      ) : taxa >= 51 && taxa <= 75 ? (
+                                        <span className="px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 metric-acerto-medio">
+                                          {taxa}%
+                                        </span>
+                                      ) : taxa >= 76 && taxa <= 90 ? (
+                                        <span className="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 metric-acerto-bom">
+                                          {taxa}%
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border border-emerald-400 dark:border-emerald-600 metric-acerto-excelente">
+                                          <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+                                          <span>{taxa}%</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Coluna 'Link' (Atalho para Banco de Questões) */}
+                                  <div className="w-20 sm:w-24 text-center flex justify-center items-center">
+                                    {assunto.link && assunto.link.trim() ? (
+                                      <div className="flex items-center justify-center gap-1 group">
+                                        <a
+                                          href={assunto.link.startsWith('http://') || assunto.link.startsWith('https://') ? assunto.link : `https://${assunto.link}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
+                                          title={`Abrir link de questões: ${assunto.link}`}
+                                        >
+                                          <span>Visualizar</span>
+                                          <ExternalLink className="w-3 h-3 text-blue-500 shrink-0" />
+                                        </a>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenLinkModal(assunto);
+                                          }}
+                                          className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
+                                          title="Editar link de questões"
+                                        >
+                                          <Edit2 className="w-2.5 h-2.5" />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenLinkModal(assunto);
+                                        }}
+                                        className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/80 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                                        title="Adicionar link para este assunto"
+                                      >
+                                        <Plus className="w-3 h-3 text-slate-400" />
+                                        <span className="hidden sm:inline">Adicionar</span>
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* Ações do Tópico: Editar e excluir centralizados na coluna Ações */}
+                                  <div className="w-16 flex items-center justify-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={handleOpenEditTopic}
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                      title="Editar Tópico"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleOpenLinkModal(assunto);
+                                        handleDeleteTopico(disc.id, assunto.id);
                                       }}
-                                      className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/80 px-2 py-1 rounded-md transition-colors cursor-pointer"
-                                      title="Adicionar link para este assunto"
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                      title="Excluir Tópico"
                                     >
-                                      <Plus className="w-3 h-3 text-slate-400" />
-                                      <span className="hidden sm:inline">Adicionar</span>
+                                      <Trash2 className="w-3.5 h-3.5" />
                                     </button>
-                                  )}
-                                </div>
-
-                                {/* Ações do Tópico: Editar e excluir centralizados na coluna Ações */}
-                                <div className="w-16 flex items-center justify-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setIsAddAssuntoOpen(false);
-                                      setEditingAssunto(assunto);
-                                      setTargetDisciplinaIdForAssunto(assunto.disciplinaId);
-                                      setTopicName(assunto.name);
-                                      setTopicImportance(assunto.importance || 'alta');
-                                      setTopicDifficulty(assunto.difficulty || 'media');
-                                      setTopicStatus(assunto.status || 'nao_iniciado');
-                                      setTopicNotes(assunto.notes || '');
-                                      setTopicLink(assunto.link || '');
-                                      const c = assunto.questoesCertas ?? assunto.correctQuestionsSolved ?? 0;
-                                      const t = assunto.questoesTotal ?? assunto.totalQuestionsSolved ?? 0;
-                                      const e = assunto.questoesErradas ?? Math.max(0, t - c);
-                                      setTopicCorrectQuestions(c);
-                                      setTopicWrongQuestions(e);
-                                    }}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                    title="Editar Tópico"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteTopico(disc.id, assunto.id);
-                                    }}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                                    title="Excluir Tópico"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            </React.Fragment>
                           );
                         })}
                       </div>

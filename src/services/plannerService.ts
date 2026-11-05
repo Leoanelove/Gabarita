@@ -199,8 +199,12 @@ export class PlannerService {
     const startDate = this.parseLocalDate(startDateStr);
     const examDate = this.parseLocalDate(targetExamDateStr);
 
-    const totalDays = Math.max(7, Math.ceil((examDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-    const finalSessions: PlannedSession[] = [...preservedSessions.filter(s => s.status === 'concluida')];
+    // Inclui tanto a data inicial quanto a data final do período (limitado a 366 dias / 1 ano)
+    const rawDiffDays = Math.round((examDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const totalDays = Math.max(1, Math.min(rawDiffDays, 366));
+    const finalSessions: PlannedSession[] = [
+      ...preservedSessions.filter(s => s.status === 'concluida' && s.date >= startDateStr && s.date <= targetExamDateStr)
+    ];
 
     const pendingReviews = revisoes.filter(r => r.status === 'pendente');
     let reviewIdx = 0;
@@ -233,16 +237,21 @@ export class PlannerService {
       topicIndices[d.disciplinaId] = 0;
     });
 
-    const planningHorizonDays = Math.min(totalDays, 42);
+    const planningHorizonDays = totalDays;
 
     for (let dayOffset = 0; dayOffset < planningHorizonDays; dayOffset++) {
       if (dayOffset > 0 && dayOffset % 7 === 0) {
         balances = initBalances();
       }
 
-      const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate() + dayOffset);
+      const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + dayOffset);
       const currentDateStr = this.formatLocalDate(currentDate);
+
+      // NUNCA gerar sessão para dias anteriores ao startDate escolhido pelo usuário ou após a data final
+      if (currentDateStr < startDateStr || currentDateStr > targetExamDateStr) {
+        continue;
+      }
+
       const dayOfWeek = this.getDayOfWeekFromDate(currentDate);
       const dailyMinutes = availability[dayOfWeek] || 0;
       if (dailyMinutes <= 0) continue;
@@ -426,8 +435,11 @@ export class PlannerService {
       });
     }
 
-    const conflicts = this.detectConflicts(finalSessions, availability, targetExamDateStr, assuntos);
-    return { sessions: finalSessions, conflicts };
+    const validSessions = finalSessions.filter(
+      s => s.date >= startDateStr && s.date <= targetExamDateStr
+    );
+    const conflicts = this.detectConflicts(validSessions, availability, targetExamDateStr, assuntos);
+    return { sessions: validSessions, conflicts };
   }
 
   private static interleaveSubjects(items: DisciplinaAllocation[]): DisciplinaAllocation[] {
@@ -532,23 +544,32 @@ export class PlannerService {
   ): StudyPlan {
     const now = new Date();
     const todayStr = this.formatLocalDate(now);
+    const effectiveStartDate =
+      currentPlan.startDate && currentPlan.startDate > todayStr
+        ? currentPlan.startDate
+        : todayStr;
     const targetExamDate = newExamDate || currentPlan.targetExamDate;
     const availability = customAvailability || currentPlan.weeklyAvailability;
     const weeklyTotalMinutes = Object.values(availability).reduce((a, b) => a + b, 0);
     const dailyAverageMinutes = Math.round(weeklyTotalMinutes / 7);
 
-    const preservedCompletedSessions = currentPlan.sessions.filter(s => s.status === 'concluida');
-    const newDistribution = this.calculateDistribution(
-      disciplinas,
-      assuntos,
-      questoes,
-      weeklyTotalMinutes
+    const preservedCompletedSessions = currentPlan.sessions.filter(
+      s => s.status === 'concluida' && s.date >= effectiveStartDate
     );
+    const newDistribution =
+      currentPlan.disciplinasDistribution && currentPlan.disciplinasDistribution.length > 0
+        ? currentPlan.disciplinasDistribution
+        : this.calculateDistribution(
+            disciplinas,
+            assuntos,
+            questoes,
+            weeklyTotalMinutes
+          );
 
     const { sessions: newFutureSessions, conflicts } = this.generateSessions(
       currentPlan.id,
       currentPlan.concursoId,
-      todayStr,
+      effectiveStartDate,
       targetExamDate,
       availability,
       disciplinas,
@@ -568,12 +589,14 @@ export class PlannerService {
       totalStudyMinutes: preservedCompletedSessions.reduce((acc, s) => acc + s.durationMinutes, 0),
     };
 
+    const startObj = this.parseLocalDate(effectiveStartDate);
     const examDate = this.parseLocalDate(targetExamDate);
-    const totalDays = Math.max(7, Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-    const totalWeeks = Math.ceil(totalDays / 7);
+    const totalDays = Math.max(1, Math.round((examDate.getTime() - startObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
 
     return {
       ...currentPlan,
+      startDate: effectiveStartDate,
       targetExamDate,
       weeklyAvailability: availability,
       dailyAverageMinutes,

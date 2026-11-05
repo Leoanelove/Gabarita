@@ -46,7 +46,6 @@ import { StudySessionModal } from './components/estudos/StudySessionModal';
 import { StudyTimerProvider, useStudyTimer } from './contexts/StudyTimerContext';
 import { Loader2 } from 'lucide-react';
 import { DashboardView } from './components/dashboard/DashboardView';
-import { SessaoEstudoView } from './components/estudos/SessaoEstudoView';
 import { ConcursosView } from './components/concursos/ConcursosView';
 import { PlanoView } from './components/plano/PlanoView';
 import { DisciplinasView } from './components/disciplinas/DisciplinasView';
@@ -92,6 +91,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     timerInitialAssuntoId,
     timerInitialDurationMinutes,
     timerInitialMode,
+    timerContabilizarPlanejamento,
     openStudyTimer,
     openStudyRegister,
     closeStudyTimer,
@@ -246,11 +246,23 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     return <AuthPage />;
   }
 
-  const handleOpenStudyTimer = (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual') => {
-    openStudyTimer(disciplinaId, assuntoId, durationMinutes, mode);
+  const handleOpenStudyTimer = (
+    disciplinaId?: string,
+    assuntoId?: string,
+    durationMinutes?: number | string,
+    mode?: 'cronometro' | 'manual',
+    contabilizarPlanejamento: boolean = true
+  ) => {
+    openStudyTimer(disciplinaId, assuntoId, durationMinutes, mode, contabilizarPlanejamento);
   };
 
-  const handleOpenStudyRegister = (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string }) => {
+  const handleOpenStudyRegister = (options?: {
+    modo?: 'cronometro' | 'manual';
+    disciplinaId?: string;
+    assuntoId?: string;
+    durationMinutes?: number | string;
+    contabilizarPlanejamento?: boolean;
+  }) => {
     openStudyRegister(options);
   };
 
@@ -723,8 +735,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     setRevisoes(prev => prev.map(r => r.id === id ? updated : r));
   };
 
-  const handleDeleteRevisao = async (id: string) => {
-    const updated = await DatabaseService.deleteRevisao(id);
+  const handleDeleteRevisao = async (idOrIds: string | string[]) => {
+    const updated = await DatabaseService.deleteRevisao(idOrIds);
     setRevisoes(updated);
   };
 
@@ -783,6 +795,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     notes?: string;
     teoriaFinalizada?: boolean;
     programarRevisoes?: boolean;
+    revisaoDays?: number[];
     contabilizarPlanejamento?: boolean;
     pageIntervals?: any[];
     videoaulas?: any[];
@@ -795,19 +808,17 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     });
     setSessoes(prev => [recorded, ...prev]);
 
-    const shouldScheduleRevision =
-      session.programarRevisoes !== undefined
-        ? session.programarRevisoes
-        : (revisionSettings?.autoScheduleOnStudy ?? true);
+    const shouldScheduleRevision = Boolean(session.programarRevisoes);
 
-    if (session.assuntoId && shouldScheduleRevision) {
-      const top = assuntos.find(a => a.id === session.assuntoId);
+    if (session.disciplinaId && shouldScheduleRevision) {
+      const top = session.assuntoId ? assuntos.find(a => a.id === session.assuntoId) : undefined;
       const updatedRevisoes = await DatabaseService.gerarCicloCompletoRevisao(
         user.id, 
         session.disciplinaId, 
         session.assuntoId, 
-        top?.name || session.assuntoName,
-        recorded
+        top?.name || session.assuntoName || 'Estudo Geral',
+        recorded,
+        session.revisaoDays
       );
       setRevisoes(updatedRevisoes);
     }
@@ -832,15 +843,19 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     const updatedItem = await DatabaseService.updateStudySession(sessionId, partial);
     setSessoes(prev => prev.map(s => (s.id === sessionId ? updatedItem : s)));
 
-    if (partial.programarRevisoes && updatedItem.assuntoId) {
-      const top = assuntos.find(a => a.id === updatedItem.assuntoId);
+    if (partial.programarRevisoes && updatedItem.disciplinaId) {
+      const top = updatedItem.assuntoId ? assuntos.find(a => a.id === updatedItem.assuntoId) : undefined;
       const updatedRevisoes = await DatabaseService.gerarCicloCompletoRevisao(
         user.id,
         updatedItem.disciplinaId,
         updatedItem.assuntoId,
-        top?.name || updatedItem.assuntoName,
-        updatedItem
+        top?.name || updatedItem.assuntoName || 'Estudo Geral',
+        updatedItem,
+        partial.revisaoDays || updatedItem.revisaoDays
       );
+      setRevisoes(updatedRevisoes);
+    } else if (partial.programarRevisoes === false) {
+      const updatedRevisoes = await DatabaseService.removerCicloRevisaoDaSessao(updatedItem);
       setRevisoes(updatedRevisoes);
     }
 
@@ -1044,7 +1059,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         <Navbar
           currentTab={currentTab}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-          onOpenStudyTimer={() => setCurrentTab('sessao')}
+          onOpenStudyTimer={() => setCurrentTab('plano')}
           onNavigateTab={setCurrentTab}
         />
 
@@ -1073,24 +1088,6 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
                 onRetry={loadData}
               />
             )}
-
-          {currentTab === 'sessao' && (
-            <SessaoEstudoView
-              user={user}
-              disciplinas={disciplinas}
-              assuntos={assuntos}
-              sessoes={sessoes}
-              plan={plan}
-              cycle={cycle}
-              initialDisciplinaId={timerInitialDisciplinaId}
-              initialAssuntoId={timerInitialAssuntoId}
-              onSaveSession={handleSaveStudySession}
-              onDeleteSession={handleDeleteStudySession}
-              onAdvanceCycle={handleAdvanceCycle}
-              onTogglePlanSession={(id) => handleTogglePlanSessionStatus(id, 'concluida')}
-              onOpenStudyTimer={handleOpenStudyTimer}
-            />
-          )}
 
           {currentTab === 'concursos' && (
             <ConcursosView
@@ -1123,7 +1120,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             />
           )}
 
-          {(currentTab === 'plano' || currentTab === 'ciclo' || currentTab === 'cronograma') && (
+          {(currentTab === 'plano' || currentTab === 'sessao' || currentTab === 'ciclo' || currentTab === 'cronograma') && (
             <PlanoView
               plan={plan}
               cycle={cycle}
@@ -1456,8 +1453,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         initialAssuntoId={timerInitialAssuntoId}
         initialDurationMinutes={timerInitialDurationMinutes}
         initialMode={timerInitialMode}
+        contabilizarPlanejamento={timerContabilizarPlanejamento}
         onSaveSession={handleSaveStudySession}
-        onAdvanceCycle={handleAdvanceCycle}
+        onAdvanceCycle={timerContabilizarPlanejamento === false ? undefined : handleAdvanceCycle}
       />
     </div>
   );

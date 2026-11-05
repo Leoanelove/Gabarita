@@ -25,7 +25,10 @@ import {
   Zap,
   RotateCcw,
   Edit3,
-  EyeOff
+  EyeOff,
+  PlusCircle,
+  History,
+  HelpCircle
 } from 'lucide-react';
 import { 
   Concurso, 
@@ -70,8 +73,8 @@ interface DashboardViewProps {
   isLoading?: boolean;
   errorMessage?: string | null;
   onNavigateTab: (tab: NavigationTab) => void;
-  onOpenStudyTimer: (preSelectedDisciplinaId?: string, preSelectedAssuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual') => void;
-  onOpenStudyRegister?: (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string }) => void;
+  onOpenStudyTimer: (preSelectedDisciplinaId?: string, preSelectedAssuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual', contabilizarPlanejamento?: boolean) => void;
+  onOpenStudyRegister?: (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string; contabilizarPlanejamento?: boolean }) => void;
   onCompleteRevisao: (
     id: string, 
     rating: RevisionRating,
@@ -210,18 +213,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [registerElapsedSeconds, setRegisterElapsedSeconds] = useState(0);
   const [registerModo, setRegisterModo] = useState<'cronometro' | 'manual'>('cronometro');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [studyOptionsMenuId, setStudyOptionsMenuId] = useState<string | null>(null);
+  const [historyModalDisciplina, setHistoryModalDisciplina] = useState<{
+    id: string;
+    name: string;
+    assuntoId?: string;
+    durationMinutes?: number;
+  } | null>(null);
 
-  // Fechar menu de 3 pontinhos das revisões ao clicar fora
+  // Fechar menus de 3 pontinhos (revisões e fila de estudos) ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (openMenuId && !target.closest('.menu-options-container')) {
         setOpenMenuId(null);
       }
+      if (studyOptionsMenuId && !target.closest('.study-options-menu-container')) {
+        setStudyOptionsMenuId(null);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openMenuId]);
+  }, [openMenuId, studyOptionsMenuId]);
+
+  const triggerManualStudyRegister = (item: {
+    disciplinaId: string;
+    assuntoId?: string;
+    durationMinutes?: number;
+  }) => {
+    setStudyOptionsMenuId(null);
+    if (onOpenStudyRegister) {
+      onOpenStudyRegister({
+        modo: 'manual',
+        disciplinaId: item.disciplinaId,
+        assuntoId: item.assuntoId,
+        durationMinutes: item.durationMinutes,
+      });
+    } else {
+      onOpenStudyTimer(
+        item.disciplinaId,
+        item.assuntoId,
+        item.durationMinutes,
+        'manual'
+      );
+    }
+  };
 
   // PASSO 1: Iniciar revisão -> abre o Cronômetro de Foco contextualizado
   const handleStartRevision = (rev: Revisao) => {
@@ -1007,9 +1043,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   size="md"
                   onClick={() => {
                     if (onOpenStudyRegister) {
-                      onOpenStudyRegister({ modo: 'manual' });
+                      onOpenStudyRegister({ modo: 'manual', contabilizarPlanejamento: false });
                     } else {
-                      onOpenStudyTimer(undefined, undefined, undefined, 'manual');
+                      onOpenStudyTimer(undefined, undefined, undefined, 'manual', false);
                     }
                   }}
                   leftIcon={<Play className="w-4 h-4 fill-current" />}
@@ -1262,7 +1298,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           const ringStrokeDashoffset = ringCircumference - (cycleProgressPercent / 100) * ringCircumference;
 
           return (
-            <Card className="h-full min-h-[440px] sm:min-h-[480px] rounded-2xl flex flex-col overflow-hidden border border-slate-200/90 dark:border-slate-800 shadow-sm">
+            <Card className="h-full min-h-[440px] sm:min-h-[480px] rounded-2xl flex flex-col overflow-visible border border-slate-200/90 dark:border-slate-800 shadow-sm">
               <CardBody className="p-6 sm:p-7 space-y-6 flex-1 flex flex-col justify-between">
                 {/* Cabeçalho: PLANEJAMENTO DO DIA | Data | Progresso do Ciclo */}
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1320,7 +1356,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                 {/* Card Principal Destacado: PRÓXIMO ESTUDO */}
                 <div
-                  className="relative rounded-2xl p-6 sm:p-7 text-white shadow-md overflow-hidden transition-all"
+                  className="relative rounded-2xl p-6 sm:p-7 text-white shadow-md overflow-visible transition-all"
                   style={{
                     background: `linear-gradient(135deg, ${palette.primary} 0%, ${palette.secondary || palette.primary} 100%)`,
                   }}
@@ -1392,29 +1428,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <span>Iniciar Estudo</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenStudyRegister
-                            ? onOpenStudyRegister({
-                                modo: 'manual',
-                                disciplinaId: primaryStudyItem.disciplinaId,
-                                assuntoId: primaryStudyItem.assuntoId,
-                                durationMinutes: primaryStudyItem.durationMinutes,
-                              })
-                            : onOpenStudyTimer(
-                                primaryStudyItem.disciplinaId,
-                                primaryStudyItem.assuntoId,
-                                primaryStudyItem.durationMinutes,
-                                'manual'
-                              )
-                        }
-                        className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white flex items-center justify-center transition-colors cursor-pointer"
-                        title="Registrar estudo manualmente para esta disciplina"
-                        aria-label="Opções do estudo"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                      <div className="relative study-options-menu-container">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const menuKey = `primary_${primaryStudyItem.id}`;
+                            setStudyOptionsMenuId(prev => (prev === menuKey ? null : menuKey));
+                          }}
+                          className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white flex items-center justify-center transition-colors cursor-pointer"
+                          title="Opções para esta disciplina"
+                          aria-label="Opções do estudo"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {studyOptionsMenuId === `primary_${primaryStudyItem.id}` && (
+                          <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-40 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerManualStudyRegister({
+                                  disciplinaId: primaryStudyItem.disciplinaId,
+                                  assuntoId: primaryStudyItem.assuntoId,
+                                  durationMinutes: primaryStudyItem.durationMinutes,
+                                })
+                              }
+                              className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                            >
+                              <PlusCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                              <span>Registrar manualmente</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setStudyOptionsMenuId(null);
+                                setHistoryModalDisciplina({
+                                  id: primaryStudyItem.disciplinaId,
+                                  name: primaryStudyItem.disciplinaName,
+                                  assuntoId: primaryStudyItem.assuntoId,
+                                  durationMinutes: primaryStudyItem.durationMinutes,
+                                });
+                              }}
+                              className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                            >
+                              <History className="w-4 h-4 text-slate-400 shrink-0" />
+                              <span>Ver últimos estudos</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1487,21 +1549,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                 <span>{item.durationMinutes}min</span>
                               </span>
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  onOpenStudyTimer(
-                                    item.disciplinaId,
-                                    item.assuntoId,
-                                    item.durationMinutes
-                                  )
-                                }
-                                className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
-                                title={`Estudar ${item.disciplinaName}`}
-                                aria-label={`Opções para ${item.disciplinaName}`}
-                              >
-                                <MoreVertical className="w-4 h-4" />
-                              </button>
+                              <div className="relative study-options-menu-container">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const menuKey = `upcoming_${item.id}`;
+                                    setStudyOptionsMenuId(prev => (prev === menuKey ? null : menuKey));
+                                  }}
+                                  className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
+                                  title={`Opções para ${item.disciplinaName}`}
+                                  aria-label={`Opções para ${item.disciplinaName}`}
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+
+                                {studyOptionsMenuId === `upcoming_${item.id}` && (
+                                  <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-40 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        triggerManualStudyRegister({
+                                          disciplinaId: item.disciplinaId,
+                                          assuntoId: item.assuntoId,
+                                          durationMinutes: item.durationMinutes,
+                                        })
+                                      }
+                                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                                    >
+                                      <PlusCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                                      <span>Registrar manualmente</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setStudyOptionsMenuId(null);
+                                        setHistoryModalDisciplina({
+                                          id: item.disciplinaId,
+                                          name: item.disciplinaName,
+                                          assuntoId: item.assuntoId,
+                                          durationMinutes: item.durationMinutes,
+                                        });
+                                      }}
+                                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                                    >
+                                      <History className="w-4 h-4 text-slate-400 shrink-0" />
+                                      <span>Ver últimos estudos</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -2369,6 +2465,246 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 >
                   Concluir
                 </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* =========================================================================
+          MODAL: "ÚLTIMOS ESTUDOS" DA DISCIPLINA SELECIONADA
+          ========================================================================= */}
+      {historyModalDisciplina && (() => {
+        const recentSessions = sessoes
+          .filter(s => s && s.disciplinaId === historyModalDisciplina.id)
+          .sort((a, b) => {
+            const tA = new Date(a.completedAt || a.createdAt).getTime();
+            const tB = new Date(b.completedAt || b.createdAt).getTime();
+            return tB - tA;
+          })
+          .slice(0, 5);
+
+        const formatShortDate = (isoStr?: string) => {
+          if (!isoStr) return '--/--/--';
+          try {
+            const d = new Date(isoStr);
+            if (isNaN(d.getTime())) return '--/--/--';
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = String(d.getFullYear()).slice(-2);
+            return `${day}/${month}/${year}`;
+          } catch {
+            return '--/--/--';
+          }
+        };
+
+        const formatDurationLabel = (mins?: number) => {
+          const safeMins = Math.max(0, Math.round(mins || 0));
+          if (safeMins < 60) return `${safeMins}min`;
+          const h = Math.floor(safeMins / 60);
+          const m = safeMins % 60;
+          return m > 0 ? `${h}h ${String(m).padStart(2, '0')}min` : `${h}h`;
+        };
+
+        const getCategoryBadgeInfo = (type?: string) => {
+          const norm = (type || 'teoria').trim().toLowerCase();
+          if (norm === 'questoes' || norm === 'questões') {
+            return {
+              label: 'Questões',
+              className:
+                'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25',
+            };
+          }
+          if (norm === 'lei_seca' || norm === 'lei seca') {
+            return {
+              label: 'Lei Seca',
+              className:
+                'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25',
+            };
+          }
+          if (norm === 'revisao' || norm === 'revisão') {
+            return {
+              label: 'Revisão',
+              className:
+                'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25',
+            };
+          }
+          if (norm === 'resumo') {
+            return {
+              label: 'Resumo',
+              className:
+                'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/25',
+            };
+          }
+          return {
+            label: norm === 'teoria' ? 'Teoria' : (type || 'Teoria'),
+            className:
+              'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/25',
+          };
+        };
+
+        const extractPagesLabel = (session: SessaoEstudo): string | null => {
+          if (Array.isArray(session.pageIntervals) && session.pageIntervals.length > 0) {
+            const valid = session.pageIntervals
+              .filter(p => (p.inicio !== '' && p.inicio !== null && p.inicio !== undefined) || (p.fim !== '' && p.fim !== null && p.fim !== undefined))
+              .map(p => {
+                const ini = p.inicio !== '' && p.inicio !== null && p.inicio !== undefined ? p.inicio : 1;
+                const fim = p.fim !== '' && p.fim !== null && p.fim !== undefined ? p.fim : ini;
+                return `${ini} ~ ${fim}`;
+              });
+            if (valid.length > 0) return `p. ${valid.join(', ')}`;
+          }
+          if (session.notes) {
+            const match = session.notes.match(/pág\.\s*(\d+)\s*[-~]\s*(\d+)/i);
+            if (match) return `p. ${match[1]} ~ ${match[2]}`;
+          }
+          return null;
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+            <div
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+              onClick={() => setHistoryModalDisciplina(null)}
+            />
+            <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-10 flex flex-col max-h-[88vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              {/* Cabeçalho */}
+              <div className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                    Últimos estudos
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {historyModalDisciplina.name} · os 5 mais recentes
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHistoryModalDisciplina(null)}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  aria-label="Fechar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Corpo do Modal */}
+              <div className="p-6 overflow-y-auto flex-1">
+                {recentSessions.length === 0 ? (
+                  <div className="py-10 px-4 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto">
+                      <History className="w-6 h-6 opacity-75" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-200">
+                        Nenhum estudo registrado ainda
+                      </h4>
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                        Você ainda não realizou sessões de estudo para esta matéria.
+                      </p>
+                    </div>
+                    <div className="pt-2">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        leftIcon={<PlusCircle className="w-4 h-4" />}
+                        onClick={() => {
+                          const target = historyModalDisciplina;
+                          setHistoryModalDisciplina(null);
+                          triggerManualStudyRegister({
+                            disciplinaId: target.id,
+                            assuntoId: target.assuntoId,
+                            durationMinutes: target.durationMinutes,
+                          });
+                        }}
+                      >
+                        Registrar primeiro estudo
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {recentSessions.map((session) => {
+                      const catBadge = getCategoryBadgeInfo(session.type);
+                      const topicObj = session.assuntoId
+                        ? assuntos.find(a => a.id === session.assuntoId)
+                        : undefined;
+                      const topicTitle =
+                        topicObj?.name || session.assuntoName || 'Estudo Geral da Disciplina';
+                      const attempted = session.questionsAttempted || 0;
+                      const correct = session.questionsCorrect || 0;
+                      const accuracy =
+                        attempted > 0
+                          ? session.accuracyRate ?? Math.round((correct / attempted) * 100)
+                          : null;
+                      const pagesStr = extractPagesLabel(session);
+
+                      return (
+                        <div
+                          key={session.id}
+                          className="py-3.5 first:pt-1 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4"
+                        >
+                          {/* Esquerda: Data + Categoria + Tópico */}
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium shrink-0 font-mono">
+                              {formatShortDate(session.completedAt || session.createdAt)}
+                            </span>
+
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${catBadge.className}`}
+                            >
+                              {catBadge.label}
+                            </span>
+
+                            <span
+                              className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate"
+                              title={topicTitle}
+                            >
+                              {topicTitle}
+                            </span>
+                          </div>
+
+                          {/* Direita: Métricas (Duração, Questões, Páginas) */}
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400 shrink-0">
+                            <span className="inline-flex items-center gap-1 font-semibold">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{formatDurationLabel(session.durationMinutes)}</span>
+                            </span>
+
+                            {attempted > 0 && (
+                              <span className="inline-flex items-center gap-1.5 font-semibold">
+                                <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                                <span>
+                                  {correct}/{attempted}
+                                </span>
+                                {accuracy !== null && (
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${
+                                      accuracy >= 75
+                                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                        : accuracy >= 50
+                                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                                        : 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                                    }`}
+                                  >
+                                    {accuracy}%
+                                  </span>
+                                )}
+                              </span>
+                            )}
+
+                            {pagesStr && (
+                              <span className="inline-flex items-center gap-1 font-semibold">
+                                <FileText className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{pagesStr}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

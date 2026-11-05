@@ -42,7 +42,10 @@ import {
   Flashcard,
   ResumoEstudo,
   ResumoStatus,
-  ResumoVersaoHistorico
+  ResumoVersaoHistorico,
+  StudyRecordOrigin,
+  PageInterval,
+  VideoaulaRecord
 } from '../types';
 import { 
   INITIAL_USER, 
@@ -516,7 +519,8 @@ function mapSessaoFromDb(row: any): SessaoEstudo {
     accuracyRate: row.accuracy_rate !== null ? Number(row.accuracy_rate) : undefined,
     notes: row.notes || undefined,
     teoriaFinalizada: Boolean(row.teoria_finalizada),
-    programarRevisoes: row.programar_revisoes !== undefined ? Boolean(row.programar_revisoes) : undefined,
+    programarRevisoes: row.programar_revisoes !== undefined && row.programar_revisoes !== null ? Boolean(row.programar_revisoes) : undefined,
+    revisaoDays: Array.isArray(row.revisao_days) ? row.revisao_days.map(Number).filter((n: number) => !isNaN(n) && n > 0) : undefined,
     contabilizarPlanejamento: row.contabilizar_planejamento !== undefined ? Boolean(row.contabilizar_planejamento) : undefined,
     pageIntervals: Array.isArray(row.page_intervals) ? row.page_intervals : undefined,
     videoaulas: Array.isArray(row.videoaulas) ? row.videoaulas : undefined,
@@ -524,6 +528,41 @@ function mapSessaoFromDb(row: any): SessaoEstudo {
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || undefined,
   };
+}
+
+const SESSION_META_STORAGE_KEY = 'gabarita_session_meta_v1';
+interface LocalSessionRevisionMeta {
+  programarRevisoes: boolean;
+  revisaoDays?: number[];
+  material?: string;
+  origem?: StudyRecordOrigin;
+  durationSeconds?: number;
+  contabilizarPlanejamento?: boolean;
+  pageIntervals?: PageInterval[];
+  videoaulas?: VideoaulaRecord[];
+}
+
+function loadSessionMetaMap(): Record<string, LocalSessionRevisionMeta> {
+  return loadStored<Record<string, LocalSessionRevisionMeta>>(SESSION_META_STORAGE_KEY, {});
+}
+
+function saveSessionMetaEntry(session: SessaoEstudo): void {
+  if (!session || !session.id) return;
+  const map = loadSessionMetaMap();
+  map[session.id] = {
+    programarRevisoes: Boolean(session.programarRevisoes),
+    revisaoDays:
+      session.programarRevisoes && Array.isArray(session.revisaoDays) && session.revisaoDays.length > 0
+        ? [...session.revisaoDays].sort((a, b) => a - b)
+        : undefined,
+    material: session.material,
+    origem: session.origem,
+    durationSeconds: session.durationSeconds,
+    contabilizarPlanejamento: session.contabilizarPlanejamento,
+    pageIntervals: session.pageIntervals,
+    videoaulas: session.videoaulas,
+  };
+  saveStored(SESSION_META_STORAGE_KEY, map);
 }
 
 function formatStudyCategoryLabel(type?: string): string | undefined {
@@ -3029,6 +3068,53 @@ export class DatabaseService {
         }));
     };
 
+    const localList = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, INITIAL_SESSOES);
+    const localMap = new Map(localList.map(s => [s.id, s]));
+    const metaMap = loadSessionMetaMap();
+
+    const mergeWithLocalMeta = (s: SessaoEstudo): SessaoEstudo => {
+      const localSess = localMap.get(s.id);
+      const meta = metaMap[s.id];
+      const resolvedProgramarRevisoes =
+        s.programarRevisoes !== undefined
+          ? s.programarRevisoes
+          : meta?.programarRevisoes !== undefined
+          ? meta.programarRevisoes
+          : localSess?.programarRevisoes;
+      const resolvedRevisaoDays =
+        resolvedProgramarRevisoes === false
+          ? undefined
+          : s.revisaoDays && s.revisaoDays.length > 0
+          ? s.revisaoDays
+          : meta?.revisaoDays && meta.revisaoDays.length > 0
+          ? meta.revisaoDays
+          : localSess?.revisaoDays && localSess.revisaoDays.length > 0
+          ? localSess.revisaoDays
+          : undefined;
+
+      return {
+        ...localSess,
+        ...s,
+        programarRevisoes: resolvedProgramarRevisoes,
+        revisaoDays: resolvedRevisaoDays,
+        material: s.material !== undefined ? s.material : meta?.material ?? localSess?.material,
+        origem: s.origem !== undefined ? s.origem : meta?.origem ?? localSess?.origem,
+        durationSeconds: s.durationSeconds !== undefined ? s.durationSeconds : meta?.durationSeconds ?? localSess?.durationSeconds,
+        contabilizarPlanejamento:
+          s.contabilizarPlanejamento !== undefined
+            ? s.contabilizarPlanejamento
+            : meta?.contabilizarPlanejamento ?? localSess?.contabilizarPlanejamento,
+        pageIntervals:
+          s.pageIntervals && s.pageIntervals.length > 0
+            ? s.pageIntervals
+            : meta?.pageIntervals ?? localSess?.pageIntervals,
+        videoaulas:
+          s.videoaulas && s.videoaulas.length > 0
+            ? s.videoaulas
+            : meta?.videoaulas ?? localSess?.videoaulas,
+      };
+    };
+
     try {
       const uid = await getCurrentUserId();
       let query = supabase
@@ -3041,8 +3127,10 @@ export class DatabaseService {
       const { data, error } = await query;
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const mapped = data.map(mapSessaoFromDb);
-        const validList = filterValidSessoes(mapped, uid);
+        const dbIds = new Set(data.map(row => row.id));
+        const mapped = data.map(row => mergeWithLocalMeta(mapSessaoFromDb(row)));
+        const localOnly = localList.filter(s => s && s.id && !dbIds.has(s.id)).map(mergeWithLocalMeta);
+        const validList = filterValidSessoes([...localOnly, ...mapped], uid);
         saveStored(STORAGE_KEYS.SESSOES, validList);
         return validList;
       }
@@ -3050,9 +3138,9 @@ export class DatabaseService {
       console.warn('Gabarita: Falha ao buscar sessoes do Supabase:', e);
     }
 
-    const stored = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, INITIAL_SESSOES);
+    const stored = localList.map(mergeWithLocalMeta);
     const validStored = filterValidSessoes(stored);
-    if (validStored.length !== stored.length) {
+    if (validStored.length !== localList.length) {
       saveStored(STORAGE_KEYS.SESSOES, validStored);
     }
     return validStored;
@@ -3071,6 +3159,11 @@ export class DatabaseService {
 
     const newSession: SessaoEstudo = {
       ...session,
+      programarRevisoes: Boolean(session.programarRevisoes),
+      revisaoDays:
+        session.programarRevisoes && Array.isArray(session.revisaoDays) && session.revisaoDays.length > 0
+          ? [...session.revisaoDays].sort((a, b) => a - b)
+          : undefined,
       concursoId: session.concursoId || disc?.concursoId,
       disciplinaName: session.disciplinaName || disc?.name || 'Geral',
       assuntoName: session.assuntoName || assunto?.name || 'Estudo Dirigido',
@@ -3081,6 +3174,7 @@ export class DatabaseService {
       completedAt: session.completedAt || new Date().toISOString(),
     };
 
+    saveSessionMetaEntry(newSession);
     const updated = [newSession, ...list];
     saveStored(STORAGE_KEYS.SESSOES, updated);
 
@@ -3263,9 +3357,23 @@ export class DatabaseService {
       ? partial.accuracyRate
       : undefined;
 
+    const nextProgramarRevisoes =
+      partial.programarRevisoes !== undefined
+        ? Boolean(partial.programarRevisoes)
+        : Boolean(prevSession.programarRevisoes);
+    const nextRevisaoDays = !nextProgramarRevisoes
+      ? undefined
+      : partial.revisaoDays && partial.revisaoDays.length > 0
+      ? [...partial.revisaoDays].sort((a, b) => a - b)
+      : prevSession.revisaoDays && prevSession.revisaoDays.length > 0
+      ? [...prevSession.revisaoDays].sort((a, b) => a - b)
+      : undefined;
+
     const updatedItem: SessaoEstudo = {
       ...prevSession,
       ...partial,
+      programarRevisoes: nextProgramarRevisoes,
+      revisaoDays: nextRevisaoDays,
       disciplinaId: nextDiscId,
       assuntoId: nextAssuntoId,
       disciplinaName: partial.disciplinaName || nextDisc?.name || prevSession.disciplinaName,
@@ -3274,6 +3382,7 @@ export class DatabaseService {
       updatedAt: new Date().toISOString(),
     };
 
+    saveSessionMetaEntry(updatedItem);
     const updated = list.map(s => (s.id === sessionId ? updatedItem : s));
     saveStored(STORAGE_KEYS.SESSOES, updated);
 
@@ -3469,13 +3578,16 @@ export class DatabaseService {
       const { data, error } = await query;
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const localMap = new Map(loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, []).map(r => [r.id, r]));
+        const localList = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, []);
+        const localMap = new Map(localList.map(r => [r.id, r]));
+        const dbIds = new Set(data.map(row => row.id));
         const mergedFromDb = data.map(row => {
           const dbRev = mapRevisaoFromDb(row);
           const localRev = localMap.get(dbRev.id);
           return localRev ? { ...localRev, ...dbRev, status: localRev.status === 'ignorada' ? 'ignorada' : dbRev.status } : dbRev;
         });
-        const list = filterValidRevisoes(mergedFromDb, uid);
+        const localOnly = localList.filter(r => r && r.id && !dbIds.has(r.id));
+        const list = filterValidRevisoes([...localOnly, ...mergedFromDb], uid);
         saveStored(STORAGE_KEYS.REVISOES, list);
         return list;
       }
@@ -3581,14 +3693,22 @@ export class DatabaseService {
     return updatedItem;
   }
 
-  static async deleteRevisao(id: string): Promise<Revisao[]> {
-    const list = await this.getRevisoes();
-    const updated = list.filter(r => r.id !== id);
+  static async deleteRevisao(idOrIds: string | string[]): Promise<Revisao[]> {
+    const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+    const idSet = new Set(ids);
+    const currentLocal = loadStored<Revisao[]>(STORAGE_KEYS.REVISOES, INITIAL_REVISOES);
+    const updated = currentLocal.filter(r => !idSet.has(r.id));
     saveStored(STORAGE_KEYS.REVISOES, updated);
 
-    supabase.from('revisoes').delete().eq('id', id).then(({ error }) => {
-      if (error) console.warn('Gabarita: Erro ao remover revisão no Supabase:', error.message);
-    });
+    if (ids.length > 0) {
+      supabase
+        .from('revisoes')
+        .delete()
+        .in('id', ids)
+        .then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao remover revisão(ões) no Supabase:', error.message);
+        });
+    }
 
     return updated;
   }
@@ -3738,15 +3858,26 @@ export class DatabaseService {
     disciplinaId: string,
     assuntoId?: string,
     assuntoName?: string,
-    sourceSession?: SessaoEstudo
+    sourceSession?: SessaoEstudo,
+    customIntervals?: number[]
   ): Promise<Revisao[]> {
     const list = await this.getRevisoes();
     const settings = await this.getRevisionSettings();
     const disciplinas = await this.getDisciplinas();
     const disc = disciplinas.find(d => d.id === disciplinaId);
-    const intervals = settings.intervalDays && settings.intervalDays.length > 0 
-      ? settings.intervalDays 
-      : [1, 7, 15, 30, 60];
+
+    const rawIntervals =
+      customIntervals && customIntervals.length > 0
+        ? customIntervals
+        : sourceSession?.revisaoDays && sourceSession.revisaoDays.length > 0
+        ? sourceSession.revisaoDays
+        : settings.intervalDays && settings.intervalDays.length > 0
+        ? settings.intervalDays
+        : [1, 7, 15, 21, 30, 45, 60, 90, 120, 180, 215, 265, 315, 365];
+
+    const intervals = Array.from(
+      new Set(rawIntervals.map(d => Number(d)).filter(d => !isNaN(d) && d > 0))
+    ).sort((a, b) => a - b);
 
     let sessionToUse = sourceSession;
     if (!sessionToUse) {
@@ -3758,33 +3889,156 @@ export class DatabaseService {
     }
     const meta = extractOriginalSessionMeta(sessionToUse);
     const baseStudyTime = sessionToUse?.completedAt ? new Date(sessionToUse.completedAt).getTime() : Date.now();
+    const resolvedAssuntoName = assuntoName || sessionToUse?.assuntoName || 'Estudo Geral';
 
+    // Remove revisões automáticas pendentes duplicadas da mesma sessão/data para evitar duplicidade ao editar registro
+    const studyDatePrefix = meta.originalStudyDate ? meta.originalStudyDate.split('T')[0] : undefined;
+    const removedIds: string[] = [];
+    const filteredList = list.filter(r => {
+      const matchBySessionId = Boolean(sessionToUse?.id && r.sourceSessionId && r.sourceSessionId === sessionToUse.id);
+      const matchByAttributes =
+        r.isAutomatic &&
+        r.status !== 'concluida' &&
+        r.disciplinaId === disciplinaId &&
+        (r.assuntoId || '') === (assuntoId || '') &&
+        (!assuntoId ? (r.assuntoName || '') === resolvedAssuntoName : true) &&
+        (!studyDatePrefix || !r.originalStudyDate || r.originalStudyDate.split('T')[0] === studyDatePrefix);
+
+      if (r.status !== 'concluida' && (matchBySessionId || matchByAttributes)) {
+        removedIds.push(r.id);
+        return false;
+      }
+      return true;
+    });
+
+    if (removedIds.length > 0) {
+      supabase
+        .from('revisoes')
+        .delete()
+        .in('id', removedIds)
+        .then(({ error }) => {
+          if (error) console.warn('Gabarita: Aviso ao limpar revisões anteriores no Supabase:', error.message);
+        });
+    }
+
+    if (sessionToUse?.id) {
+      const updatedSessionWithMeta: SessaoEstudo = {
+        ...sessionToUse,
+        programarRevisoes: true,
+        revisaoDays: intervals,
+      };
+      saveSessionMetaEntry(updatedSessionWithMeta);
+      const storedSessoes = loadStored<SessaoEstudo[]>(STORAGE_KEYS.SESSOES, []);
+      if (storedSessoes.some(s => s.id === sessionToUse!.id)) {
+        saveStored(
+          STORAGE_KEYS.SESSOES,
+          storedSessoes.map(s => (s.id === sessionToUse!.id ? { ...s, programarRevisoes: true, revisaoDays: intervals } : s))
+        );
+      }
+    }
+
+    const nowTs = Date.now();
     const newRevs: Revisao[] = intervals.map((days, idx) => {
       const targetDate = new Date(baseStudyTime + days * 86400000);
       const targetDateStr = PlannerService.formatLocalDate(targetDate);
       return {
-        id: `rev_srs_${Date.now()}_${idx}`,
+        id: `rev_srs_${nowTs}_${idx}`,
         userId,
         disciplinaId,
-        disciplinaName: disc?.name || 'Geral',
-        assuntoId,
-        assuntoName: assuntoName || sessionToUse?.assuntoName || 'Geral',
-        method: days === 1 ? '24h' : `${days}d`,
+        disciplinaName: disc?.name || sessionToUse?.disciplinaName || 'Geral',
+        assuntoId: assuntoId || undefined,
+        assuntoName: resolvedAssuntoName,
+        method: (days === 1 ? '24h' : `${days}d`) as any,
         stage: idx + 1,
         totalStages: intervals.length,
         intervalDays: days,
         scheduledFor: targetDateStr,
         status: 'pendente',
         isAutomatic: true,
-        notes: `SRS Ciclo de ${days} ${days === 1 ? 'dia' : 'dias'} para fixação de ${assuntoName || 'conteúdo'}.`,
+        sourceSessionId: sessionToUse?.id,
+        notes: `SRS Ciclo de ${days} ${days === 1 ? 'dia' : 'dias'} para fixação de ${resolvedAssuntoName}.`,
         createdAt: new Date().toISOString(),
         ...meta,
       };
     });
 
-    const updated = [...newRevs, ...list];
+    const updated = [...newRevs, ...filteredList];
     saveStored(STORAGE_KEYS.REVISOES, updated);
+
+    getCurrentUserId().then(uid => {
+      const targetUid = uid || userId;
+      if (targetUid && newRevs.length > 0) {
+        const rowsToInsert = newRevs.map(newRev => ({
+          id: newRev.id,
+          user_id: targetUid,
+          disciplina_id: newRev.disciplinaId,
+          assunto_id: newRev.assuntoId || null,
+          disciplina_name: newRev.disciplinaName,
+          assunto_name: newRev.assuntoName,
+          method: newRev.method,
+          stage: newRev.stage,
+          total_stages: newRev.totalStages,
+          interval_days: newRev.intervalDays,
+          scheduled_for: newRev.scheduledFor.includes('T') ? newRev.scheduledFor.split('T')[0] : newRev.scheduledFor,
+          completed_at: newRev.completedAt || null,
+          status: newRev.status,
+          rating: newRev.rating || null,
+          accuracy_rate: newRev.accuracyRate ?? null,
+          questions_attempted: newRev.questionsAttempted ?? null,
+          questions_correct: newRev.questionsCorrect ?? null,
+          notes: newRev.notes,
+          is_automatic: newRev.isAutomatic,
+          next_revision_id: newRev.nextRevisionId || null,
+          created_at: newRev.createdAt,
+          updated_at: newRev.updatedAt || null,
+        }));
+        supabase.from('revisoes').insert(rowsToInsert).then(({ error }) => {
+          if (error) console.warn('Gabarita: Erro ao inserir ciclo de revisões no Supabase:', error.message);
+        });
+      }
+    });
+
     return updated;
+  }
+
+  static async removerCicloRevisaoDaSessao(session: SessaoEstudo): Promise<Revisao[]> {
+    const list = await this.getRevisoes();
+    const meta = extractOriginalSessionMeta(session);
+    const studyDatePrefix = meta.originalStudyDate ? meta.originalStudyDate.split('T')[0] : undefined;
+    const removedIds: string[] = [];
+
+    const filteredList = list.filter(r => {
+      if (r.status === 'concluida') return true;
+      const matchBySessionId = Boolean(session.id && r.sourceSessionId && r.sourceSessionId === session.id);
+      const matchByAttributes =
+        Boolean(r.isAutomatic) &&
+        r.disciplinaId === session.disciplinaId &&
+        (r.assuntoId || '') === (session.assuntoId || '') &&
+        Boolean(studyDatePrefix && r.originalStudyDate && r.originalStudyDate.split('T')[0] === studyDatePrefix);
+
+      if (matchBySessionId || matchByAttributes) {
+        removedIds.push(r.id);
+        return false;
+      }
+      return true;
+    });
+
+    if (removedIds.length > 0) {
+      saveStored(STORAGE_KEYS.REVISOES, filteredList);
+      supabase
+        .from('revisoes')
+        .delete()
+        .in('id', removedIds)
+        .then(({ error }) => {
+          if (error) console.warn('Gabarita: Aviso ao remover revisões vinculadas à sessão no Supabase:', error.message);
+        });
+    }
+
+    if (session.id) {
+      saveSessionMetaEntry({ ...session, programarRevisoes: false, revisaoDays: undefined });
+    }
+
+    return filteredList;
   }
 
   // --- EDITAIS (SUPABASE) ---

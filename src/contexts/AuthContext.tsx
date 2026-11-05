@@ -7,7 +7,7 @@ interface AuthContextType extends AuthState {
   setLoginTransitioning: (active: boolean) => void;
   loginWithEmail: (email: string, pass: string) => Promise<UserProfile>;
   registerWithEmail: (name: string, email: string, pass: string, consentGiven?: boolean) => Promise<RegisterResult>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<UserProfile>;
   loginAsGuest: () => Promise<UserProfile>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -42,8 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await AuthService.registerWithEmail(name, email, pass, consentGiven);
   };
 
-  const loginWithGoogle = async () => {
-    return await AuthService.loginWithGoogle();
+  const loginWithGoogle = async (credential: string) => {
+    return await AuthService.loginWithGoogle(credential);
   };
 
   const loginAsGuest = async () => {

@@ -25,6 +25,7 @@ import {
   SimuladoVariacaoMultiplaEscolha
 } from '../../types';
 import { Button } from '../../design-system/Button';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface RegisterSimuladoModalProps {
   concursos: Concurso[];
@@ -49,7 +50,28 @@ export const RegisterSimuladoModal: React.FC<RegisterSimuladoModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { colorSkin, effectiveTheme, palette } = useTheme();
   const activeConcurso = concursos.find(c => c.active) || concursos[0];
+
+  const themeFontColor = useMemo(() => {
+    const isDark = effectiveTheme === 'dark';
+    switch (colorSkin) {
+      case 'azul':
+        return isDark ? '#60a5fa' : '#2563eb';
+      case 'rosa':
+        return isDark ? '#f472b6' : '#db2777';
+      case 'roxo':
+      case 'purple':
+        return isDark ? '#a78bfa' : '#7c3aed';
+      case 'laranja':
+      case 'orange':
+      case 'dbz':
+        return isDark ? '#fb923c' : '#ea580c';
+      case 'verde':
+      default:
+        return isDark ? '#34d399' : (palette?.primary || '#059669');
+    }
+  }, [colorSkin, effectiveTheme, palette]);
 
   // Dados Gerais
   const [title, setTitle] = useState('');
@@ -745,8 +767,19 @@ export const RegisterSimuladoModal: React.FC<RegisterSimuladoModalProps> = ({
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 border border-indigo-500/30 text-white shadow-xl space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-500/20 pb-2.5">
               <div className="flex items-center gap-2">
-                <Calculator className="w-4 h-4 text-indigo-400" />
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-indigo-300">
+                <Calculator
+                  className="w-4 h-4 theme-primary-text"
+                  style={{ color: themeFontColor }}
+                />
+                <h4
+                  className="text-xs font-extrabold uppercase tracking-wider theme-primary-text"
+                  style={{ color: themeFontColor }}
+                  ref={(el) => {
+                    if (el) {
+                      el.style.setProperty('color', themeFontColor, 'important');
+                    }
+                  }}
+                >
                   Resumo Automático do Simulado
                 </h4>
               </div>

@@ -53,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const titles: Record<NavigationTab, { title: string; subtitle: string }> = {
     dashboard: { title: 'Painel Geral de Estudos', subtitle: 'Acompanhe seu ritmo, metas e próximas revisões' },
-    sessao: { title: 'Próximo Estudo & Cronômetro', subtitle: 'Execução de estudo em foco, horas líquidas, registro de questões e histórico' },
+    sessao: { title: 'Plano de Estudos & Cronograma', subtitle: 'Balanceamento multi-fatorial, detecção de conflitos e gestão de rotina' },
     concursos: { title: 'Concursos, Cargos & Provas', subtitle: 'Certames acompanhados, cargos pretendidos e cadernos anteriores' },
     plano: { title: 'Plano de Estudos & Cronograma', subtitle: 'Balanceamento multi-fatorial, detecção de conflitos e gestão de rotina' },
     ciclo: { title: 'Ciclo de Estudos Dinâmico', subtitle: 'Esteira giratória flexível de alto rendimento proporcional por peso' },

@@ -208,6 +208,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const sessionsByDate = useMemo(() => {
     const map: Record<string, PlannedSession[]> = {};
     plan.sessions.forEach(s => {
+      if (plan.startDate && s.date < plan.startDate) return;
       if (!map[s.date]) map[s.date] = [];
       map[s.date].push(s);
     });
@@ -215,73 +216,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       map[k].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     });
     return map;
-  }, [plan.sessions]);
+  }, [plan.sessions, plan.startDate]);
 
   // Sessões focadas no dia atual (aba Diário)
   const dailySessions = useMemo(() => {
-    const existing = sessionsByDate[selectedDateStr] || [];
-    if (existing.length > 0) return existing;
-    if (!plan.sessions || plan.sessions.length === 0) return [];
-    if (disciplinas.length === 0) return [];
-
-    const d1 = disciplinas[0];
-    const d2 = disciplinas[1] || disciplinas[0];
-    const d3 = disciplinas[2] || disciplinas[0];
-
-    return [
-      {
-        id: `day_1_${selectedDateStr}`,
-        planId: plan.id,
-        concursoId: plan.concursoId,
-        disciplinaId: d1.id,
-        disciplinaName: d1.name,
-        disciplinaColor: d1.color,
-        assuntoName: 'Estudo Teórico e Conceitos Fundamentais',
-        date: selectedDateStr,
-        dayOfWeek: PlannerService.getDayOfWeekFromDate(selectedDateObj),
-        startTime: '08:00',
-        durationMinutes: 90,
-        type: 'teoria' as const,
-        status: (selectedDateStr < todayStr ? 'concluida' : 'pendente') as PlanSessionStatus,
-        order: 1,
-        notes: 'Estudo direcionado do conteúdo programático.',
-      },
-      {
-        id: `day_2_${selectedDateStr}`,
-        planId: plan.id,
-        concursoId: plan.concursoId,
-        disciplinaId: d2.id,
-        disciplinaName: d2.name,
-        disciplinaColor: d2.color,
-        assuntoName: 'Resolução de Questões e Fixação',
-        date: selectedDateStr,
-        dayOfWeek: PlannerService.getDayOfWeekFromDate(selectedDateObj),
-        startTime: '10:30',
-        durationMinutes: 60,
-        type: 'questoes' as const,
-        status: (selectedDateStr < todayStr ? 'concluida' : 'pendente') as PlanSessionStatus,
-        order: 2,
-        notes: 'Resolução intensiva de questões da banca.',
-      },
-      {
-        id: `day_3_${selectedDateStr}`,
-        planId: plan.id,
-        concursoId: plan.concursoId,
-        disciplinaId: d3.id,
-        disciplinaName: d3.name,
-        disciplinaColor: d3.color,
-        assuntoName: 'Revisão Espaçada Ativa',
-        date: selectedDateStr,
-        dayOfWeek: PlannerService.getDayOfWeekFromDate(selectedDateObj),
-        startTime: '14:30',
-        durationMinutes: 60,
-        type: 'revisao' as const,
-        status: 'pendente' as PlanSessionStatus,
-        order: 3,
-        notes: 'Revisão espaçada de tópicos com maior índice de erro.',
-      },
-    ];
-  }, [sessionsByDate, selectedDateStr, plan, disciplinas, selectedDateObj, todayStr]);
+    return sessionsByDate[selectedDateStr] || [];
+  }, [sessionsByDate, selectedDateStr]);
 
   const handleDragStart = (e: React.DragEvent, sessionId: string) => {
     setDraggedSessionId(sessionId);

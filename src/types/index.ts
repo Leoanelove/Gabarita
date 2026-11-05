@@ -251,6 +251,7 @@ export interface SessaoEstudo {
   notes?: string;
   teoriaFinalizada?: boolean;
   programarRevisoes?: boolean;
+  revisaoDays?: number[];
   contabilizarPlanejamento?: boolean;
   pageIntervals?: PageInterval[];
   videoaulas?: VideoaulaRecord[];
@@ -292,6 +293,7 @@ export interface Revisao {
   questionsCorrect?: number;
   notes?: string;
   isAutomatic?: boolean;
+  sourceSessionId?: string;
   nextRevisionId?: string;
   createdAt: string;
   updatedAt?: string;

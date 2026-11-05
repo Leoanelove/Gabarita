@@ -28,9 +28,11 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const rawUrl = env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || env.SUPABASE_URL || process.env.SUPABASE_URL || '';
   const rawKey = env.VITE_SUPABASE_KEY || process.env.VITE_SUPABASE_KEY || env.SUPABASE_KEY || process.env.SUPABASE_KEY || '';
+  const rawGoogleClientId = env.VITE_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
 
   const supabaseUrl = sanitizeUrl(rawUrl);
   const supabaseKey = (rawKey || '').trim().replace(/^["']|["']$/g, '');
+  const googleClientId = (rawGoogleClientId || '').trim().replace(/^["']|["']$/g, '');
 
   return {
     plugins: [react(), tailwindcss()],
@@ -39,6 +41,8 @@ export default defineConfig(({ mode }) => {
       'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl),
       'process.env.VITE_SUPABASE_KEY': JSON.stringify(supabaseKey),
       'process.env.SUPABASE_KEY': JSON.stringify(supabaseKey),
+      'process.env.VITE_GOOGLE_CLIENT_ID': JSON.stringify(googleClientId),
+      'process.env.GOOGLE_CLIENT_ID': JSON.stringify(googleClientId),
     },
     resolve: {
       alias: {
