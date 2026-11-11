@@ -49,7 +49,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
   onFinish,
   onClose,
 }) => {
-  const { isSoundOn, toggleSound, isAlarmRinging, unlockAudio, triggerAlarm, stopAlarm } = useTimerAlarm();
+  const { isSoundOn, toggleSound, isAlarmRinging, unlockAudio, stopAlarm } = useTimerAlarm();
 
   // Fila de cartões ativos (permite que 'Errei' adicione o cartão no final da fila da sessão atual)
   const [queue, setQueue] = useState<Flashcard[]>(() => [...cards]);
@@ -212,10 +212,10 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
     }
   };
 
-  // Concluir e pontuar XP
+  // Concluir e pontuar XP (sem disparar alarme estridente nem popup de cronômetro)
   const completeSession = async () => {
     setIsSessionFinished(true);
-    triggerAlarm('session');
+    stopAlarm();
 
     const totalAnswered = stats.totalAnswers + 1;
     const xp = Math.max(10, totalAnswered * 5 + 15); // Ex: 5 cards = 40 XP
@@ -326,9 +326,13 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
           <button
             onClick={() => {
               stopAlarm();
-              onClose();
+              if (stats.totalAnswers > 0) {
+                handleFinishAndExit();
+              } else {
+                onClose();
+              }
             }}
-            title="Sair da sessão"
+            title="Sair da sessão e salvar progresso"
             className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -419,7 +423,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
               <button
                 type="button"
                 onClick={() => handleRate('errei')}
-                className="flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-red-700 to-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)] h-44 text-white cursor-pointer select-none"
+                className="flashcard-srs-btn flashcard-srs-btn-errei flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-red-700 to-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)] h-44 text-white cursor-pointer select-none"
               >
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
                   <X className="w-6 h-6 text-red-600 stroke-[3]" />
@@ -437,7 +441,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
               <button
                 type="button"
                 onClick={() => handleRate('dificil')}
-                className="flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-amber-600 to-amber-500 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)] h-44 text-white cursor-pointer select-none"
+                className="flashcard-srs-btn flashcard-srs-btn-dificil flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-amber-600 to-amber-500 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)] h-44 text-white cursor-pointer select-none"
               >
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
                   <span className="text-amber-500 font-black text-2xl leading-none select-none">~</span>
@@ -455,7 +459,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
               <button
                 type="button"
                 onClick={() => handleRate('bom')}
-                className="flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-blue-700 to-blue-500 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)] h-44 text-white cursor-pointer select-none"
+                className="flashcard-srs-btn flashcard-srs-btn-bom flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-blue-700 to-blue-500 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)] h-44 text-white cursor-pointer select-none"
               >
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
                   <Check className="w-6 h-6 text-blue-600 stroke-[3]" />
@@ -478,7 +482,7 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
                   borderColor: '#34d399',
                   boxShadow: '0 0 15px rgba(16, 185, 129, 0.45)'
                 }}
-                className="flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-emerald-700 to-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.45)] h-44 text-white cursor-pointer select-none !text-white"
+                className="flashcard-srs-btn flashcard-srs-btn-facil flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-emerald-700 to-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.45)] h-44 text-white cursor-pointer select-none !text-white"
               >
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
                   <Sparkles 
@@ -551,25 +555,8 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
               </div>
             </div>
 
-            {/* Recompensa de Gamificação (XP) */}
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center gap-2">
-              <Flame className="w-5 h-5 fill-current" />
-              <span className="text-sm font-bold">
-                +{Math.max(10, stats.totalAnswers * 5 + 15)} XP adicionados ao seu perfil!
-              </span>
-            </div>
-
             {/* Ação de Conclusão */}
             <div className="space-y-2.5">
-              {isAlarmRinging && (
-                <button
-                  type="button"
-                  onClick={stopAlarm}
-                  className="w-full py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black text-sm shadow-lg shadow-rose-600/30 animate-pulse cursor-pointer transition-all"
-                >
-                  🔕 Desativar Alarme
-                </button>
-              )}
               <Button
                 variant="primary"
                 size="lg"

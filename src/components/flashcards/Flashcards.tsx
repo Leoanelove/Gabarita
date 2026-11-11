@@ -1668,37 +1668,75 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
   };
 
   // Callback de finalização da sessão no FlashcardPlayer
-  const handleFinishReviewSession = (sessionStats: ReviewSessionStats) => {
+  const handleFinishReviewSession = async (sessionStats: ReviewSessionStats) => {
     const reviewedDeck = concursoDecks.find(d => d.id === reviewDeckId) || activeDeck;
     const discName = reviewedDeck?.disciplina || cardsParaRevisar[0]?.disciplina || availableDisciplinasList[0] || 'Geral';
-    const matchedDisc = activeDisciplinas.find(
-      d => d.name.trim().toLowerCase() === discName.trim().toLowerCase()
-    ) || activeDisciplinas[0] || disciplinas[0];
-    const topicName = cardsParaRevisar[0]?.topico || reviewedDeck?.nome || 'Revisão de Flashcards';
-    const matchedAssunto = assuntos.find(
-      a => a.disciplinaId === matchedDisc?.id && a.name.trim().toLowerCase() === topicName.trim().toLowerCase()
-    );
 
-    if (onSaveStudySession && sessionStats.totalReviewed > 0) {
-      const durationMins = Math.max(1, Math.round((sessionStats.timeSpentSeconds || 60) / 60));
-      const correctCount = (sessionStats.countBom || 0) + (sessionStats.countFacil || 0);
-      Promise.resolve(
-        onSaveStudySession({
-          concursoId: currentConcursoId || undefined,
-          disciplinaId: matchedDisc?.id || 'disc_flashcards',
-          assuntoId: matchedAssunto?.id,
-          disciplinaName: matchedDisc?.name || discName,
-          assuntoName: matchedAssunto?.name || topicName,
-          durationMinutes: durationMins,
-          durationSeconds: sessionStats.timeSpentSeconds || 60,
-          type: 'flashcards',
-          origem: 'flashcards',
-          questionsAttempted: sessionStats.totalReviewed,
-          questionsCorrect: correctCount,
-          notes: `Sessão de Flashcards (${reviewedDeck?.nome || 'Revisão Diária'}): ${sessionStats.totalReviewed} cartões revisados.`,
-          completedAt: new Date().toISOString(),
-        })
-      ).catch(err => console.warn('Erro ao salvar sessão de flashcards no histórico:', err));
+    // Normalizador de strings para matching inteligente de disciplina e assunto
+    const norm = (s?: string) => (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const cleanDiscName = norm(discName);
+
+    const matchedDisc = activeDisciplinas.find(d => {
+      const c = norm(d.name);
+      return c === cleanDiscName || c.includes(cleanDiscName) || cleanDiscName.includes(c);
+    }) || disciplinas.find(d => {
+      const c = norm(d.name);
+      return c === cleanDiscName || c.includes(cleanDiscName) || cleanDiscName.includes(c);
+    }) || activeDisciplinas[0] || disciplinas[0];
+
+    const topicName = cardsParaRevisar[0]?.topico || reviewedDeck?.nome || 'Revisão de Flashcards';
+    const cleanTopicName = norm(topicName);
+
+    const matchedAssunto = assuntos.find(a => {
+      if (matchedDisc && a.disciplinaId !== matchedDisc.id) return false;
+      const c = norm(a.name);
+      return c === cleanTopicName || c.includes(cleanTopicName) || cleanTopicName.includes(c);
+    });
+
+    const timeSpentSeconds = Math.max(1, sessionStats.timeSpentSeconds || 1);
+    const durationMinutes = Math.max(1, Math.round(timeSpentSeconds / 60));
+    const correctCount = (sessionStats.countBom || 0) + (sessionStats.countFacil || 0);
+
+    const resolvedConcursoId = currentConcursoId || activeConcursoId || matchedDisc?.concursoId || undefined;
+    const resolvedDisciplinaId = matchedDisc?.id || activeDisciplinas[0]?.id || disciplinas[0]?.id || 'disc_flashcards';
+    const resolvedDisciplinaName = matchedDisc?.name || discName;
+    const resolvedAssuntoName = matchedAssunto?.name || topicName;
+
+    const sessionPayload = {
+      concursoId: resolvedConcursoId,
+      disciplinaId: resolvedDisciplinaId,
+      assuntoId: matchedAssunto?.id || undefined,
+      disciplinaName: resolvedDisciplinaName,
+      assuntoName: resolvedAssuntoName,
+      durationMinutes: durationMinutes,
+      durationSeconds: timeSpentSeconds,
+      type: 'flashcards',
+      origem: 'flashcards',
+      questionsAttempted: sessionStats.totalReviewed,
+      questionsCorrect: correctCount,
+      notes: `Sessão de Flashcards (${reviewedDeck?.nome || 'Revisão Diária'}): ${sessionStats.totalReviewed} cartões revisados em ${Math.floor(timeSpentSeconds / 60)}m ${timeSpentSeconds % 60}s.`,
+      completedAt: new Date().toISOString(),
+    };
+
+    if (sessionStats.totalReviewed > 0 || timeSpentSeconds >= 5) {
+      try {
+        if (onSaveStudySession) {
+          await onSaveStudySession(sessionPayload);
+        } else {
+          await DatabaseService.recordStudySession(sessionPayload as any);
+        }
+      } catch (err) {
+        console.warn('Erro ao salvar sessão de flashcards no histórico:', err);
+        try {
+          await DatabaseService.recordStudySession(sessionPayload as any);
+        } catch (fallbackErr) {
+          console.error('Falha no fallback de gravação de flashcard:', fallbackErr);
+        }
+      }
+
+      // Dispara eventos globais para atualização reativa instantânea de todas as abas (Histórico, Dashboard, Edital)
+      window.dispatchEvent(new CustomEvent('gabarita_sessoes_updated'));
+      window.dispatchEvent(new CustomEvent('gabarita_edital_verticalizado_sync'));
     }
 
     setIsReviewSessionActive(false);
@@ -1714,8 +1752,12 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
       console.warn('Erro ao atualizar estados locais após revisão:', e);
     }
 
+    const mins = Math.floor(timeSpentSeconds / 60);
+    const secs = timeSpentSeconds % 60;
+    const timeFormatted = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+
     setSuccessToast(
-      `Sessão concluída! ${sessionStats.totalReviewed} revisões realizadas • +${sessionStats.xpEarned} XP conquistados! 🏆`
+      `Sessão concluída e salva no histórico! ${sessionStats.totalReviewed} cartões revisados • Tempo: ${timeFormatted} 🏆`
     );
   };
 
@@ -1798,7 +1840,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         <div className="space-y-2">
           <div className="flex items-center gap-3 flex-wrap">
             <div
-              className="w-11 h-11 rounded-xl bg-black/50 border border-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-md"
+              className="flashcards-banner-icon-box w-11 h-11 rounded-xl bg-black/50 border border-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-md"
               style={{ color: themeGlowStyles.color }}
             >
               <Layers className="w-6 h-6" />
@@ -1812,7 +1854,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
             >
               <span>Hub de Flashcards</span>
               <span
-                className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-black/60 text-white border border-white/25 backdrop-blur-md shadow-xs"
+                className="flashcards-banner-badge text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-black/60 text-white border border-white/25 backdrop-blur-md shadow-xs"
                 style={{ color: '#FFFFFF', textShadow: 'none' }}
               >
                 SM-2 Ativo
@@ -1820,7 +1862,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
             </h1>
           </div>
           <p
-            className="text-xs sm:text-sm !text-white/90 leading-relaxed max-w-xl drop-shadow-xs"
+            className="flashcards-banner-desc text-xs sm:text-sm !text-white/90 leading-relaxed max-w-xl drop-shadow-xs"
             style={{ color: 'rgba(255, 255, 255, 0.92)' }}
           >
             Memorização ativa de alto rendimento por disciplinas e repetição inteligente para{' '}
@@ -1843,7 +1885,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
           <button
             type="button"
             onClick={() => handleOpenImportModal('file')}
-            className="h-10 px-4 rounded-xl bg-black/60 hover:bg-black/80 text-white border border-white/25 backdrop-blur-md shadow-md font-bold text-xs md:text-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            className="btn-banner-secundario flashcards-banner-btn h-10 px-4 rounded-xl bg-black/60 hover:bg-black/80 text-white border border-white/25 backdrop-blur-md shadow-md font-bold text-xs md:text-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
           >
             <Upload className="w-4 h-4 shrink-0" />
             <span>Importar</span>
@@ -1852,7 +1894,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
             type="button"
             onClick={() => handleOpenExportModal({ scope: 'all' })}
             disabled={concursoFlashcards.length === 0}
-            className="h-10 px-4 rounded-xl bg-black/60 hover:bg-black/80 disabled:opacity-50 disabled:cursor-not-allowed text-white border border-white/25 backdrop-blur-md shadow-md font-bold text-xs md:text-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            className="btn-banner-secundario flashcards-banner-btn h-10 px-4 rounded-xl bg-black/60 hover:bg-black/80 disabled:opacity-50 disabled:cursor-not-allowed text-white border border-white/25 backdrop-blur-md shadow-md font-bold text-xs md:text-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
           >
             <Download className="w-4 h-4 shrink-0" />
             <span>Exportar</span>
@@ -1924,7 +1966,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
 
         {/* Progresso / Precisão */}
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-          <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="flashcards-retention-icon-box w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <TrendingUp className="w-5 h-5" />
           </div>
           <div className="min-w-0">
@@ -1932,10 +1974,10 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
               Progresso / Precisão
             </span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              <span className="flashcards-retention-value text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
                 {precisaoCalculada}%
               </span>
-              <span className="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">
+              <span className="flashcards-retention-label text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">
                 retenção
               </span>
             </div>
@@ -1944,7 +1986,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
       </div>
 
       {/* 3. Banner / Card de Destaque da "Revisão Diária" */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 p-6 sm:p-7 shadow-xs">
+      <div className="flashcards-daily-review-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 p-6 sm:p-7 shadow-xs">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
           <div className="flex flex-col justify-center space-y-2 max-w-2xl">
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
@@ -1983,7 +2025,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
       </div>
 
       {/* 4. Barra de Controles: Busca, Seletor Rápido de Concurso, Filtro de Disciplinas e Ações de Importar/Exportar */}
-      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="flashcards-daily-review-card flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-3.5 rounded-2xl border border-primary/25 dark:border-primary/20 shadow-xs overflow-hidden">
         <div className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -1991,7 +2033,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar baralho ou conteúdo..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white/90 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
           />
         </div>
 
@@ -1999,7 +2041,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
           {/* Seletor Rápido de Concurso */}
           {availableConcursos.length > 0 && (
             <div className="flex items-center gap-1.5 min-w-0 max-w-full sm:max-w-[260px]">
-              <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 shrink-0 font-medium">
+              <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
                 <Briefcase className="w-3.5 h-3.5 text-primary" />
                 <span className="hidden md:inline">Concurso:</span>
               </div>
@@ -2007,7 +2049,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                 value={currentConcursoId}
                 onChange={(e) => handleQuickSwitchConcurso(e.target.value)}
                 title="Alternar Concurso"
-                className="w-full min-w-0 truncate text-xs font-bold px-3 py-2 bg-primary/5 dark:bg-primary/10 border border-primary/25 dark:border-primary/30 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                className="w-full min-w-0 truncate text-xs font-bold px-3 py-2 bg-white/90 dark:bg-slate-900/80 border border-primary/25 dark:border-primary/30 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
               >
                 {availableConcursos.map(c => (
                   <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
@@ -2020,14 +2062,14 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
 
           {/* Filtro por Disciplina do Concurso Selecionado */}
           <div className="flex items-center gap-1.5 min-w-0 max-w-full sm:max-w-[240px]">
-            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 shrink-0 font-medium">
-              <Filter className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
+              <Filter className="w-3.5 h-3.5 text-primary" />
               <span className="hidden md:inline">Filtrar:</span>
             </div>
             <select
               value={filterDisciplina}
               onChange={(e) => setFilterDisciplina(e.target.value)}
-              className="w-full min-w-0 truncate text-xs font-semibold px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+              className="w-full min-w-0 truncate text-xs font-semibold px-3 py-2 bg-white/90 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
               <option value="todas">Todas as Disciplinas</option>
               {availableDisciplinasList.map(disc => (
@@ -2043,7 +2085,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
               size="sm"
               onClick={() => handleOpenImportModal('file')}
               leftIcon={<Upload className="w-3.5 h-3.5" />}
-              className="text-xs font-bold whitespace-nowrap"
+              className="text-xs font-bold whitespace-nowrap bg-white/80 dark:bg-slate-900/80"
             >
               Importar
             </Button>
@@ -2053,7 +2095,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
               onClick={() => handleOpenExportModal({ scope: 'all' })}
               disabled={concursoFlashcards.length === 0}
               leftIcon={<Download className="w-3.5 h-3.5" />}
-              className="text-xs font-bold whitespace-nowrap"
+              className="text-xs font-bold whitespace-nowrap bg-white/80 dark:bg-slate-900/80"
             >
               Exportar
             </Button>
@@ -2064,7 +2106,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
               variant="outline"
               size="sm"
               onClick={() => setSelectedDeckId(null)}
-              className="text-xs shrink-0 whitespace-nowrap"
+              className="text-xs shrink-0 whitespace-nowrap bg-white/80 dark:bg-slate-900/80"
               leftIcon={<ArrowLeft className="w-3 h-3" />}
             >
               Voltar aos Baralhos
@@ -2203,11 +2245,11 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                       return (
                         <div
                           key={deck.id}
-                          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between hover:border-primary/50 dark:hover:border-primary/50 transition-all shadow-xs hover:shadow-md group"
+                          className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-2xl border border-primary/25 dark:border-primary/20 p-5 flex flex-col justify-between hover:border-primary/50 dark:hover:border-primary/50 transition-all shadow-xs hover:shadow-md group"
                         >
                           <div className="space-y-3">
                             <div className="flex items-start justify-between gap-2">
-                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 truncate max-w-[170px]">
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-primary/20 dark:border-slate-700/60 truncate max-w-[170px]">
                                 {deck.disciplina}
                               </span>
 
@@ -2216,7 +2258,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                                   {deck.pendentesHoje} hoje
                                 </span>
                               ) : (
-                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                <span className="flashcards-em-dia-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                                   Em dia
                                 </span>
                               )}
@@ -2226,18 +2268,18 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                               <h3 className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors text-base line-clamp-2">
                                 {deck.nome}
                               </h3>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                                 {deckCards.length} {deckCards.length === 1 ? 'cartão cadastrado' : 'cartões cadastrados'}
                               </p>
                             </div>
                           </div>
 
                           {/* Rodapé do Card do Baralho */}
-                          <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                          <div className="pt-4 mt-4 border-t border-primary/15 dark:border-primary/20 flex items-center justify-between gap-2">
                             <button
                               type="button"
                               onClick={() => setSelectedDeckId(deck.id)}
-                              className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+                              className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5" /> Ver Cards ({deckCards.length})
                             </button>
@@ -2250,7 +2292,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                                   handleOpenExportModal({ scope: 'deck', deckId: deck.id });
                                 }}
                                 title="Exportar este baralho"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                               >
                                 <Download className="w-4 h-4" />
                               </button>
@@ -2261,7 +2303,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                                   setDeckToDelete(deck);
                                 }}
                                 title="Excluir baralho"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -2269,7 +2311,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                                 type="button"
                                 onClick={() => handleOpenCreateModal(deck)}
                                 title="Adicionar flashcard neste baralho"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                               >
                                 <Plus className="w-4 h-4" />
                               </button>

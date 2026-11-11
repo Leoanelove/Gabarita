@@ -84,7 +84,14 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
   // Carrega / sincroniza o histórico de sessões se necessário
   useEffect(() => {
     if (isOpen && session) {
-      setSelectedTopicId(session.assuntoId || '');
+      const topics = PlannerService.getOrderedTopicsForDisciplina(
+        session.disciplinaId,
+        session.disciplinaName,
+        assuntos,
+        disciplinas
+      );
+      const matched = topics.find(t => t.id === session.assuntoId || (session.assuntoName && t.name.toLowerCase() === session.assuntoName.toLowerCase()));
+      setSelectedTopicId(matched?.id || session.assuntoId || '');
       setIsEditingTopic(false);
       setShowDatePicker(false);
       setIsMenuOpen(false);
@@ -123,8 +130,16 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
     }
   };
 
-  // Tópicos filtrados para a disciplina desta sessão
-  const availableTopics = assuntos.filter(a => a.disciplinaId === session.disciplinaId);
+  // Tópicos filtrados e ordenados rigorosamente pela ordem do edital verticalizado para a disciplina desta sessão
+  const availableTopics = useMemo(() => {
+    if (!session) return [];
+    return PlannerService.getOrderedTopicsForDisciplina(
+      session.disciplinaId,
+      session.disciplinaName,
+      assuntos,
+      disciplinas
+    );
+  }, [session, assuntos, disciplinas]);
 
   // Busca do histórico mais recente desta disciplina
   const lastStudySession = localHistorySessoes
@@ -429,7 +444,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
                 onClick={() => setShowDatePicker(prev => !prev)}
                 className="flex-1 py-2.5 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <Calendar className="w-4 h-4 text-blue-500" />
+                <Calendar className="w-4 h-4 transition-colors" style={{ color: palette.primary }} />
                 <span>Escolher outro dia</span>
               </button>
             </div>

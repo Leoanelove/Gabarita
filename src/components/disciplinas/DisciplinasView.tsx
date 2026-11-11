@@ -1012,49 +1012,49 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
       {/* Global Summary Statistics */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 font-medium block text-[11px]">Progresso do Edital</span>
+          <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+            <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Progresso do Edital</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                 {editalStats.progressPct}%
               </span>
-              <span className="text-slate-500 text-[11px]">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px]">
                 ({editalStats.dominados}/{editalStats.totalTopics} tópicos)
               </span>
             </div>
-            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-2">
+            <div className="w-full h-1.5 bg-slate-200/80 dark:bg-slate-700/80 rounded-full overflow-hidden mt-2">
               <div 
-                className="h-full bg-emerald-500 transition-all duration-500" 
+                className="h-full bg-[var(--primary-color)] transition-all duration-500" 
                 style={{ width: `${editalStats.progressPct}%` }} 
               />
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 font-medium block text-[11px]">Total de Matérias</span>
+          <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+            <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Total de Matérias</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                 {currentConcursoDisciplinas.length}
               </span>
-              <span className="text-slate-500 text-[11px]">cadastradas</span>
+              <span className="text-slate-500 dark:text-slate-400 text-[11px]">cadastradas</span>
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 font-medium block text-[11px]">Questões Resolvidas</span>
+          <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+            <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Questões Resolvidas</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                 {editalStats.totalQuestions}
               </span>
-              <span className="text-slate-500 text-[11px]">no total</span>
+              <span className="text-slate-500 dark:text-slate-400 text-[11px]">no total</span>
             </div>
           </div>
 
           {(() => {
             const globalAccStyle = getAccuracyConfig(editalStats.accuracyPct, editalStats.totalQuestions);
             return (
-              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
-                <span className="text-slate-400 font-medium block text-[11px]">Taxa Geral de Acerto</span>
+              <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+                <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Taxa Geral de Acerto</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className={`text-xl font-black font-mono flex items-center gap-1.5 ${globalAccStyle.textClass}`}>
                     {globalAccStyle.hasCrown && (
@@ -1064,7 +1064,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                     )}
                     <span>{globalAccStyle.hasData ? `${editalStats.accuracyPct}%` : '—'}</span>
                   </span>
-                  <span className="text-slate-500 text-[11px]">média</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-[11px]">média</span>
                 </div>
               </div>
             );
@@ -1073,7 +1073,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
       </div>
 
       {/* Toolbar: Search, Filters, Gamification Legend & Expand All Button */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col gap-3">
+      <div className="flashcards-daily-review-card relative overflow-hidden bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex-1 max-w-md">
             <Input
@@ -1086,13 +1086,13 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
 
           <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
             {/* Status filter toggle */}
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
+            <div className="flex items-center bg-white/80 dark:bg-slate-800/90 border border-slate-200/70 dark:border-slate-700/70 p-1 rounded-xl text-xs">
               <button
                 onClick={() => setStatusFilter('todos')}
                 className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${
                   statusFilter === 'todos'
-                    ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Todos
@@ -1101,8 +1101,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                 onClick={() => setStatusFilter('concluidos')}
                 className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${
                   statusFilter === 'concluidos'
-                    ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Concluídos
@@ -1111,8 +1111,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                 onClick={() => setStatusFilter('pendentes')}
                 className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${
                   statusFilter === 'pendentes'
-                    ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Pendentes
@@ -1124,8 +1124,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
               size="sm"
               variant="outline"
               onClick={() => toggleAllDisciplinas(!areAllExpanded)}
-              leftIcon={areAllExpanded ? <Folder className="w-4 h-4" /> : <FolderOpen className="w-4 h-4 text-emerald-500" />}
-              className="cursor-pointer font-medium text-xs whitespace-nowrap"
+              leftIcon={areAllExpanded ? <Folder className="w-4 h-4" /> : <FolderOpen className="w-4 h-4 text-[var(--primary-color)] dark:text-[var(--primary-text-dark)]" />}
+              className="cursor-pointer font-medium text-xs whitespace-nowrap bg-white/80 dark:bg-slate-900/80"
             >
               {areAllExpanded ? 'Recolher Todos' : 'Expandir Todos'}
             </Button>
@@ -1133,7 +1133,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
         </div>
 
         {/* Legenda de Gamificação do Percentual de Acerto */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-2 flex-wrap py-2">
+        <div className="pt-2 border-t border-primary/15 dark:border-primary/20 flex items-center justify-end gap-2 flex-wrap py-2">
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1 select-none">
             Faixas de Acerto:
           </span>
@@ -1327,7 +1327,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
             return (
               <div 
                 key={disc.id}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700"
+                className="edital-disciplina-card bg-white dark:bg-slate-900 border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs overflow-hidden transition-all duration-200"
               >
                 {/* 1. VISÃO RECOLHIDA: Card da Matéria (Barra lateral fina colorida, Nome, Estatísticas, Barra de Progresso e Chevron) */}
                 <div
@@ -1340,7 +1340,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                       toggleDisciplinaAccordion(disc.id);
                     }
                   }}
-                  className="p-4 sm:p-5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 select-none relative transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/30"
+                  className="edital-disciplina-header bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-4 sm:p-5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 select-none relative transition-all"
                 >
                   {/* Barra lateral fina colorida no topo/esquerda do card para identificação */}
                   <div 
@@ -1399,7 +1399,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                       )}
 
                       {/* Barra de Progresso Reduzida (ao lado direito de Acertos) */}
-                      <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-[11px] shadow-2xs">
+                      <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-[11px] shadow-2xs">
                         <span className="text-slate-500 dark:text-slate-400 font-medium">Progresso:</span>
                         <div className="w-16 sm:w-20 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
                           <div 
@@ -1474,8 +1474,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                     <div 
                       className={`p-2 rounded-xl transition-all duration-300 cursor-pointer ${
                         isExpanded 
-                          ? 'rotate-180 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' 
-                          : 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          ? 'rotate-180 text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] bg-[var(--primary-light)]' 
+                          : 'text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 hover:bg-white dark:hover:bg-slate-700'
                       }`}
                     >
                       <ChevronDown className="w-5 h-5" />
@@ -1485,7 +1485,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
 
                 {/* 3. VISÃO EXPANDIDA (Lista de Tópicos pertencentes àquela disciplina) */}
                 {isExpanded && (
-                  <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 sm:p-5 space-y-2.5">
+                  <div className="border-t border-primary/20 dark:border-primary/20 bg-slate-50/70 dark:bg-slate-950/60 p-3 sm:p-5 space-y-2.5">
                     {/* Cabeçalho da grade expandida */}
                     <div className="flex items-center justify-between pb-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800/80 px-2 sm:px-3">
                       <span>Tópicos da Disciplina ({visibleAssuntos.length})</span>

@@ -10,7 +10,8 @@ import {
   PlanConflict, 
   DisciplinaAllocation, 
   PlanHistoryLog,
-  PlanSessionType 
+  PlanSessionType,
+  SessaoEstudo
 } from '../types';
 
 export class PlannerService {
@@ -40,6 +41,228 @@ export class PlannerService {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  }
+
+  /**
+   * Determina se uma sessão planejada foi efetivamente estudada pelo estudante
+   * (seja por marcação direta no plano ou por registro de estudo em `sessoes`).
+   */
+  static isSessionStudied(session: PlannedSession, sessoes: SessaoEstudo[] = []): boolean {
+    if (session.status === 'concluida') return true;
+    if (!sessoes || sessoes.length === 0) return false;
+
+    const sessionDate = session.date;
+    return sessoes.some(st => {
+      if (st.disciplinaId !== session.disciplinaId) return false;
+      const studyDate = st.completedAt
+        ? (st.completedAt.includes('T') ? st.completedAt.split('T')[0] : st.completedAt)
+        : (st.createdAt ? (st.createdAt.includes('T') ? st.createdAt.split('T')[0] : st.createdAt) : '');
+
+      // Se estudou na data planejada do bloco
+      if (studyDate === sessionDate) {
+        if (session.assuntoId && st.assuntoId) {
+          return st.assuntoId === session.assuntoId;
+        }
+        return true;
+      }
+
+      // Se estudou o mesmo tópico em data posterior à planejada
+      if (session.assuntoId && st.assuntoId && st.assuntoId === session.assuntoId && studyDate >= sessionDate) {
+        return true;
+      }
+
+      return false;
+    });
+  }
+
+  /**
+   * Uma sessão só pode ser considerada atrasada se:
+   * 1. A sua data já passou estritamente (session.date < todayStr) — ou seja,
+   *    a notificação só deve aparecer NO DIA SEGUINTE ao dos blocos (nunca no próprio dia ou futuro).
+   * 2. O estudante NÃO tiver estudado a sessão (nem marcada como concluída nem registrada em sessoes).
+   */
+  static isSessionOverdue(
+    session: PlannedSession,
+    todayStr: string,
+    sessoes: SessaoEstudo[] = []
+  ): boolean {
+    // REGRA FUNDAMENTAL: Blocos do dia de hoje (ou de datas futuras) NUNCA são considerados atrasados.
+    // A notificação de atraso só pode aparecer no dia seguinte ao dos blocos.
+    if (!session.date || session.date >= todayStr) {
+      return false;
+    }
+
+    // Se já estiver marcada como concluída
+    if (session.status === 'concluida') {
+      return false;
+    }
+
+    // Verifica se o usuário estudou a sessão no histórico
+    if (this.isSessionStudied(session, sessoes)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Retorna apenas as sessões de dias anteriores que o usuário NÃO tiver estudado.
+   */
+  static getOverdueSessions(
+    sessions: PlannedSession[],
+    todayStr: string,
+    sessoes: SessaoEstudo[] = []
+  ): PlannedSession[] {
+    if (!sessions || sessions.length === 0) return [];
+
+    const usedSessaoIds = new Set<string>();
+
+    return sessions.filter(session => {
+      // Bloqueia qualquer sessão de hoje ou de datas futuras
+      if (!session.date || session.date >= todayStr) return false;
+      if (session.status === 'concluida') return false;
+
+      // Procura correspondência no histórico de estudos
+      const matchedSessao = (sessoes || []).find(st => {
+        if (usedSessaoIds.has(st.id)) return false;
+        if (st.disciplinaId !== session.disciplinaId) return false;
+        const studyDate = st.completedAt
+          ? (st.completedAt.includes('T') ? st.completedAt.split('T')[0] : st.completedAt)
+          : (st.createdAt ? (st.createdAt.includes('T') ? st.createdAt.split('T')[0] : st.createdAt) : '');
+
+        if (studyDate === session.date) {
+          if (session.assuntoId && st.assuntoId) {
+            return st.assuntoId === session.assuntoId;
+          }
+          return true;
+        }
+
+        if (session.assuntoId && st.assuntoId && st.assuntoId === session.assuntoId && studyDate >= session.date) {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (matchedSessao) {
+        usedSessaoIds.add(matchedSessao.id);
+        return false; // Estudada! Não está atrasada.
+      }
+
+      return true; // Não estudada e data passada -> atrasada!
+    });
+  }
+
+  /**
+   * Retorna os tópicos de uma disciplina ordenados rigorosamente pela ordem do edital verticalizado (1, 2, 3...).
+   * Suporta correspondência por disciplinaId, por nome da disciplina, tópicos embutidos na disciplina ou no bundle ativo.
+   */
+  static getOrderedTopicsForDisciplina(
+    disciplinaId: string,
+    disciplinaName: string,
+    allAssuntos: Assunto[] = [],
+    allDisciplinas: Disciplina[] = []
+  ): Assunto[] {
+    const cleanDiscId = String(disciplinaId || '').trim();
+    const cleanDiscName = String(disciplinaName || '').trim().toLowerCase();
+
+    const matchedMap = new Map<string, Assunto>();
+
+    // 1. Tópicos da lista geral de assuntos (por ID ou nome de disciplina)
+    allAssuntos.forEach(a => {
+      const aDiscId = String(a.disciplinaId || '').trim();
+      const aDiscName = String((a as any).disciplinaName || '').trim().toLowerCase();
+
+      if ((cleanDiscId && aDiscId === cleanDiscId) || (cleanDiscName && aDiscName && aDiscName === cleanDiscName)) {
+        if (!matchedMap.has(a.id)) {
+          matchedMap.set(a.id, a);
+        }
+      }
+    });
+
+    // 2. Tópicos embutidos na própria disciplina
+    const foundDisc = allDisciplinas.find(d => 
+      String(d.id).trim() === cleanDiscId || (d.name && d.name.trim().toLowerCase() === cleanDiscName)
+    );
+    if (foundDisc) {
+      if ((foundDisc as any).assuntos && Array.isArray((foundDisc as any).assuntos)) {
+        (foundDisc as any).assuntos.forEach((emb: any, idx: number) => {
+          const embId = emb.id || `ass_emb_${foundDisc.id}_${idx}`;
+          if (!matchedMap.has(embId)) {
+            matchedMap.set(embId, {
+              id: embId,
+              disciplinaId: foundDisc.id,
+              name: emb.name || 'Tópico',
+              order: typeof emb.order === 'number' ? emb.order : idx + 1,
+              importance: emb.importance || 'alta',
+              difficulty: emb.difficulty || 'media',
+              status: emb.status || 'nao_iniciado',
+              completed: Boolean(emb.completed),
+              masteryLevel: emb.masteryLevel || 0,
+              totalQuestionsSolved: emb.totalQuestionsSolved || 0,
+              correctQuestionsSolved: emb.correctQuestionsSolved || 0,
+              accuracyRate: emb.accuracyRate || 0,
+              createdAt: emb.createdAt || new Date().toISOString(),
+            });
+          }
+        });
+      } else if ((foundDisc as any).topicos && Array.isArray((foundDisc as any).topicos)) {
+        (foundDisc as any).topicos.forEach((top: any, idx: number) => {
+          const topName = typeof top === 'string' ? top : top.name;
+          const topId = (typeof top === 'object' && top.id) ? top.id : `ass_top_${foundDisc.id}_${idx}`;
+          if (!matchedMap.has(topId)) {
+            matchedMap.set(topId, {
+              id: topId,
+              disciplinaId: foundDisc.id,
+              name: topName || `Tópico ${idx + 1}`,
+              order: typeof top.order === 'number' ? top.order : idx + 1,
+              importance: top.importance || 'alta',
+              difficulty: top.difficulty || 'media',
+              status: top.status || 'nao_iniciado',
+              completed: Boolean(top.completed),
+              masteryLevel: 0,
+              totalQuestionsSolved: 0,
+              correctQuestionsSolved: 0,
+              accuracyRate: 0,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        });
+      }
+    }
+
+    // 3. Verifica se há tópicos salvos no gabarita_active_contest em localStorage
+    if (matchedMap.size === 0 && typeof window !== 'undefined') {
+      try {
+        const rawActive = localStorage.getItem('gabarita_active_contest');
+        if (rawActive) {
+          const bundle = JSON.parse(rawActive);
+          const bundleDisc = (bundle?.disciplinas || []).find((d: any) =>
+            String(d.id).trim() === cleanDiscId || (d.name && d.name.trim().toLowerCase() === cleanDiscName)
+          );
+          if (bundleDisc?.assuntos && Array.isArray(bundleDisc.assuntos)) {
+            bundleDisc.assuntos.forEach((a: any, idx: number) => {
+              const aId = a.id || `ass_bundle_${bundleDisc.id}_${idx}`;
+              if (!matchedMap.has(aId)) {
+                matchedMap.set(aId, a);
+              }
+            });
+          }
+        }
+      } catch {}
+    }
+
+    const result = Array.from(matchedMap.values());
+
+    // 4. Ordenação rigorosa pelo edital verticalizado: crescente pelo campo order (1, 2, 3...)
+    result.sort((a, b) => {
+      const orderA = typeof a.order === 'number' ? a.order : 9999;
+      const orderB = typeof b.order === 'number' ? b.order : 9999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.createdAt || '').localeCompare(b.createdAt || '');
+    });
+
+    return result;
   }
 
   static calculateDistribution(
@@ -196,6 +419,7 @@ export class PlannerService {
   ): { sessions: PlannedSession[]; conflicts: PlanConflict[] } {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = this.formatLocalDate(today);
     const startDate = this.parseLocalDate(startDateStr);
     const examDate = this.parseLocalDate(targetExamDateStr);
 
@@ -232,9 +456,19 @@ export class PlannerService {
 
     let balances = initBalances();
 
+    // Mapeamento e índices sequenciais de tópicos por disciplina seguindo rigorosamente o edital verticalizado
+    const discTopicsMap: Record<string, Assunto[]> = {};
     const topicIndices: Record<string, number> = {};
+
     distribution.forEach(d => {
-      topicIndices[d.disciplinaId] = 0;
+      const key = d.disciplinaId || d.disciplinaName;
+      const topics = this.getOrderedTopicsForDisciplina(d.disciplinaId, d.disciplinaName, assuntos, disciplinas);
+      discTopicsMap[key] = topics;
+      // Dá continuidade com base em blocos concluídos prévios para não reiniciar do início se já houver progresso
+      const completedCount = finalSessions.filter(
+        s => (s.disciplinaId === d.disciplinaId || s.disciplinaName === d.disciplinaName) && s.status === 'concluida'
+      ).length;
+      topicIndices[key] = completedCount;
     });
 
     const planningHorizonDays = totalDays;
@@ -289,7 +523,7 @@ export class PlannerService {
           const rev = pendingReviews[reviewIdx];
           const discAlloc = distribution.find(d => d.disciplinaId === rev.disciplinaId) || distribution[0];
           if (discAlloc) {
-            const isPast = currentDate < today;
+            const isPast = currentDateStr < todayStr;
             const revDuration = Math.max(15, Math.min(45, Math.min(dayRemaining, maxDur)));
             const newSession: PlannedSession = {
               id: `plan_ses_rev_${currentDateStr}_${slotOrder}`,
@@ -396,12 +630,24 @@ export class PlannerService {
       dayBlocks.forEach((block) => {
         const safeDuration = Math.max(minDur, Math.min(maxDur, block.duration));
 
-        const discTopics = assuntos.filter(a => a.disciplinaId === block.alloc.disciplinaId);
+        const discKey = block.alloc.disciplinaId || block.alloc.disciplinaName;
+        let discTopics = discTopicsMap[discKey];
+        if (!discTopics || discTopics.length === 0) {
+          discTopics = this.getOrderedTopicsForDisciplina(
+            block.alloc.disciplinaId,
+            block.alloc.disciplinaName,
+            assuntos,
+            disciplinas
+          );
+          discTopicsMap[discKey] = discTopics;
+        }
+
         let unstudiedTopic: Assunto | undefined;
         if (discTopics.length > 0) {
-          const idx = (topicIndices[block.alloc.disciplinaId] || 0) % discTopics.length;
-          unstudiedTopic = discTopics[idx];
-          topicIndices[block.alloc.disciplinaId] = idx + 1;
+          const currentIdx = topicIndices[discKey] ?? 0;
+          const topicIndex = currentIdx % discTopics.length;
+          unstudiedTopic = discTopics[topicIndex];
+          topicIndices[discKey] = currentIdx + 1;
         }
 
         let sessionType: PlanSessionType = 'teoria';
@@ -411,7 +657,7 @@ export class PlannerService {
           sessionType = 'questoes';
         }
 
-        const isPast = currentDate < today;
+        const isPast = currentDateStr < todayStr;
         const newSession: PlannedSession = {
           id: `plan_ses_${currentDateStr}_${slotOrder}`,
           planId,
@@ -475,14 +721,15 @@ export class PlannerService {
     sessions: PlannedSession[],
     availability: WeeklyAvailability,
     examDateStr: string,
-    assuntos: Assunto[]
+    assuntos: Assunto[],
+    sessoes: SessaoEstudo[] = []
   ): PlanConflict[] {
     const conflicts: PlanConflict[] = [];
-    const todayStr = this.formatLocalDate(new Date());
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = this.formatLocalDate(today);
 
-    const overdueSessions = sessions.filter(s => s.status === 'atrasada' || (s.date < todayStr && s.status === 'pendente'));
+    const overdueSessions = this.getOverdueSessions(sessions, todayStr, sessoes);
     if (overdueSessions.length > 0) {
       conflicts.push({
         id: 'conf_overdue',
@@ -613,16 +860,15 @@ export class PlannerService {
   static redistributeOverdueSessions(
     plan: StudyPlan,
     mode: 'today' | 'spread' = 'spread',
-    targetDateStr?: string
+    targetDateStr?: string,
+    sessoes: SessaoEstudo[] = []
   ): { updatedSessions: PlannedSession[]; count: number } {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = this.formatLocalDate(today);
     const destinationDate = targetDateStr || todayStr;
 
-    const overdueSessions = plan.sessions.filter(s => 
-      s.status === 'atrasada' || (s.status === 'pendente' && s.date < todayStr)
-    );
+    const overdueSessions = this.getOverdueSessions(plan.sessions, todayStr, sessoes);
     if (overdueSessions.length === 0) {
       return { updatedSessions: plan.sessions, count: 0 };
     }

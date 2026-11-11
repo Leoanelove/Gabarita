@@ -1697,8 +1697,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Quadro 2 (Superior Direito): Metas de Estudo Semanal */}
         <div className="h-full min-h-[440px] sm:min-h-[480px] flex flex-col bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
           {/* Cabeçalho: Metas de Estudo Semanal */}
-          <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-3">
+          <div className="dashboard-themed-header relative overflow-hidden px-6 py-5 flex items-center justify-between bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border-b border-primary/25 dark:border-primary/20">
+            <div className="flex items-center gap-3 relative z-10">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{
@@ -1716,7 +1716,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={handleOpenEditModal}
-              className="w-9 h-9 rounded-xl bg-slate-100/80 hover:bg-slate-200/70 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+              className="relative z-10 w-9 h-9 rounded-xl bg-white/80 hover:bg-white dark:bg-slate-800/90 dark:hover:bg-slate-700 border border-primary/20 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
               title="Configurar Metas de Estudo Semanal"
               aria-label="Configurar Metas de Estudo Semanal"
             >
@@ -1965,9 +1965,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Quadro 3 (Inferior Esquerdo): Rendimento & Histórico de Estudos */}
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col rounded-2xl overflow-hidden">
           <CardHeader
             title="Rendimento & Histórico de Estudos"
+            className="dashboard-themed-header relative overflow-hidden px-6 py-5 items-center bg-gradient-to-r from-primary/15 via-primary/5 to-transparent !border-b !border-primary/25 dark:!border-primary/20"
             action={
               <Button size="sm" variant="ghost" onClick={() => onNavigateTab('historico')} rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>
                 Ver Histórico
@@ -1980,9 +1981,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </Card>
 
         {/* Quadro 4 (Inferior Direito): Fila de Revisões Espaçadas de Hoje */}
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col rounded-2xl overflow-hidden">
           <CardHeader
             title="Fila de Revisões Espaçadas de Hoje"
+            className="dashboard-themed-header relative overflow-hidden px-6 py-5 items-center bg-gradient-to-r from-primary/15 via-primary/5 to-transparent !border-b !border-primary/25 dark:!border-primary/20"
             action={
               <Button size="sm" variant="ghost" onClick={() => onNavigateTab('revisoes')} rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>
                 Ver Todas

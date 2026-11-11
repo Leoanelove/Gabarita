@@ -351,7 +351,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
   const [docHtml, setDocHtml] = useState<string>('');
   const [isReadingMode, setIsReadingMode] = useState<boolean>(false);
   const [readingFontSize, setReadingFontSize] = useState<'sm' | 'base' | 'lg' | 'xl'>('lg');
-  const [isLinedPaper, setIsLinedPaper] = useState<boolean>(false);
+  const [isLinedPaper, setIsLinedPaper] = useState<boolean>(true);
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [showHighlightMenu, setShowHighlightMenu] = useState<boolean>(false);
@@ -650,6 +650,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
     if (!disc) return;
 
     setSelectedDisciplinaId(disc.id);
+    setIsLinedPaper(true);
     const discTopicos = activeAssuntos.filter(a => a.disciplinaId === disc.id);
     const discResumos = resumos.filter(r => r.disciplinaId === disc.id);
 
@@ -1941,7 +1942,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
           {/* B. 4 CARDS DE RESUMO (KPIs) NO TOPO */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* KPI 1: Resumos Criados */}
-            <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col justify-between">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400">
                   Resumos Criados
@@ -1965,7 +1966,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
             </div>
 
             {/* KPI 2: Cobertura do Edital Resumida */}
-            <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col justify-between">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400">
                   Cobertura do Edital Resumida
@@ -1986,7 +1987,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
                   ({kpiStats.topicosResumidosCount} de {kpiStats.totalTopicosEdital} tópicos)
                 </span>
               </div>
-              <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
+              <div className="w-full h-2 bg-slate-200/80 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
                 <div
                   className="h-full rounded-full transition-all duration-300"
                   style={{
@@ -1998,7 +1999,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
             </div>
 
             {/* KPI 3: Resumos de Véspera (Favoritos) */}
-            <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col justify-between">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400">
                   Resumos de Véspera
@@ -2016,7 +2017,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
             </div>
 
             {/* KPI 4: Volume de Síntese */}
-            <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col justify-between">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400">
                   Volume de Síntese
@@ -2037,7 +2038,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
           </div>
 
           {/* C. BARRA DE BUSCA GLOBAL PROFUNDA E FILTROS RÁPIDOS */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3.5">
+          <div className="flashcards-daily-review-card relative overflow-hidden bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-4 shadow-xs space-y-3.5">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -2045,7 +2046,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
                 value={globalSearchQuery}
                 onChange={e => setGlobalSearchQuery(e.target.value)}
                 placeholder="Pesquisar dentro dos seus resumos por palavra-chave, artigo de lei, tópico, #tag ou disciplina..."
-                className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2"
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-700/80 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2"
                 style={{ '--tw-ring-color': themeGlowStyles.color } as React.CSSProperties}
               />
               {globalSearchQuery && (
@@ -2078,7 +2079,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                       isActive
                         ? 'text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        : 'bg-white/80 dark:bg-slate-800/90 border border-slate-200/70 dark:border-slate-700/70 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'
                     }`}
                     style={isActive ? { backgroundColor: themeGlowStyles.color } : undefined}
                   >
@@ -2090,7 +2091,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
 
             {/* Resultados Encontrados nos Cadernos (Full-Text Search) */}
             {globalSearchQuery.trim().length > 0 && (
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+              <div className="pt-3 border-t border-primary/15 dark:border-primary/20 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Resultados Encontrados nos Cadernos ({globalSearchResults.length})
@@ -2105,7 +2106,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
                     {globalSearchResults.map(({ resumo, snippet }) => (
                       <div
                         key={resumo.id}
-                        className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+                        className="p-3.5 rounded-xl bg-white/85 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
                       >
                         <div className="space-y-1">
                           <div className="flex items-center justify-between gap-2">
@@ -2168,7 +2169,7 @@ export const ResumosView: React.FC<ResumosViewProps> = ({
                     onClick={() =>
                       handleOpenDisciplinaWorkspace(r.disciplinaId, r.assuntoId, r.id)
                     }
-                    className="text-left p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                    className="flashcards-daily-review-card relative overflow-hidden text-left p-3.5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs transition-all flex items-center justify-between gap-3 cursor-pointer group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <SubjectIcon subjectName={r.disciplinaName} />

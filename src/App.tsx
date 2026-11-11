@@ -71,6 +71,10 @@ const THEME_LIGHT_BACKGROUNDS: Record<string, string> = {
   laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Planos%20de%20Fundo/Plano-de-fundo-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvUGxhbm9zIGRlIEZ1bmRvL1BsYW5vLWRlLWZ1bmRvLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjcwNDQwOCwiZXhwIjo0OTQ2MzA0NDA4fQ.kLJJqGFmuP8GOlsamCoOVk8n6rpmTZjjzhmaGI63JGc_h2HfDNUx_ta8NK2c3c_cw7a_tea6El_vwQ8IQbUBlw',
 };
 
+// Flags de controle de módulos (Para reativar no futuro, altere para true)
+const ENABLE_METAS_MODULE = false; // Para reativar "Metas & Desempenho", altere para true
+const ENABLE_AI_ASSISTANT_MODULE = false; // Para reativar "Assistente IA", altere para true
+
 const MainApp: React.FC = () => {
   const { user, isAuthenticated, isLoading, isLoginTransitioning, refreshProfile } = useAuth();
   const { colorSkin, effectiveTheme, reapplyTheme } = useTheme();
@@ -140,9 +144,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         DatabaseService.getQuestoes(),
         DatabaseService.getBlocosQuestoes(),
         DatabaseService.getCadernoErros(),
-        DatabaseService.getMetas(),
-        DatabaseService.getConquistas(),
-        DatabaseService.getMarcos(),
+        ENABLE_METAS_MODULE ? DatabaseService.getMetas() : Promise.resolve([] as Meta[]),
+        ENABLE_METAS_MODULE ? DatabaseService.getConquistas() : Promise.resolve([] as Conquista[]),
+        ENABLE_METAS_MODULE ? DatabaseService.getMarcos() : Promise.resolve([] as MarcoEstudo[]),
         DatabaseService.getEstatisticasProgressoReal(user?.id || 'user_demo_01'),
         DatabaseService.getSimulados(),
         DatabaseService.getStudyMethod(),
@@ -363,12 +367,16 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
       targetConcursoTitle: `${updatedActive.organ} - ${updatedActive.role}`,
     });
     try {
-      const [newCycle, newPlan] = await Promise.all([
+      const [newCycle, newPlan, freshDisciplinas, freshAssuntos] = await Promise.all([
         DatabaseService.getStudyCycle(updatedActive.id),
         DatabaseService.getStudyPlan(updatedActive.id),
+        DatabaseService.getDisciplinas(),
+        DatabaseService.getAssuntos(),
       ]);
       setCycle(newCycle && newCycle.concursoId === updatedActive.id && newCycle.blocks && newCycle.blocks.length > 0 ? newCycle : null);
       setPlan(newPlan && newPlan.concursoId === updatedActive.id && newPlan.sessions && newPlan.sessions.length > 0 ? newPlan : null);
+      setDisciplinas(freshDisciplinas);
+      setAssuntos(freshAssuntos);
     } catch (e) {
       console.warn('Erro ao atualizar ciclo e plano do concurso ativo:', e);
     }
@@ -383,12 +391,16 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         targetConcursoTitle: `${result.nextActiveConcurso.organ} - ${result.nextActiveConcurso.role}`,
       });
       try {
-        const [newCycle, newPlan] = await Promise.all([
+        const [newCycle, newPlan, freshDisciplinas, freshAssuntos] = await Promise.all([
           DatabaseService.getStudyCycle(result.nextActiveConcurso.id),
           DatabaseService.getStudyPlan(result.nextActiveConcurso.id),
+          DatabaseService.getDisciplinas(),
+          DatabaseService.getAssuntos(),
         ]);
         setCycle(newCycle);
         setPlan(newPlan);
+        setDisciplinas(freshDisciplinas);
+        setAssuntos(freshAssuntos);
       } catch (e) {
         console.warn('Erro ao atualizar ciclo e plano após arquivar:', e);
       }
@@ -1293,7 +1305,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             </div>
           )}
 
-          {currentTab === 'metas' && (
+          {/* Para reativar a rota "Metas & Desempenho", altere ENABLE_METAS_MODULE para true no topo do arquivo */}
+          {ENABLE_METAS_MODULE && currentTab === 'metas' && (
             <MetasView
               metas={metas}
               conquistas={conquistas}
@@ -1390,7 +1403,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             />
           )}
 
-          {currentTab === 'ai_assistant' && (
+          {/* Para reativar a rota "Assistente IA", altere ENABLE_AI_ASSISTANT_MODULE para true no topo do arquivo */}
+          {ENABLE_AI_ASSISTANT_MODULE && currentTab === 'ai_assistant' && (
             <AIAssistantView />
           )}
 

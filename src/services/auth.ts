@@ -470,6 +470,33 @@ export class AuthService {
     }
   }
 
+  static async changePassword(currentPassword: string, newPassword: string, captchaToken?: string): Promise<void> {
+    if (!currentPassword) {
+      throw new Error('Informe sua senha atual.');
+    }
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('A nova senha deve conter no mínimo 6 caracteres.');
+    }
+    const currentUser = this.currentState.user;
+    if (isSupabaseConfigured && currentUser && currentUser.id !== 'user_demo_01') {
+      const options: { emailRedirectTo?: string; captchaToken?: string } = captchaToken
+        ? { captchaToken }
+        : {};
+      const { error } = await supabase.auth.updateUser(
+        { password: newPassword },
+        options as any
+      );
+      if (error) {
+        throw new Error(this.translateAuthError(error.message));
+      }
+      try {
+        await supabase.auth.signOut({ scope: 'others' });
+      } catch {
+        // Ignora caso o escopo others não seja suportado na sessão atual
+      }
+    }
+  }
+
   static async deleteAccount(): Promise<void> {
     const currentUser = this.currentState.user;
     if (currentUser) {

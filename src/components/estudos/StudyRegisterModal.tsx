@@ -16,6 +16,7 @@ import {
   ChevronDown,
   GraduationCap,
   CalendarCheck,
+  Calendar,
   Lock,
   Search
 } from 'lucide-react';
@@ -857,7 +858,10 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto sm:ml-0">
               {/* Seletor de Data de Registro: [Hoje | Ontem | Outro] */}
               <div className="flex items-center gap-2 shrink-0">
-                <CalendarCheck className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 hidden xs:block" />
+                <CalendarCheck 
+                  className="w-4 h-4 shrink-0 hidden xs:block transition-colors" 
+                  style={{ color: palette.primary }} 
+                />
                 <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 h-9 shadow-xs">
                   {(['hoje', 'ontem', 'outro'] as const).map((opt) => {
                     const isSelected = dateMode === opt;
@@ -887,8 +891,23 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                       value={customDate}
                       max={getTodayYMD()}
                       onChange={(e) => setCustomDate(e.target.value)}
-                      className="h-9 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/30 shadow-2xs cursor-pointer"
+                      onClick={(e) => {
+                        try {
+                          (e.target as HTMLInputElement).showPicker?.();
+                        } catch {}
+                      }}
+                      className="themed-date-input h-9 pl-2.5 pr-8 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-medium focus:outline-none focus:ring-2 shadow-2xs cursor-pointer transition-colors"
+                      style={{
+                        accentColor: palette.primary,
+                        outlineColor: palette.primary,
+                      }}
                     />
+                    <div 
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center transition-colors"
+                      style={{ color: palette.primary }}
+                    >
+                      <Calendar className="w-4 h-4 stroke-[2.2]" style={{ color: palette.primary }} />
+                    </div>
                   </div>
                 )}
               </div>

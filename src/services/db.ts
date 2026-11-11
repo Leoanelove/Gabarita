@@ -1169,6 +1169,8 @@ export class DatabaseService {
             role: data.role || 'aluno',
             photoURL: data.photo_url || '',
             bio: data.bio || '',
+            gender: data.preferences?.gender || current.gender || 'Não Informado',
+            birthDate: data.preferences?.birthDate || current.birthDate || '',
             targetConcursoId: data.target_concurso_id || '',
             targetConcursoTitle: data.target_concurso_title || '',
             studyHoursPerDay: Number(data.study_hours_per_day || 4.0),
@@ -5897,9 +5899,10 @@ export class DatabaseService {
   static async batchRescheduleOverdue(targetDateStr?: string, mode: 'today' | 'spread' = 'spread'): Promise<StudyPlan> {
     const plan = await this.getStudyPlan();
     const destinationDate = targetDateStr || PlannerService.formatLocalDate(new Date());
-    const { updatedSessions, count } = PlannerService.redistributeOverdueSessions(plan, mode, destinationDate);
+    const sessoes = await this.getSessoes();
+    const { updatedSessions, count } = PlannerService.redistributeOverdueSessions(plan, mode, destinationDate, sessoes);
     const assuntos = await this.getAssuntos();
-    const conflicts = PlannerService.detectConflicts(updatedSessions, plan.weeklyAvailability, plan.targetExamDate, assuntos);
+    const conflicts = PlannerService.detectConflicts(updatedSessions, plan.weeklyAvailability, plan.targetExamDate, assuntos, sessoes);
     const updatedPlan: StudyPlan = {
       ...plan,
       sessions: updatedSessions,

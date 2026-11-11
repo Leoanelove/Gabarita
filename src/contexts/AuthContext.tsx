@@ -10,6 +10,7 @@ interface AuthContextType extends AuthState {
   loginWithGoogle: (credential: string) => Promise<UserProfile>;
   loginAsGuest: () => Promise<UserProfile>;
   resetPassword: (email: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string, captchaToken?: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: (updatedProfile: Partial<UserProfile>) => void;
@@ -54,6 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await AuthService.resetPassword(email);
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string, captchaToken?: string) => {
+    return await AuthService.changePassword(currentPassword, newPassword, captchaToken);
+  };
+
   const deleteAccount = async () => {
     return await AuthService.deleteAccount();
   };
@@ -83,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithGoogle,
         loginAsGuest,
         resetPassword,
+        changePassword,
         deleteAccount,
         logout,
         refreshProfile,

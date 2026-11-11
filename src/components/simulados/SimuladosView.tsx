@@ -233,13 +233,13 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
         {/* Topo Esquerdo: 2 Cards Verticais (lg:col-span-4) */}
         <div className="lg:col-span-4 flex flex-col gap-4">
           {/* Card 1: 'Simulados Realizados' */}
-          <Card className="flex-1 border-slate-200 dark:border-slate-800 bg-gradient-to-br from-indigo-500/10 via-slate-50 to-white dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900 shadow-sm">
+          <Card className="flashcards-daily-review-card flex-1 rounded-2xl border-primary/25 dark:border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent shadow-xs">
             <CardBody className="p-5 flex flex-col justify-between h-full">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider font-extrabold text-indigo-600 dark:text-indigo-400">
+                <span className="text-[11px] uppercase tracking-wider font-extrabold text-primary">
                   Simulados Realizados
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <div className="w-8 h-8 rounded-xl bg-primary/15 flex items-center justify-center text-primary">
                   <BarChart2 className="w-4 h-4" />
                 </div>
               </div>
@@ -248,14 +248,14 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                 <span className="text-3xl sm:text-4xl font-black font-mono text-slate-900 dark:text-slate-100">
                   {totalSimulados}
                 </span>
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-2">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-2">
                   {totalSimulados === 1 ? 'simulado registrado' : 'simulados registrados'}
                 </span>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="pt-2 border-t border-primary/15 dark:border-primary/20 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
                 <span>Total de Questões:</span>
-                <strong className="text-slate-800 dark:text-slate-200 font-mono font-bold">
+                <strong className="text-slate-900 dark:text-slate-100 font-mono font-bold">
                   {totalQuestoesSimulados} q
                 </strong>
               </div>
@@ -263,14 +263,14 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
           </Card>
 
           {/* Card 2: 'Último Simulado' */}
-          <Card className="flex-1 border-slate-200 dark:border-slate-800 bg-gradient-to-br from-emerald-500/10 via-slate-50 to-white dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900 shadow-sm">
+          <Card className="flashcards-daily-review-card flex-1 rounded-2xl border-primary/25 dark:border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent shadow-xs">
             <CardBody className="p-5 flex flex-col justify-between h-full space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider font-extrabold text-emerald-600 dark:text-emerald-400">
+                <span className="text-[11px] uppercase tracking-wider font-extrabold text-primary">
                   Último Simulado
                 </span>
                 {ultimoSimulado && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                     {ultimoSimulado.banca || 'Simulado'}
                   </span>
                 )}
@@ -279,14 +279,14 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
               {ultimoSimulado ? (
                 <>
                   <div className="space-y-1">
-                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title={ultimoSimulado.title}>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={ultimoSimulado.title}>
                       {ultimoSimulado.title}
                     </h3>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                      <span className="text-3xl font-black font-mono text-primary">
                         {ultimoAccuracy}%
                       </span>
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
                         aproveitamento geral
                       </span>
                     </div>
@@ -323,7 +323,7 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                   </div>
                 </>
               ) : (
-                <div className="py-4 text-center text-slate-400 text-xs">
+                <div className="py-4 text-center text-slate-500 dark:text-slate-400 text-xs">
                   Nenhum simulado registrado ainda.
                 </div>
               )}
@@ -333,12 +333,13 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
 
         {/* Topo Direito: Card Largo 'Seu Desempenho' com Gráfico de Linha (lg:col-span-8) */}
         <div className="lg:col-span-8 flex flex-col">
-          <Card className="h-full border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <Card className="flashcards-daily-review-card h-full rounded-2xl border-primary/25 dark:border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent shadow-xs flex flex-col justify-between overflow-hidden">
             <CardHeader
               title="Seu Desempenho"
               subtitle="Evolução percentual de acertos ao longo do tempo"
+              className="dashboard-themed-header border-primary/15 dark:border-primary/20"
               action={
-                <div className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800/50">
+                <div className="flex items-center gap-1.5 text-xs text-primary font-bold bg-white/85 dark:bg-slate-900/80 px-2.5 py-1 rounded-lg border border-primary/25 dark:border-primary/30">
                   <TrendingUp className="w-3.5 h-3.5" />
                   <span>Histórico de Evolução</span>
                 </div>
@@ -356,10 +357,10 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-indigo-500" />
+              <Clock className="w-4 h-4 text-primary" />
               Histórico de Simulados
             </h3>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
               {filteredSimulados.length}
             </span>
           </div>
@@ -372,7 +373,7 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                 <select
                   value={selectedBancaFilter}
                   onChange={(e) => setSelectedBancaFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-hidden"
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary/20 outline-hidden"
                 >
                   <option value="todas">Todas as Bancas</option>
                   {availableBancas.map(b => (
@@ -390,7 +391,7 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar por nome ou banca..."
-                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 outline-hidden font-medium"
+                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-primary/20 outline-hidden font-medium"
               />
             </div>
           </div>
@@ -427,25 +428,25 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
               return (
                 <div
                   key={sim.id}
-                  className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 transition-all duration-200 shadow-xs hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="flashcards-daily-review-card p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 hover:border-primary/50 dark:hover:border-primary/50 transition-all duration-200 shadow-xs hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
                   {/* Coluna 1: Data, Nome do Simulado e Banca */}
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-bold font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                        <Calendar className="w-3 h-3 text-slate-400" />
+                      <span className="text-[11px] font-bold font-mono text-slate-600 dark:text-slate-300 flex items-center gap-1 bg-white/80 dark:bg-slate-900/80 border border-primary/15 dark:border-slate-700 px-2 py-0.5 rounded-md">
+                        <Calendar className="w-3 h-3 text-primary" />
                         {formattedDate}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-primary/15 text-primary border border-primary/30">
                         {sim.banca || 'Simulado'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 border border-primary/15 dark:border-slate-700/60">
                         {sim.tipoGabarito === 'CERTO_ERRADO' || sim.modalidade === 'certo_errado'
                           ? 'Certo/Errado'
                           : `Múltipla Escolha ${sim.variacaoMultiplaEscolha === 'A_A_D' ? '(A-D)' : '(A-E)'}`}
                       </span>
                       {disciplinesCount > 0 && (
-                        <span className="text-[11px] font-medium text-slate-400">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                           • {disciplinesCount} {disciplinesCount === 1 ? 'matéria' : 'matérias'}
                         </span>
                       )}
@@ -453,29 +454,29 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                     <h4 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">
                       {sim.title}
                     </h4>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        Tempo Gasto: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{formattedDuration}</strong>
+                        <Clock className="w-3.5 h-3.5 text-primary" />
+                        Tempo Gasto: <strong className="text-slate-800 dark:text-slate-200 font-semibold">{formattedDuration}</strong>
                       </span>
                       <span>•</span>
-                      <span>Total: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{sim.questionsCount} questões</strong></span>
+                      <span>Total: <strong className="text-slate-800 dark:text-slate-200 font-semibold">{sim.questionsCount} questões</strong></span>
                     </div>
                   </div>
 
                   {/* Coluna 2: Resumo de Acertos/Erros/Brancos e Taxa */}
-                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-primary/15 dark:border-slate-800">
                     {/* Contadores Acertos / Erros / Brancos */}
                     <div className="flex items-center gap-2 text-xs font-mono font-bold">
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" title="Acertos">
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" title="Acertos">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>{correct}</span>
                       </div>
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400" title="Erros">
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400" title="Erros">
                         <XCircle className="w-3.5 h-3.5" />
                         <span>{wrong}</span>
                       </div>
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400" title="Em Branco">
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400" title="Em Branco">
                         <MinusCircle className="w-3.5 h-3.5" />
                         <span>{blank}</span>
                       </div>
@@ -483,14 +484,14 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
 
                     {/* Taxa de Aproveitamento */}
                     <div className="text-right min-w-[70px]">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
                         Aproveitamento
                       </span>
                       <span className={`text-xl font-black font-mono ${
                         accuracy >= 80 
                           ? 'text-emerald-600 dark:text-emerald-400' 
                           : accuracy >= 60 
-                            ? 'text-indigo-600 dark:text-indigo-400' 
+                            ? 'text-primary' 
                             : 'text-amber-600 dark:text-amber-400'
                       }`}>
                         {accuracy}%
@@ -510,13 +511,13 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
                         variant="outline"
                         onClick={() => setViewingDetailSimulado(sim)}
                         leftIcon={<Eye className="w-3.5 h-3.5" />}
-                        className="text-xs"
+                        className="text-xs bg-white/85 dark:bg-slate-900/80"
                       >
                         Ver Detalhes
                       </Button>
                       <button
                         onClick={() => handleDelete(sim.id, sim.title)}
-                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors"
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors"
                         title="Excluir Simulado"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -528,12 +529,14 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
             })}
           </div>
         ) : (
-          <div className="p-8 sm:p-12 text-center rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
-            <Award className="w-10 h-10 text-slate-400 mx-auto" />
-            <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
+          <div className="flashcards-daily-review-card p-8 sm:p-12 text-center rounded-3xl border border-primary/25 dark:border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent space-y-3 shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center text-primary mx-auto">
+              <Award className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {searchTerm ? 'Nenhum simulado encontrado para a busca.' : 'Nenhum simulado registrado no histórico.'}
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
               Realizou uma prova ou simulado impresso/online? Clique abaixo para registrar seus acertos e erros por matéria.
             </p>
             <Button
@@ -541,7 +544,7 @@ export const SimuladosView: React.FC<SimuladosViewProps> = ({
               size="sm"
               onClick={() => setIsRegisterModalOpen(true)}
               leftIcon={<Plus className="w-4 h-4" />}
-              className="mt-2 bg-indigo-600 text-white font-bold"
+              className="mt-2 font-bold"
             >
               Registrar Primeiro Simulado
             </Button>

@@ -41,6 +41,8 @@ export interface UserPreferences {
   notificationPreferences?: NotificationPreferences;
   consentGiven?: boolean;
   consentDate?: string;
+  gender?: string;
+  birthDate?: string;
 }
 
 export interface UserProfile {
@@ -51,6 +53,8 @@ export interface UserProfile {
   subscription?: SubscriptionDetails;
   photoURL?: string;
   bio?: string;
+  gender?: string;
+  birthDate?: string;
   targetConcursoId?: string;
   targetConcursoTitle?: string;
   studyHoursPerDay: number;

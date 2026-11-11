@@ -928,13 +928,23 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
     return sessoes
       .filter(s => {
         // 0. Integridade Referencial & Escopo de Concurso Ativo
-        if (!s || !s.id || !s.disciplinaId) return false;
-        if (!relevantDiscIds.has(s.disciplinaId)) return false;
-        if (s.concursoId && !validConcursoIds.has(s.concursoId)) return false;
-        if (filterConcursoScope === 'ativo' && activeConcurso) {
-          if (s.concursoId && s.concursoId !== activeConcurso.id) return false;
+        if (!s || !s.id) return false;
+        const isFlashcard = s.type === 'flashcards' || s.origem === 'flashcards';
+
+        if (!isFlashcard) {
+          if (!s.disciplinaId) return false;
+          if (!relevantDiscIds.has(s.disciplinaId)) return false;
+          if (s.concursoId && !validConcursoIds.has(s.concursoId)) return false;
+          if (filterConcursoScope === 'ativo' && activeConcurso) {
+            if (s.concursoId && s.concursoId !== activeConcurso.id) return false;
+          }
+          if (s.assuntoId && !relevantAssuntoIds.has(s.assuntoId)) return false;
+        } else {
+          // Para flashcards, aceita disciplinas vinculadas ou gerais, respeitando o escopo do concurso ativo
+          if (filterConcursoScope === 'ativo' && activeConcurso) {
+            if (s.concursoId && s.concursoId !== activeConcurso.id) return false;
+          }
         }
-        if (s.assuntoId && !relevantAssuntoIds.has(s.assuntoId)) return false;
 
         // 1. Filtro de Busca Textual
         if (searchQuery.trim()) {
@@ -1342,9 +1352,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
           {/* 2. Quatro Cards Superiores de Resumo (KPIs Consolidados) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: TEMPO DE ESTUDO */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
               <div className="space-y-1 min-w-0">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Tempo de Estudo
                 </span>
                 <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -1367,9 +1377,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             </div>
 
             {/* Card 2: DESEMPENHO */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
               <div className="space-y-1 min-w-0">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Desempenho
                 </span>
                 <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -1396,9 +1406,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             </div>
 
             {/* Card 3: PROGRESSO NO EDITAL */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
               <div className="space-y-1 min-w-0">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Progresso no Edital
                 </span>
                 <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -1419,9 +1429,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             </div>
 
             {/* Card 4: PÁGINAS LIDAS */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
               <div className="space-y-1 min-w-0">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Páginas Lidas
                 </span>
                 <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -1443,7 +1453,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
           </div>
 
           {/* 3. Barra de Busca e Filtros Retráteis */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs p-3.5 sm:p-4 space-y-4">
+          <div className="flashcards-daily-review-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs p-3.5 sm:p-4 space-y-4">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1452,7 +1462,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Buscar por disciplina, tópico, material ou anotação..."
-                  className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all"
+                  className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-700/80 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all"
                   style={{ ['--tw-ring-color' as any]: palette.primary }}
                 />
                 {searchQuery && (
@@ -1473,7 +1483,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   className={`px-4 py-2.5 rounded-xl border text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     isFilterOpen || activeFiltersCount > 0
                       ? 'border-transparent text-white shadow-sm'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      : 'border-slate-200/80 dark:border-slate-700 bg-white/85 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700'
                   }`}
                   style={
                     isFilterOpen || activeFiltersCount > 0
@@ -1499,7 +1509,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   <button
                     type="button"
                     onClick={handleClearFilters}
-                    className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="px-3 py-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/85 dark:bg-slate-800/90 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Limpar todos os filtros"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -1511,7 +1521,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
             {/* Painel Retrátil de Filtros */}
             {isFilterOpen && (
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 animate-in fade-in duration-150">
+              <div className="pt-3 border-t border-primary/15 dark:border-primary/20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 animate-in fade-in duration-150">
                 {/* Escopo do Concurso */}
                 <div>
                   <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
@@ -1681,10 +1691,10 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
               {dailyGroups.map(group => (
                 <div
                   key={group.ymd}
-                  className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden"
+                  className="edital-disciplina-card rounded-2xl bg-white dark:bg-slate-900 border border-primary/25 dark:border-primary/20 shadow-xs overflow-hidden"
                 >
                   {/* Cabeçalho do Dia */}
-                  <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                  <div className="dashboard-themed-header px-5 py-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-b border-primary/25 dark:border-primary/20 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2.5">
                       <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
                         {group.ddmm}
@@ -1700,8 +1710,8 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                       </span>
                     </div>
 
-                    <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-                      <Clock className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300">
+                      <Clock className="w-3.5 h-3.5" style={{ color: palette.primary }} />
                       <span>{formatHoursMinutes(group.totalMinutes)}</span>
                     </div>
                   </div>
@@ -1928,12 +1938,12 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
         return (
           <div className="space-y-6 animate-in fade-in duration-150">
             {/* Cabeçalho da Disciplina */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flashcards-daily-review-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-3.5">
                 <button
                   type="button"
                   onClick={() => setSelectedSubjectId(null)}
-                  className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 transition-colors shrink-0 cursor-pointer"
+                  className="w-10 h-10 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white/85 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 transition-colors shrink-0 cursor-pointer"
                   title="Voltar para a Linha do Tempo Geral"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -1979,9 +1989,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             {/* 4 Cards de KPIs Específicos da Disciplina */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: TEMPO DE ESTUDO */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+              <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Tempo de Estudo
                   </span>
                   <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
@@ -2003,9 +2013,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
               </div>
 
               {/* Card 2: DESEMPENHO */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+              <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Desempenho
                   </span>
                   <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -2032,9 +2042,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
               </div>
 
               {/* Card 3: PROGRESSO NO EDITAL */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+              <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Progresso no Edital
                   </span>
                   <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -2055,9 +2065,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
               </div>
 
               {/* Card 4: PÁGINAS LIDAS */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex items-start justify-between gap-3">
+              <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Páginas Lidas
                   </span>
                   <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -2079,15 +2089,15 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             </div>
 
             {/* Seção 1: Card "HISTÓRICO DE REGISTROS" da Disciplina */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+            <div className="edital-disciplina-card rounded-2xl bg-white dark:bg-slate-900 border border-primary/25 dark:border-primary/20 shadow-xs overflow-hidden">
+              <div className="dashboard-themed-header px-6 py-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-b border-primary/25 dark:border-primary/20 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2.5">
-                  <History className="w-4 h-4 text-slate-400" />
+                  <History className="w-4 h-4" style={{ color: palette.primary }} />
                   <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                     Histórico de Registros
                   </h3>
                 </div>
-                <span className="text-xs font-bold text-slate-400 dark:text-slate-500">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                   {subjectData.subjectSessions.length}{' '}
                   {subjectData.subjectSessions.length === 1 ? 'registro' : 'registros'}
                 </span>

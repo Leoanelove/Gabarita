@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -82,7 +82,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   const { palette } = useTheme();
   const [viewMode, setViewMode] = useState<CalendarViewMode>('semanal');
-  const todayStr = useMemo(() => PlannerService.formatLocalDate(new Date()), []);
+  const [currentClockDate, setCurrentClockDate] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentClockDate(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const todayStr = useMemo(() => PlannerService.formatLocalDate(currentClockDate), [currentClockDate]);
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
   const [draggedSessionId, setDraggedSessionId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
@@ -128,8 +133,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const overdueSessions = useMemo(() => {
-    return plan.sessions.filter(s => s.status === 'atrasada' || (s.status === 'pendente' && s.date < todayStr));
-  }, [plan.sessions, todayStr]);
+    return PlannerService.getOverdueSessions(plan.sessions, todayStr, sessoes);
+  }, [plan.sessions, todayStr, sessoes]);
 
   const selectedDateObj = useMemo(() => {
     return PlannerService.parseLocalDate(selectedDateStr);
@@ -256,9 +261,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
       )}
 
-      <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-2 flex-wrap shadow-xs">
+      <div className="flashcards-daily-review-card relative overflow-hidden p-3 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl flex items-center justify-between gap-2 flex-wrap shadow-xs">
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5">
+          <div className="flex items-center bg-white/80 dark:bg-slate-800/90 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-0.5">
             <button onClick={handlePrev} className="p-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /></button>
             <button onClick={() => setSelectedDateStr(todayStr)} className="px-2.5 py-1 text-xs font-bold cursor-pointer">Hoje</button>
             <button onClick={handleNext} className="p-1.5 cursor-pointer"><ChevronRight className="w-4 h-4" /></button>
@@ -270,10 +275,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
-            <button onClick={() => setViewMode('diario')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'diario' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Diário</button>
-            <button onClick={() => setViewMode('semanal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'semanal' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Semanal</button>
-            <button onClick={() => setViewMode('mensal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'mensal' ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'}`}>Mensal</button>
+          <div className="flex items-center bg-white/80 dark:bg-slate-800/90 border border-slate-200/70 dark:border-slate-700/70 p-1 rounded-xl text-xs">
+            <button onClick={() => setViewMode('diario')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'diario' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Diário</button>
+            <button onClick={() => setViewMode('semanal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'semanal' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Semanal</button>
+            <button onClick={() => setViewMode('mensal')} className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-all ${viewMode === 'mensal' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Mensal</button>
           </div>
           <button
             type="button"
@@ -325,9 +330,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           ========================================================================= */}
       {viewMode === 'diario' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flashcards-daily-review-card relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[var(--primary-light)] text-[var(--primary-color)] dark:text-[var(--primary-text-dark)]">
+              <div className="p-2.5 rounded-xl bg-[var(--primary-light)] text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] border border-[var(--primary-light-border)]">
                 <CalendarIcon className="w-5 h-5" />
               </div>
               <div>
@@ -354,8 +359,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
           <div className="space-y-3">
             {dailySessions.map((session) => {
-              const isDone = session.status === 'concluida';
-              const isOverdue = session.status === 'atrasada' || (session.status === 'pendente' && session.date < todayStr);
+              const isDone = session.status === 'concluida' || PlannerService.isSessionStudied(session, sessoes);
+              const isOverdue = PlannerService.isSessionOverdue(session, todayStr, sessoes);
 
               return (
                 <div
@@ -453,11 +458,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 key={day.dateStr}
                 onDragOver={(e) => { e.preventDefault(); setDragOverDate(day.dateStr); }}
                 onDrop={(e) => handleDrop(e, day.dateStr)}
-                className={`rounded-2xl border flex flex-col min-h-96 bg-white dark:bg-slate-900 ${day.isToday ? 'theme-primary-border ring-1 ring-(--primary-color)' : 'border-slate-200 dark:border-slate-800'}`}
+                className={`rounded-2xl border overflow-hidden flex flex-col min-h-96 bg-white dark:bg-slate-900 ${day.isToday ? 'theme-primary-border ring-1 ring-(--primary-color)' : 'border-slate-200 dark:border-slate-800'}`}
               >
-                <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold">
-                  <span>{day.dayOfWeek.toUpperCase()}</span>
-                  <span className="font-mono">{day.dateObj.getDate()}</span>
+                <div className="dashboard-themed-header relative overflow-hidden p-3 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border-b border-primary/25 dark:border-primary/20 flex items-center justify-between text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <span className={day.isToday ? 'text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] font-extrabold' : ''}>{day.dayOfWeek.toUpperCase()}</span>
+                  <span className={`font-mono ${day.isToday ? 'px-1.5 py-0.5 rounded-md bg-[var(--primary-color)] text-white' : ''}`}>{day.dateObj.getDate()}</span>
                 </div>
                 <div className="p-2 space-y-2 flex-1 overflow-y-auto">
                   {daySessions.map(session => (

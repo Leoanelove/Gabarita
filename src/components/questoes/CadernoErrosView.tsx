@@ -682,62 +682,62 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       {/* Grid de 5 KPIs / Métricas Analíticas Avançadas */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Total */}
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs transition-hover hover:border-slate-300 dark:hover:border-slate-700">
+        <div className="flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Erros</span>
-            <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Total Erros</span>
+            <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center text-primary">
               <BookX className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-slate-100">{summary.total}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Cadastrados no banco</div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Cadastrados no banco</div>
         </div>
 
         {/* Pendentes */}
         <div 
           onClick={() => { setFilterStatus('pendente'); setCurrentPage(1); }}
-          className={`p-4 bg-white dark:bg-slate-900 border rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
             filterStatus === 'pendente' 
-              ? 'border-rose-400 ring-2 ring-rose-400/20 bg-rose-50/10' 
-              : 'border-rose-200 dark:border-rose-900/40 hover:border-rose-300'
+              ? 'ring-2 ring-rose-400/30' 
+              : ''
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Pendentes</span>
-            <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 text-2xl sm:text-3xl font-black font-mono text-rose-600 dark:text-rose-400">{summary.pendentes}</div>
-          <div className="text-[11px] text-rose-500/80 mt-0.5">Prioridade de estudo</div>
+          <div className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">Prioridade de estudo</div>
         </div>
 
         {/* Em Revisão */}
         <div 
           onClick={() => { setFilterStatus('em_revisao'); setCurrentPage(1); }}
-          className={`p-4 bg-white dark:bg-slate-900 border rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
             filterStatus === 'em_revisao' 
-              ? 'border-amber-400 ring-2 ring-amber-400/20 bg-amber-50/10' 
-              : 'border-amber-200 dark:border-amber-900/40 hover:border-amber-300'
+              ? 'ring-2 ring-amber-400/30' 
+              : ''
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Em Revisão</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <RotateCcw className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400">{summary.emRevisao}</div>
-          <div className="text-[11px] text-amber-500/80 mt-0.5">Em fixação ativa</div>
+          <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">Em fixação ativa</div>
         </div>
 
         {/* Dominados */}
         <div 
           onClick={() => { setFilterStatus('dominado'); setCurrentPage(1); }}
-          className={`p-4 bg-white dark:bg-slate-900 border rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
             filterStatus === 'dominado' 
-              ? 'border-emerald-400 ring-2 ring-emerald-400/20 bg-emerald-50/10' 
-              : 'border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-300'
+              ? 'ring-2 ring-emerald-400/30' 
+              : ''
           }`}
         >
           <div className="flex items-center justify-between">
@@ -753,20 +753,20 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         {/* Reincidentes Críticos */}
         <div 
           onClick={() => { setFilterStatus('reincidente'); setCurrentPage(1); }}
-          className={`p-4 bg-white dark:bg-slate-900 border rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] col-span-2 lg:col-span-1 ${
+          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] col-span-2 lg:col-span-1 ${
             filterStatus === 'reincidente' 
-              ? 'border-orange-400 ring-2 ring-orange-400/20 bg-orange-50/10' 
-              : 'border-orange-200 dark:border-orange-900/40 hover:border-orange-300'
+              ? 'ring-2 ring-orange-400/30' 
+              : ''
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Reincidentes</span>
-            <div className="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-orange-500/15 text-orange-600 dark:text-orange-400 flex items-center justify-center">
               <Flame className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 text-2xl sm:text-3xl font-black font-mono text-orange-600 dark:text-orange-400">{summary.reincidentes}</div>
-          <div className="text-[11px] text-orange-500/80 mt-0.5">Erros repetidos 2x ou +</div>
+          <div className="text-[11px] text-orange-600/80 dark:text-orange-400/80 mt-0.5">Erros repetidos 2x ou +</div>
         </div>
       </div>
 
@@ -774,11 +774,12 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       {showAnalyticsPanel && summary.total > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Gráfico de Diagnóstico por Causa Raiz */}
-          <Card className="lg:col-span-2">
+          <Card className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl lg:col-span-2">
             <CardHeader
+              className="border-primary/15 dark:border-primary/20"
               title={
                 <div className="flex items-center gap-2 text-sm sm:text-base font-bold">
-                  <BarChart3 className="w-4 h-4 text-emerald-500" />
+                  <BarChart3 className="w-4 h-4 text-primary" />
                   <span>Diagnóstico por Causa Raiz (Motivo do Erro)</span>
                 </div>
               }
@@ -805,8 +806,8 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                       }}
                       className={`p-3 rounded-xl border transition-all cursor-pointer ${
                         isSelected 
-                          ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 ring-1 ring-emerald-500/30' 
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-700'
+                          ? 'border-primary bg-primary/10 ring-1 ring-primary/30' 
+                          : 'border-primary/15 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 hover:border-primary/35 dark:hover:border-slate-700'
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs mb-1.5">
@@ -833,18 +834,19 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                   );
                 })}
               </div>
-              <p className="text-[11px] text-slate-400 text-right">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right">
                 * Dica: clique sobre uma causa raiz para filtrar a lista instantaneamente.
               </p>
             </CardBody>
           </Card>
 
           {/* Concentração por Disciplina */}
-          <Card>
+          <Card className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl">
             <CardHeader
+              className="border-primary/15 dark:border-primary/20"
               title={
                 <div className="flex items-center gap-2 text-sm sm:text-base font-bold">
-                  <FolderOpen className="w-4 h-4 text-emerald-500" />
+                  <FolderOpen className="w-4 h-4 text-primary" />
                   <span>Vulnerabilidade por Matéria</span>
                 </div>
               }
@@ -869,8 +871,8 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                         }}
                         className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
-                            : 'border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/20 hover:border-slate-200 dark:hover:border-slate-700'
+                            ? 'border-primary bg-primary/10'
+                            : 'border-primary/15 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 hover:border-primary/35 dark:hover:border-slate-700'
                         }`}
                       >
                         <div className="flex items-center justify-between text-xs mb-1">
@@ -894,7 +896,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                             }} 
                           />
                         </div>
-                        <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                        <div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                           <span>{pct}% do total de falhas</span>
                           <span>{stat.dominados} dominados</span>
                         </div>
@@ -902,7 +904,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                     );
                   })}
                   {summary.discStats.length > 5 && (
-                    <div className="text-[11px] text-center text-slate-400 pt-1">
+                    <div className="text-[11px] text-center text-slate-500 dark:text-slate-400 pt-1">
                       + {summary.discStats.length - 5} outras matérias registradas
                     </div>
                   )}
@@ -914,7 +916,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       )}
 
       {/* Barra de Controle & Filtros Combinados */}
-      <Card className="w-full max-w-full overflow-hidden">
+      <Card className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl w-full max-w-full overflow-hidden">
         <CardBody className="p-4 sm:p-5 space-y-4 w-full max-w-full">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 w-full max-w-full min-w-0">
             {/* Campo de Busca em Tempo Real */}
@@ -928,7 +930,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                   setCurrentPage(1);
                 }}
                 placeholder="Buscar por enunciado, anotação, assunto, gabarito ou banca..."
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                className="w-full pl-10 pr-9 py-2.5 bg-white/90 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
               {searchTerm && (
                 <button
@@ -949,7 +951,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                   setFilterDisciplina(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full sm:w-auto max-w-full sm:max-w-[200px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full sm:w-auto max-w-full sm:max-w-[200px] truncate px-3 py-2.5 rounded-xl border border-primary/20 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary"
               >
                 <option value="todas">Todas as Disciplinas</option>
                 {activeDisciplinas.map(d => {
@@ -970,7 +972,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                   setFilterMotivo(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full sm:w-auto max-w-full sm:max-w-[180px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full sm:w-auto max-w-full sm:max-w-[180px] truncate px-3 py-2.5 rounded-xl border border-primary/20 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary"
               >
                 <option value="todos">Todos os Motivos</option>
                 {(Object.entries(MOTIVOS_CONFIG) as [MotivoErro, typeof MOTIVOS_CONFIG[MotivoErro]][]).map(([key, cfg]) => (
@@ -988,7 +990,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                     setFilterBanca(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full sm:w-auto max-w-full sm:max-w-[160px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                  className="w-full sm:w-auto max-w-full sm:max-w-[160px] truncate px-3 py-2.5 rounded-xl border border-primary/20 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary"
                 >
                   <option value="todas">Todas as Bancas</option>
                   {availableBancas.map(b => (
@@ -1001,7 +1003,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortField)}
-                className="w-full sm:w-auto max-w-full sm:max-w-[170px] truncate px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full sm:w-auto max-w-full sm:max-w-[170px] truncate px-3 py-2.5 rounded-xl border border-primary/20 dark:border-slate-700 bg-white/90 dark:bg-slate-900/80 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary"
               >
                 <option value="recentes">Mais Recentes</option>
                 <option value="reincidentes">Mais Reincidentes</option>
@@ -1012,9 +1014,9 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
           </div>
 
           {/* Chips de Status & Barra de Informação */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-primary/15 dark:border-primary/20 text-xs">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-slate-400 font-semibold mr-1">Status:</span>
+              <span className="text-slate-500 dark:text-slate-400 font-semibold mr-1">Status:</span>
               {[
                 { id: 'todos', label: 'Todos', count: summary.total },
                 { id: 'pendente', label: 'Pendentes', count: summary.pendentes, color: 'text-rose-500' },
@@ -1028,10 +1030,10 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                     setFilterStatus(tab.id);
                     setCurrentPage(1);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     filterStatus === tab.id
-                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'bg-white/80 dark:bg-slate-900/80 border border-primary/15 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-slate-800'
                   }`}
                 >
                   {tab.label} <span className="opacity-70 text-[10px]">({tab.count})</span>
@@ -1040,7 +1042,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
+              <span className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
                 {filteredItems.length} {filteredItems.length === 1 ? 'erro encontrado' : 'erros encontrados'}
               </span>
               {hasActiveFilters && (
@@ -1058,14 +1060,14 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
 
       {/* Conteúdo Principal: Tabela ou Cards */}
       {filteredItems.length === 0 ? (
-        <Card className="text-center py-12 px-4">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+        <Card className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl text-center py-12 px-4">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center text-primary mb-3">
             <BookX className="w-7 h-7" />
           </div>
           <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
             Nenhum erro encontrado
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1 mb-4">
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto mt-1 mb-4">
             {hasActiveFilters 
               ? 'Nenhum registro corresponde aos filtros e termos de busca informados. Tente ajustar os parâmetros.'
               : 'Seu Caderno de Erros está limpo! Cadastre seus erros para que o algoritmo monitore suas vulnerabilidades.'}
@@ -1082,11 +1084,11 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         </Card>
       ) : viewMode === 'table' ? (
         /* Visualização em Tabela Estruturada */
-        <Card>
+        <Card className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <tr className="bg-primary/10 dark:bg-slate-800/60 border-b border-primary/20 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                   <th className="py-3.5 px-4">Disciplina & Tópico</th>
                   <th className="py-3.5 px-4 min-w-[280px]">Enunciado & Diagnóstico</th>
                   <th className="py-3.5 px-4">Causa Raiz (Motivo)</th>
@@ -1095,7 +1097,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                   <th className="py-3.5 px-4 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <tbody className="divide-y divide-primary/10 dark:divide-slate-800/80">
                 {paginatedItems.map((item) => {
                   const motivoCfg = MOTIVOS_CONFIG[item.motivo] || MOTIVOS_CONFIG.outro;
                   const disc = disciplinas.find(d => d.id === item.disciplinaId);
@@ -1106,7 +1108,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
 
                   return (
                     <React.Fragment key={item.id}>
-                      <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                      <tr className="hover:bg-white/60 dark:hover:bg-slate-800/40 transition-colors">
                         {/* Disciplina & Tópico */}
                         <td className="py-3.5 px-4 align-top">
                           <div className="space-y-1">
@@ -1121,7 +1123,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                               {item.assuntoName}
                             </div>
                             {item.banca && (
-                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-primary/15 dark:border-slate-700">
                                 {item.banca}
                               </span>
                             )}
@@ -1155,7 +1157,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                                 href={item.questionUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                className="inline-flex items-center gap-1 font-bold text-primary hover:underline"
                               >
                                 <ExternalLink className="w-3 h-3" />
                                 <span>Link da Questão</span>
@@ -1163,7 +1165,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                             )}
                             <button
                               onClick={() => setExpandedRowId(isExpanded ? null : item.id)}
-                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-semibold"
+                              className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold"
                             >
                               {isExpanded ? 'Ver menos' : 'Ver mais detalhes'}
                             </button>
@@ -1189,7 +1191,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
                               <span className="text-[10px] text-orange-500 font-semibold mt-0.5">Reincidente</span>
                             </div>
                           ) : (
-                            <span className="px-2 py-0.5 rounded text-xs text-slate-500 font-semibold bg-slate-100 dark:bg-slate-800">
+                            <span className="px-2 py-0.5 rounded text-xs text-slate-600 dark:text-slate-400 font-semibold bg-white/80 dark:bg-slate-800 border border-primary/15 dark:border-slate-700">
                               1x
                             </span>
                           )}
@@ -1310,7 +1312,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
             return (
               <div 
                 key={item.id} 
-                className="p-5 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 space-y-3.5 text-xs shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
+                className="flashcards-daily-review-card p-5 rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 space-y-3.5 text-xs shadow-xs hover:border-primary/50 dark:hover:border-primary/50 transition-all flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   {/* Topo do Card */}

@@ -575,10 +575,24 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
         };
       });
 
-      // 3. Recupera dados complementares para gerar as sessões reais
-      const [revisoes] = await Promise.all([
+      // 3. Recupera dados complementares para gerar as sessões reais com todos os tópicos disponíveis
+      const [revisoes, freshAssuntos, activeBundle] = await Promise.all([
         DatabaseService.getRevisoes(),
+        DatabaseService.getAssuntos(),
+        DatabaseService.getActiveContestBundle(),
       ]);
+
+      const allAvailableAssuntosMap = new Map<string, Assunto>();
+      (assuntos || []).forEach(a => allAvailableAssuntosMap.set(a.id, a));
+      (freshAssuntos || []).forEach(a => allAvailableAssuntosMap.set(a.id, a));
+      if (activeBundle?.disciplinas) {
+        activeBundle.disciplinas.forEach(d => {
+          if (Array.isArray(d.assuntos)) {
+            d.assuntos.forEach(a => allAvailableAssuntosMap.set(a.id, a));
+          }
+        });
+      }
+      const consolidatedAssuntos = Array.from(allAvailableAssuntosMap.values());
 
       const selectedDisciplinasList = materiasDoConcursoAtivo.filter(d => selectedDisciplinaIds.includes(d.id));
 
@@ -593,7 +607,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
         resolvedEndDateStr,
         newAvailability,
         selectedDisciplinasList,
-        assuntos,
+        consolidatedAssuntos,
         revisoes,
         newDistribution,
         preservedCompleted,
@@ -1012,7 +1026,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4 text-emerald-500" style={{ color: primaryColor }} />
+                  <CalendarDays className="w-4 h-4 transition-colors" style={{ color: primaryColor }} />
                   Disponibilidade Diária (DOM a SÁB)
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1300,14 +1314,18 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
               {startDateOption === 'outro' && (
                 <div className="pt-1 animate-in fade-in duration-150">
                   <div className="relative max-w-xs">
-                    <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Calendar 
+                      className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" 
+                      style={{ color: primaryColor }}
+                    />
                     <input
                       type="date"
                       min={todayStr}
                       max={addDaysToDateStr(todayStr, 365)}
                       value={customStartDate}
                       onChange={(e) => setCustomStartDate(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2"
+                      style={{ accentColor: primaryColor }}
                     />
                   </div>
                 </div>
@@ -1421,14 +1439,18 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="relative max-w-xs">
-                        <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Calendar 
+                          className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" 
+                          style={{ color: primaryColor }}
+                        />
                         <input
                           type="date"
                           min={resolvedStartDateStr}
                           max={maxOneYearEndDateStr}
                           value={customEndDate}
                           onChange={(e) => setCustomEndDate(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2"
+                          style={{ accentColor: primaryColor }}
                         />
                       </div>
                     </div>

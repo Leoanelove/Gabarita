@@ -144,7 +144,7 @@ export const MenuBannerFrame: React.FC<MenuBannerFrameProps> = ({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl md:rounded-3xl border bg-slate-900 dark:bg-slate-950 transition-all duration-300 ${minHeight} ${className}`.trim()}
+      className={`menu-banner-frame relative overflow-hidden rounded-2xl md:rounded-3xl border bg-slate-900 dark:bg-slate-950 transition-all duration-300 ${minHeight} ${className}`.trim()}
       style={{
         boxShadow: bannerThemeGlowShadow.boxShadow,
         borderColor: bannerThemeGlowShadow.borderColor,

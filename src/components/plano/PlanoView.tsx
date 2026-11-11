@@ -440,7 +440,13 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const todayStr = useMemo(() => PlannerService.formatLocalDate(new Date()), []);
+  const [currentClockDate, setCurrentClockDate] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentClockDate(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const todayStr = useMemo(() => PlannerService.formatLocalDate(currentClockDate), [currentClockDate]);
 
   const metrics = useMemo(() => {
     const today = new Date();
@@ -448,8 +454,9 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
     const examDate = PlannerService.parseLocalDate(effectivePlan.targetExamDate);
     const daysUntilExam = Math.max(0, Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
     const totalSessions = effectivePlan.sessions.length;
-    const completedSessions = effectivePlan.sessions.filter(s => s.status === 'concluida').length;
-    const overdueSessions = effectivePlan.sessions.filter(s => s.status === 'atrasada' || (s.date < todayStr && s.status === 'pendente')).length;
+    const completedSessions = effectivePlan.sessions.filter(s => s.status === 'concluida' || PlannerService.isSessionStudied(s, sessoes)).length;
+    const overdueSessionsList = PlannerService.getOverdueSessions(effectivePlan.sessions, todayStr, sessoes);
+    const overdueSessions = overdueSessionsList.length;
     const todaySessions = effectivePlan.sessions.filter(s => s.date === todayStr);
     const weeklyMinutes = totalSessions > 0 ? Object.values(effectivePlan.weeklyAvailability).reduce((a, b) => a + b, 0) : 0;
     const weeklyHours = (weeklyMinutes / 60).toFixed(1);
@@ -465,7 +472,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
       completionRate,
       conflictsCount: effectivePlan.conflicts.length,
     };
-  }, [effectivePlan, todayStr]);
+  }, [effectivePlan, todayStr, sessoes]);
 
   const handleOpenAddSession = (presetDate?: string) => {
     setFormDisciplinaId(disciplinas[0]?.id || '');
@@ -857,11 +864,11 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
       ) : (
         <div className="space-y-6">
           {/* Header do Cronograma Fixo */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
+          <div className="flashcards-daily-review-card relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs space-y-5">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2.5">
-                  <span className="p-2 rounded-xl bg-[var(--primary-light)] text-[var(--primary-color)] dark:text-[var(--primary-text-dark)]">
+                  <span className="p-2 rounded-xl bg-[var(--primary-light)] text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] border border-[var(--primary-light-border)]">
                     <CalendarClock className="w-6 h-6" />
                   </span>
                   <div>
@@ -883,7 +890,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
                   size="sm"
                   onClick={() => setIsCreateScheduleModalOpen(true)}
                   leftIcon={<RefreshCw className="w-4 h-4 text-[var(--primary-color)] dark:text-[var(--primary-text-dark)]" />}
-                  className="cursor-pointer"
+                  className="cursor-pointer bg-white/80 dark:bg-slate-900/80"
                 >
                   Recalcular
                 </Button>
@@ -891,29 +898,29 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
             </div>
 
             {/* Métricas do Cronograma */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-primary/15 dark:border-primary/20 text-xs">
+              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
                 <span className="text-slate-400 font-medium block text-[11px]">Contagem Regressiva</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">{metrics.daysUntilExam}</span>
                   <span className="text-slate-500 text-xs font-semibold">dias para a prova</span>
                 </div>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
                 <span className="text-slate-400 font-medium block text-[11px]">Carga Semanal</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{metrics.weeklyHours}h</span>
                   <span className="text-slate-500 text-xs font-semibold">/ semana</span>
                 </div>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
                 <span className="text-slate-400 font-medium block text-[11px]">Progresso do Plano</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-xl font-black text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] font-mono">{metrics.completionRate}%</span>
                   <span className="text-slate-500 text-xs font-semibold">({metrics.completedSessions}/{metrics.totalSessions})</span>
                 </div>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
                 <span className="text-slate-400 font-medium block text-[11px]">Status</span>
                 <div className="flex items-center gap-1.5 mt-1">
                   {metrics.overdueSessions > 0 ? (

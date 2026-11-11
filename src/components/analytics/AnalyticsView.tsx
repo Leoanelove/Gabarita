@@ -735,10 +735,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       </MenuBannerFrame>
 
       {/* 1. BARRA DE CONTROLES E FILTROS SUPERIORES */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-4 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Pills de Intervalo de Período */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mr-1 hidden sm:inline">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 mr-1 hidden sm:inline">
             Período:
           </span>
 
@@ -759,7 +759,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'text-white shadow-sm ring-2 ring-offset-1 dark:ring-offset-slate-900'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    : 'bg-white/85 dark:bg-slate-900/80 border border-primary/15 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-slate-800'
                 }`}
                 style={
                   isActive
@@ -776,8 +776,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           })}
 
           {/* Tag com a Faixa Real de Datas Selecionada */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 ml-auto sm:ml-2">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-semibold bg-white/85 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-primary/20 dark:border-slate-700/60 ml-auto sm:ml-2">
+            <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
             <span>{periodDateRange.labelFormatted}</span>
           </div>
         </div>
@@ -791,14 +791,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               onClick={() => setFilterMenuOpen(prev => !prev)}
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
                 activeFiltersCount > 0
-                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white/90 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 border-primary/20 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800'
               }`}
             >
               <Filter className="w-3.5 h-3.5" />
               <span>Filtros</span>
               {activeFiltersCount > 0 && (
-                <span className="w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="w-5 h-5 rounded-full bg-white text-primary text-[10px] font-bold flex items-center justify-center">
                   {activeFiltersCount}
                 </span>
               )}
@@ -886,8 +886,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             size="sm"
             variant="outline"
             onClick={handleExportCSV}
-            leftIcon={<FileSpreadsheet className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />}
-            className="font-bold text-xs whitespace-nowrap"
+            leftIcon={<FileSpreadsheet className="w-4 h-4 text-primary shrink-0" />}
+            className="font-bold text-xs whitespace-nowrap bg-white/85 dark:bg-slate-900/80"
           >
             Exportar CSV
           </Button>
@@ -980,17 +980,17 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* 2. NOVOS CARDS DE MÉTRICAS ESPECÍFICAS & ANALÍTICAS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Card 1: Páginas Lidas */}
-        <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-amber-400/50 transition-colors">
+        <div className="flashcards-daily-review-card p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-amber-400/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700/60 flex items-center justify-center shrink-0">
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-600 dark:text-slate-300 block">
                   Páginas Lidas
                 </span>
-                <span className="text-[10px] text-slate-400">Leitura, Teoria & Lei Seca</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Leitura, Teoria & Lei Seca</span>
               </div>
             </div>
             {filteredData.totalPaginasLidas > 0 && (
@@ -1002,7 +1002,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
           <div className="space-y-1 my-2">
             <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {filteredData.totalPaginasLidas} <span className="text-base font-semibold text-slate-400">pág.</span>
+              {filteredData.totalPaginasLidas} <span className="text-base font-semibold text-slate-500 dark:text-slate-400">pág.</span>
             </div>
             <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
               {filteredData.ritmoPaginasPorHora.toFixed(1).replace('.', ',')} páginas por hora no período filtrado
@@ -1011,17 +1011,17 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
 
         {/* Card 2: Videoaulas */}
-        <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-purple-400/50 transition-colors">
+        <div className="flashcards-daily-review-card p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-purple-400/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-700/60 flex items-center justify-center shrink-0">
                 <Video className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-600 dark:text-slate-300 block">
                   Videoaulas
                 </span>
-                <span className="text-[10px] text-slate-400">Tempo & aulas concluídas</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Tempo & aulas concluídas</span>
               </div>
             </div>
             {filteredData.totalVideosAssistidos > 0 && (
@@ -1042,7 +1042,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
 
         {/* Card 3: Constância nos Estudos */}
-        <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-emerald-400/50 transition-colors">
+        <div className="flashcards-daily-review-card p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div 
@@ -1056,10 +1056,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 <CalendarCheck className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-600 dark:text-slate-300 block">
                   Constância nos Estudos
                 </span>
-                <span className="text-[10px] text-slate-400">Dias de estudo vs. sem estudo</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Dias de estudo vs. sem estudo</span>
               </div>
             </div>
             <span
@@ -1076,9 +1076,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
           <div className="space-y-1 my-2">
             <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-baseline gap-2">
-              <span>{filteredData.diasEstudados} <span className="text-sm font-semibold text-slate-400">dias estudados</span></span>
+              <span>{filteredData.diasEstudados} <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">dias estudados</span></span>
             </div>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
               {filteredData.diasSemEstudo} {filteredData.diasSemEstudo === 1 ? 'dia' : 'dias'} sem estudo (desde o início oficial)
             </p>
           </div>
@@ -1137,14 +1137,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       </div>
 
       {/* 3. QUADRO ANALÍTICO "TEMPO POR CATEGORIA" (DONUT CHART DINÂMICO + LEGENDA) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-6 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-primary/15 dark:border-primary/20">
           <div>
             <h3 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-500" />
+              <Clock className="w-5 h-5 text-primary" />
               TEMPO POR CATEGORIA
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
               Distribuição dinâmica do tempo líquido de estudo por método e material
             </p>
           </div>
@@ -1173,7 +1173,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                       fill="transparent"
                       stroke="currentColor"
                       strokeWidth="24"
-                      className="text-slate-100 dark:text-slate-800/80"
+                      className="text-white/70 dark:text-slate-800/80"
                     />
 
                     {/* Slices Dinâmicas */}
@@ -1210,7 +1210,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {formatDurationFriendly(categoryData.totalCategoryMinutes)}
                 </span>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
                   no período
                 </span>
               </div>
@@ -1223,7 +1223,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               {categoryData.list.map((cat) => (
                 <div
                   key={cat.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 transition-all hover:border-slate-300 dark:hover:border-slate-700"
+                  className="flex items-center justify-between p-3 rounded-xl bg-white/80 dark:bg-slate-900/75 border border-primary/15 dark:border-slate-800 transition-all hover:border-primary/35 dark:hover:border-slate-700"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
@@ -1239,7 +1239,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                     <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
                       {formatDurationFriendly(cat.minutes)}
                     </span>
-                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-primary/15 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                       {cat.percentage}%
                     </span>
                   </div>
@@ -1251,14 +1251,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       </div>
 
       {/* ABAS DETALHADAS DE DESEMPENHO E EVOLUÇÃO */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto text-xs">
+      <div className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-2.5 flex items-center justify-between gap-2 overflow-x-auto text-xs shadow-xs">
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setActiveTab('geral')}
             className={`px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer ${
               activeTab === 'geral'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                ? 'bg-primary text-white shadow-xs'
+                : 'bg-white/80 dark:bg-slate-900/80 border border-primary/15 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-slate-800'
             }`}
           >
             Visão Geral
@@ -1267,8 +1267,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             onClick={() => setActiveTab('disciplinas')}
             className={`px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer ${
               activeTab === 'disciplinas'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                ? 'bg-primary text-white shadow-xs'
+                : 'bg-white/80 dark:bg-slate-900/80 border border-primary/15 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-slate-800'
             }`}
           >
             Por Disciplina
@@ -1277,8 +1277,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             onClick={() => setActiveTab('evolucao')}
             className={`px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer ${
               activeTab === 'evolucao'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                ? 'bg-primary text-white shadow-xs'
+                : 'bg-white/80 dark:bg-slate-900/80 border border-primary/15 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-slate-800'
             }`}
           >
             Evolução Semanal
@@ -1287,14 +1287,14 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       </div>
 
       {activeTab === 'geral' && (
-        <Card>
-          <CardHeader title="Progresso Geral do Edital" />
+        <Card className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl overflow-hidden">
+          <CardHeader title="Progresso Geral do Edital" className="border-primary/15 dark:border-primary/20" />
           <CardBody className="p-6 space-y-4">
             <div className="flex justify-between font-bold text-sm">
               <span>Cobertura do Edital</span>
               <span style={{ color: themeGlowStyles.color }}>{stats.percentualEdital}%</span>
             </div>
-            <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+            <div className="w-full bg-white/80 dark:bg-slate-800 h-3 rounded-full overflow-hidden border border-primary/15 dark:border-transparent">
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{
@@ -1312,10 +1312,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {activeTab === 'disciplinas' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {desempenhoDisciplinas.map(d => (
-            <Card key={d.id}>
-              <CardHeader title={d.name} action={<Badge variant="emerald" size="sm">{d.taxaAcerto}%</Badge>} />
+            <Card key={d.id} className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl overflow-hidden">
+              <CardHeader title={d.name} action={<Badge variant="emerald" size="sm">{d.taxaAcerto}%</Badge>} className="border-primary/15 dark:border-primary/20" />
               <CardBody className="p-5">
-                <p className="text-xs text-slate-500">Acertos: {d.acertos} / {d.questoes}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Acertos: {d.acertos} / {d.questoes}</p>
               </CardBody>
             </Card>
           ))}
@@ -1323,8 +1323,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       )}
 
       {activeTab === 'evolucao' && (
-        <Card>
-          <CardHeader title="Ritmo dos Últimos 7 Dias (Domingo a Sábado)" />
+        <Card className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border-primary/25 dark:border-primary/20 rounded-2xl overflow-hidden">
+          <CardHeader title="Ritmo dos Últimos 7 Dias (Domingo a Sábado)" className="border-primary/15 dark:border-primary/20" />
           <CardBody className="p-6">
             {(() => {
               const maxWeeklyMinutes = Math.max(...weeklyEvolutionData.map(item => item.minutos), 0);
