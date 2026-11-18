@@ -721,7 +721,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
           ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Progresso do ciclo */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div 
             className="w-12 h-12 rounded-full border-2 flex items-center justify-center shrink-0"
             style={{
@@ -747,7 +747,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
         </div>
 
         {/* Card 2: Tempo estudado */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="w-12 h-12 rounded-full bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20">
             <Clock className="w-5 h-5" />
           </div>
@@ -762,7 +762,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
         </div>
 
         {/* Card 3: Blocos concluídos */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div 
             className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border"
             style={{
@@ -784,7 +784,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
         </div>
 
         {/* Card 4: Próximo bloco */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/50 flex items-center gap-3.5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
             <Calendar className="w-5 h-5" />
           </div>

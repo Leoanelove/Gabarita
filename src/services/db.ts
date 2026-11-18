@@ -3621,7 +3621,7 @@ export class DatabaseService {
     const disc = disciplinas.find(d => d.id === rev.disciplinaId);
     const newRev: Revisao = {
       ...rev,
-      id: `rev_${Date.now()}`,
+      id: `rev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       disciplinaName: rev.disciplinaName || disc?.name || 'Geral',
       createdAt: new Date().toISOString(),
     };

@@ -25,7 +25,7 @@ import {
   History,
   NotebookPen
 } from 'lucide-react';
-import { NavigationTab, StudyMethod, Concurso } from '../../types';
+import { NavigationTab, StudyMethod, Concurso, Revisao, Disciplina } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DatabaseService } from '../../services/db';
@@ -40,6 +40,8 @@ interface SidebarProps {
   studyMethod?: StudyMethod;
   concursos?: Concurso[];
   activeConcursoId?: string;
+  revisoes?: Revisao[];
+  disciplinas?: Disciplina[];
   onSetActiveConcurso?: (id: string) => void | Promise<void>;
 }
 
@@ -51,6 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   studyMethod = 'ciclo',
   concursos = [],
   activeConcursoId,
+  revisoes,
+  disciplinas,
   onSetActiveConcurso,
 }) => {
   const { user, logout } = useAuth();
@@ -88,32 +92,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [concursos]);
 
-  // Carrega e sincroniza a contagem real de revisões pendentes para hoje (<= today)
+  // Carrega e sincroniza a contagem real de revisões de HOJE (mesma lógica de stats.hoje do RevisoesView)
   useEffect(() => {
+    const calcularHoje = (list: any[], discs: any[]) => {
+      const d = new Date();
+      const ano = d.getFullYear();
+      const mes = String(d.getMonth() + 1).padStart(2, '0');
+      const dia = String(d.getDate()).padStart(2, '0');
+      const todayStr = `${ano}-${mes}-${dia}`;
+
+      const filteredByConcurso = activeConcursoId
+        ? list.filter((r: any) => {
+            const disc = discs.find((discItem: any) => discItem.id === r.disciplinaId);
+            return disc && disc.concursoId === activeConcursoId;
+          })
+        : list;
+
+      return filteredByConcurso.filter((r: any) => {
+        if (!r || !r.scheduledFor) return false;
+        if (r.status === 'concluida' || r.status === 'ignorada' || r.status === 'atrasada') {
+          return false;
+        }
+        const sDate = r.scheduledFor.includes('T') ? r.scheduledFor.split('T')[0] : r.scheduledFor;
+        return sDate === todayStr;
+      }).length;
+    };
+
     const carregarContagemRevisoesHoje = () => {
+      if (Array.isArray(revisoes) && Array.isArray(disciplinas)) {
+        setRevisoesCountHoje(calcularHoje(revisoes, disciplinas));
+        return;
+      }
+
       try {
         const rawRevs = localStorage.getItem('gabarita_revisoes');
         const rawDiscs = localStorage.getItem('gabarita_disciplinas');
         if (rawRevs) {
           const list = JSON.parse(rawRevs);
           const discs = rawDiscs ? JSON.parse(rawDiscs) : [];
-          const activeDiscIds = new Set(
-            activeConcursoId ? discs.filter((d: any) => d.concursoId === activeConcursoId).map((d: any) => d.id) : []
-          );
-
           if (Array.isArray(list)) {
-            const d = new Date();
-            const ano = d.getFullYear();
-            const mes = String(d.getMonth() + 1).padStart(2, "0");
-            const dia = String(d.getDate()).padStart(2, "0");
-            const todayStr = `${ano}-${mes}-${dia}`;
-            const count = list.filter((r: any) => {
-              if (r.status === "concluida") return false;
-              if (activeConcursoId && activeDiscIds.size > 0 && !activeDiscIds.has(r.disciplinaId)) return false;
-              const scheduledDate = r.scheduledFor && r.scheduledFor.includes("T") ? r.scheduledFor.split("T")[0] : (r.scheduledFor || "");
-              return scheduledDate && scheduledDate <= todayStr;
-            }).length;
-            setRevisoesCountHoje(count);
+            setRevisoesCountHoje(calcularHoje(list, Array.isArray(discs) ? discs : []));
             return;
           }
         }
@@ -122,33 +140,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
 
       Promise.all([DatabaseService.getRevisoes(), DatabaseService.getDisciplinas()]).then(([list, discs]) => {
-        const activeDiscIds = new Set(
-          activeConcursoId ? discs.filter(d => d.concursoId === activeConcursoId).map(d => d.id) : []
-        );
-        const d = new Date();
-        const ano = d.getFullYear();
-        const mes = String(d.getMonth() + 1).padStart(2, "0");
-        const dia = String(d.getDate()).padStart(2, "0");
-        const todayStr = `${ano}-${mes}-${dia}`;
-        const count = list.filter(r => {
-          if (r.status === "concluida") return false;
-          if (activeConcursoId && activeDiscIds.size > 0 && !activeDiscIds.has(r.disciplinaId)) return false;
-          const scheduledDate = r.scheduledFor.includes("T") ? r.scheduledFor.split("T")[0] : r.scheduledFor;
-          return scheduledDate <= todayStr;
-        }).length;
-        setRevisoesCountHoje(count);
+        setRevisoesCountHoje(calcularHoje(list, discs));
       });
     };
 
     carregarContagemRevisoesHoje();
-    // Ouvinte para atualizar se houver evento de armazenamento ou foco
-    window.addEventListener("storage", carregarContagemRevisoesHoje);
-    window.addEventListener("focus", carregarContagemRevisoesHoje);
+    window.addEventListener('storage', carregarContagemRevisoesHoje);
+    window.addEventListener('focus', carregarContagemRevisoesHoje);
     return () => {
-      window.removeEventListener("storage", carregarContagemRevisoesHoje);
-      window.removeEventListener("focus", carregarContagemRevisoesHoje);
+      window.removeEventListener('storage', carregarContagemRevisoesHoje);
+      window.removeEventListener('focus', carregarContagemRevisoesHoje);
     };
-  }, [currentTab, activeConcursoId]);
+  }, [currentTab, activeConcursoId, revisoes, disciplinas]);
 
   // Fechamento suave ao clicar fora (click outside)
   useEffect(() => {
@@ -220,7 +223,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'concursos', label: 'Concursos & Provas', icon: Target },
     { id: 'plano', label: 'Plano de Estudos', icon: CalendarClock },
     { id: 'estudos', label: 'Edital Verticalizado', icon: BookOpen },
-    { id: 'revisoes', label: 'Revisões', icon: Repeat, badge: revisoesCountHoje > 0 ? `${revisoesCountHoje} hoje` : undefined },
+    { id: 'revisoes', label: 'Revisões', icon: Repeat, badge: `${revisoesCountHoje} hoje` },
     { id: 'resumos', label: 'Resumos', icon: NotebookPen },
     { id: 'historico', label: 'Histórico', icon: History },
     { id: 'flashcards', label: 'Flashcards', icon: Layers },
@@ -392,19 +395,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <React.Fragment key={item.id}>
                 <button
                   onClick={() => handleNavClick(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  className={`sidebar-nav-btn group relative overflow-hidden w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'theme-btn-primary text-white shadow-sm font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-100'
+                      ? 'sidebar-nav-btn-active theme-btn-primary text-white shadow-sm font-semibold'
+                      : 'sidebar-nav-btn-inactive text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                  <span
+                    aria-hidden="true"
+                    className={`sidebar-nav-indicator absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full transition-all duration-200 pointer-events-none ${
+                      isActive
+                        ? 'opacity-90 translate-x-0 bg-white/85'
+                        : 'opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0'
+                    }`}
+                    style={!isActive ? { backgroundColor: palette.primary } : undefined}
+                  />
+                  <div className={`flex items-center gap-3 transition-transform duration-200 ${isActive ? '' : 'group-hover:translate-x-1'}`}>
+                    <Icon
+                      className={`sidebar-nav-icon w-4 h-4 transition-colors duration-200 ${
+                        isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'
+                      }`}
+                    />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
                     <span
-                      className={
+                      className={`relative z-10 transition-transform duration-200 ${
                         isActive
                           ? 'text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/20 text-white'
                           : item.id === 'revisoes'
@@ -412,7 +428,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           : item.id === 'ai_assistant'
                           ? 'px-2 py-0.5 text-[11px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                           : 'text-[10px] font-bold px-1.5 py-0.5 rounded-full sidebar-badge'
-                      }
+                      }`}
                     >
                       {item.badge}
                     </span>

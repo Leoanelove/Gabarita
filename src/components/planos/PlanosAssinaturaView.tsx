@@ -148,9 +148,9 @@ export const PlanosAssinaturaView: React.FC<PlanosAssinaturaViewProps> = ({
         bannerThemes={PLANOS_BANNER_THEMES}
         alt="Banner Planos & Assinatura"
         minHeight="min-h-[190px] md:min-h-[210px]"
-        className="planos-banner w-full rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center justify-center bg-slate-950 py-8 px-6 md:px-10 card-banner metas-xp-banner"
-        bgWrapperClassName="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
-        imgClassName="w-full h-full object-cover object-center scale-100 transition-transform duration-300"
+        className="planos-banner planos-main-banner w-full rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center justify-center bg-slate-950 py-8 px-6 md:px-10 card-banner metas-xp-banner"
+        bgWrapperClassName="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0"
+        imgClassName="planos-banner-bg-img absolute -left-[7%] -top-[24%] w-[114%] h-[148%] max-w-none object-cover object-[78%_center] md:object-[74%_center] pointer-events-none select-none transition-transform duration-300"
         overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/55 to-slate-950/75 pointer-events-none z-[1]"
         contentClassName="text-center max-w-2xl mx-auto space-y-3"
       >

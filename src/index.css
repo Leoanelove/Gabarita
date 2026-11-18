@@ -533,8 +533,12 @@ body:not(.dark) .sidebar-nivel-badge {
 [data-skin="rosa"] .bg-emerald-50,
 [data-skin="rosa"] .bg-emerald-100,
 [data-skin="rosa"] .bg-emerald-500\/10,
-[data-skin="rosa"] .bg-emerald-500\/15 {
-  background-color: rgba(219, 39, 119, 0.12) !important;
+[data-skin="rosa"] .bg-emerald-500\/15,
+[data-skin="rosa"] .bg-emerald-500\/20,
+.skin-rosa .bg-emerald-500\/20,
+body.theme-pink .bg-emerald-500\/20,
+.theme-pink .bg-emerald-500\/20 {
+  background-color: rgba(219, 39, 119, 0.18) !important;
 }
 
 [data-skin="rosa"] .dark\:bg-emerald-950\/30,
@@ -4424,4 +4428,509 @@ html.dark-mode [data-skin="laranja"] #root .dashboard-themed-header {
   border-bottom: 1px solid rgba(251, 146, 60, 0.25) !important;
 }
 
+/* ==========================================================================
+   CAMPO DE PESQUISA DE EDITAIS (.edital-search-input) & BANNER (.edital-selector-glass-banner)
+   Borda fina na cor do tema aplicado e sombra discreta ao redor do componente
+   nos 5 temas (Verde, Azul, Rosa, Roxo e Laranja) em Modo Claro e Escuro
+   ========================================================================== */
 
+/* 1. Campo de Pesquisa (.edital-search-input) — Tema Verde (Padrão) */
+html body #root input.edital-search-input,
+html [data-skin="verde"] #root input.edital-search-input {
+  border: 1px solid rgba(16, 185, 129, 0.65) !important;
+  box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.16), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 2. Campo de Pesquisa (.edital-search-input) — Tema Azul */
+html body.theme-blue #root input.edital-search-input,
+html .theme-blue #root input.edital-search-input,
+html [data-skin="azul"] #root input.edital-search-input {
+  border: 1px solid rgba(59, 130, 246, 0.65) !important;
+  box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.16), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 3. Campo de Pesquisa (.edital-search-input) — Tema Rosa */
+html body.theme-pink #root input.edital-search-input,
+html .theme-pink #root input.edital-search-input,
+html [data-skin="rosa"] #root input.edital-search-input {
+  border: 1px solid rgba(236, 72, 153, 0.65) !important;
+  box-shadow: 0 4px 12px -2px rgba(236, 72, 153, 0.16), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 4. Campo de Pesquisa (.edital-search-input) — Tema Roxo */
+html body.theme-purple #root input.edital-search-input,
+html .theme-purple #root input.edital-search-input,
+html [data-skin="roxo"] #root input.edital-search-input,
+html [data-skin="purple"] #root input.edital-search-input {
+  border: 1px solid rgba(139, 92, 246, 0.65) !important;
+  box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.16), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 5. Campo de Pesquisa (.edital-search-input) — Tema Laranja */
+html body.theme-orange #root input.edital-search-input,
+html body.theme-laranja #root input.edital-search-input,
+html .theme-orange #root input.edital-search-input,
+html .theme-laranja #root input.edital-search-input,
+html [data-skin="laranja"] #root input.edital-search-input,
+html [data-skin="orange"] #root input.edital-search-input {
+  border: 1px solid rgba(249, 115, 22, 0.65) !important;
+  box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.16), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Blindagem do Banner (.edital-selector-glass-banner) nos temas Roxo e Laranja */
+html:not(.dark):not(.dark-mode) body.theme-purple #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) .theme-purple #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] #root section.edital-selector-glass-banner {
+  background: radial-gradient(circle at 95% 5%, rgba(139, 92, 246, 0.20), transparent 45%), linear-gradient(125deg, rgba(139, 92, 246, 0.08), rgba(255, 255, 255, 0.88) 55%, rgba(139, 92, 246, 0.08)) !important;
+  border: 1px solid rgba(139, 92, 246, 0.45) !important;
+  box-shadow: 0 8px 24px -4px rgba(139, 92, 246, 0.18), 0 2px 6px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+html.dark body.theme-purple #root section.edital-selector-glass-banner,
+html.dark-mode body.theme-purple #root section.edital-selector-glass-banner,
+html.dark [data-skin="roxo"] #root section.edital-selector-glass-banner,
+html.dark-mode [data-skin="roxo"] #root section.edital-selector-glass-banner {
+  background: radial-gradient(circle at 95% 5%, rgba(139, 92, 246, 0.20), transparent 45%), linear-gradient(125deg, rgba(139, 92, 246, 0.08), rgba(15, 23, 42, 0.92) 55%, rgba(139, 92, 246, 0.08)) !important;
+  border: 1px solid rgba(139, 92, 246, 0.45) !important;
+  box-shadow: 0 8px 24px -4px rgba(139, 92, 246, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.25) !important;
+}
+
+html:not(.dark):not(.dark-mode) body.theme-orange #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) body.theme-laranja #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="orange"] #root section.edital-selector-glass-banner {
+  background: radial-gradient(circle at 95% 5%, rgba(249, 115, 22, 0.20), transparent 45%), linear-gradient(125deg, rgba(249, 115, 22, 0.08), rgba(255, 255, 255, 0.88) 55%, rgba(249, 115, 22, 0.08)) !important;
+  border: 1px solid rgba(249, 115, 22, 0.45) !important;
+  box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.18), 0 2px 6px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+html.dark body.theme-orange #root section.edital-selector-glass-banner,
+html.dark body.theme-laranja #root section.edital-selector-glass-banner,
+html.dark-mode body.theme-orange #root section.edital-selector-glass-banner,
+html.dark-mode body.theme-laranja #root section.edital-selector-glass-banner,
+html.dark [data-skin="laranja"] #root section.edital-selector-glass-banner,
+html.dark-mode [data-skin="laranja"] #root section.edital-selector-glass-banner {
+  background: radial-gradient(circle at 95% 5%, rgba(249, 115, 22, 0.20), transparent 45%), linear-gradient(125deg, rgba(249, 115, 22, 0.08), rgba(15, 23, 42, 0.92) 55%, rgba(249, 115, 22, 0.08)) !important;
+  border: 1px solid rgba(249, 115, 22, 0.45) !important;
+  box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* =========================================================================
+   COBERTURA RESPONSIVA E ESCALonamento EM QUALQUER ZOOM (PC, TABLET E MOBILE)
+   Garante que o plano de fundo dos banners (.menu-banner-frame, .concursos-main-banner,
+   .provas-main-banner) se expanda ou diminua proporcionalmente e cubra 100% da área
+   sem expor margens externas das imagens PNG em nenhum nível de zoom.
+   ========================================================================= */
+.menu-banner-frame {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.menu-banner-frame > .menu-banner-bg-wrapper {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  z-index: 0 !important;
+}
+
+.concursos-main-banner .concursos-banner-bg-img,
+.painel-geral-main-banner .painel-geral-banner-bg-img,
+.banner-principal .painel-geral-banner-bg-img,
+.resumos-main-banner .resumos-banner-bg-img,
+.flashcards-main-banner .flashcards-banner-bg-img,
+.flashcards-banner .flashcards-banner-bg-img,
+.caderno-erros-main-banner .caderno-erros-banner-bg-img,
+.caderno-erros-banner .caderno-erros-banner-bg-img,
+.planos-main-banner .planos-banner-bg-img,
+.planos-banner .planos-banner-bg-img {
+  position: absolute !important;
+  left: -7% !important;
+  top: -24% !important;
+  width: 114% !important;
+  height: 148% !important;
+  max-width: none !important;
+  min-width: 114% !important;
+  min-height: 148% !important;
+  object-fit: cover !important;
+  object-position: 78% center !important;
+}
+
+@media (min-width: 768px) {
+  .concursos-main-banner .concursos-banner-bg-img,
+  .painel-geral-main-banner .painel-geral-banner-bg-img,
+  .banner-principal .painel-geral-banner-bg-img,
+  .resumos-main-banner .resumos-banner-bg-img,
+  .flashcards-main-banner .flashcards-banner-bg-img,
+  .flashcards-banner .flashcards-banner-bg-img,
+  .caderno-erros-main-banner .caderno-erros-banner-bg-img,
+  .caderno-erros-banner .caderno-erros-banner-bg-img,
+  .planos-main-banner .planos-banner-bg-img,
+  .planos-banner .planos-banner-bg-img {
+    object-position: 74% center !important;
+  }
+}
+
+.provas-main-banner .provas-banner-bg-img {
+  position: absolute !important;
+  left: -5% !important;
+  top: -20% !important;
+  width: 110% !important;
+  height: 136% !important;
+  max-width: none !important;
+  min-width: 110% !important;
+  min-height: 136% !important;
+  object-fit: cover !important;
+  object-position: 76% center !important;
+}
+
+@media (min-width: 768px) {
+  .provas-main-banner .provas-banner-bg-img {
+    object-position: center center !important;
+  }
+}
+
+/* =========================================================================
+   MICRO-INTERAÇÕES DINÂMICAS POR TEMA (SIDEBAR & CARDS DE MÉTRICAS)
+   ========================================================================= */
+html body #root aside nav .sidebar-nav-btn-inactive {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+html body #root aside nav .sidebar-nav-btn-inactive:hover {
+  background-color: var(--primary-light) !important;
+}
+
+html body #root aside nav .sidebar-nav-btn-inactive:hover .sidebar-nav-indicator {
+  background-color: var(--primary-color) !important;
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+}
+
+html body #root aside nav .sidebar-nav-btn-inactive:hover .sidebar-nav-icon {
+  color: var(--primary-color) !important;
+}
+
+html.dark body #root aside nav .sidebar-nav-btn-inactive:hover .sidebar-nav-icon,
+html.dark-mode body #root aside nav .sidebar-nav-btn-inactive:hover .sidebar-nav-icon {
+  color: var(--primary-text-dark, var(--primary-hover, var(--primary-color))) !important;
+}
+
+html body #root aside nav .sidebar-nav-btn-active {
+  position: relative;
+  overflow: hidden;
+  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+
+html body #root aside nav .sidebar-nav-btn-active:hover {
+  filter: brightness(1.05);
+}
+
+/* Cards com faixa lateral esquerda permanente na cor do tema, elevação fluida, sombra dinâmica e destaque de borda no hover */
+html body #root .gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme {
+  position: relative;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+  border-left-color: var(--primary-color) !important;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 300ms ease,
+              border-color 300ms ease,
+              background-color 300ms ease;
+}
+
+html body #root .gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme:hover {
+  transform: translateY(-4px) !important;
+  border-top-color: color-mix(in srgb, var(--primary-color) 48%, transparent) !important;
+  border-right-color: color-mix(in srgb, var(--primary-color) 48%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--primary-color) 48%, transparent) !important;
+  border-left-color: var(--primary-color) !important;
+  box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.12), 0 6px 16px -4px var(--chart-glow) !important;
+}
+
+html.dark body #root .gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme:hover,
+html.dark-mode body #root .gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme.gabarita-card-hover-theme:hover {
+  border-top-color: color-mix(in srgb, var(--primary-hover, var(--primary-color)) 58%, transparent) !important;
+  border-right-color: color-mix(in srgb, var(--primary-hover, var(--primary-color)) 58%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--primary-hover, var(--primary-color)) 58%, transparent) !important;
+  border-left-color: var(--primary-color) !important;
+  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.48), 0 6px 18px -4px var(--chart-glow) !important;
+}
+
+/* =========================================================================
+   MODAL "AGENDAR NOVA REVISÃO" - GRADIENTE SUAVE & BORDAS FINAS POR TEMA
+   ========================================================================= */
+html body #root .agendar-revisao-themed-modal.agendar-revisao-themed-modal.agendar-revisao-themed-modal.agendar-revisao-themed-modal {
+  background-color: #ffffff !important;
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-color) 15%, transparent) 0%,
+    color-mix(in srgb, var(--primary-color) 5%, transparent) 50%,
+    #ffffff 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent) !important;
+}
+
+html.dark body #root .agendar-revisao-themed-modal.agendar-revisao-themed-modal.agendar-revisao-themed-modal.agendar-revisao-themed-modal,
+html.dark-mode body #root .agendar-revisao-themed-modal.agendar-revisao-themed-modal.agendar-revisao-themed-modal.agendar-revisao-themed-modal {
+  background-color: #0f172a !important;
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-color) 20%, rgba(15, 23, 42, 0.96)) 0%,
+    color-mix(in srgb, var(--primary-color) 8%, rgba(15, 23, 42, 0.98)) 55%,
+    #0f172a 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 42%, transparent) !important;
+}
+
+html body #root .agendar-revisao-themed-modal > div {
+  background-color: transparent !important;
+}
+
+html body #root .agendar-revisao-themed-modal > div:first-child {
+  border-bottom-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-footer {
+  border-top-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-field {
+  background-color: #ffffff !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 75%, transparent) !important;
+  border-radius: 0.75rem !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-field:hover,
+html body #root .agendar-revisao-themed-modal .agendar-revisao-field:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent) !important;
+}
+
+html.dark body #root .agendar-revisao-themed-modal .agendar-revisao-field,
+html.dark-mode body #root .agendar-revisao-themed-modal .agendar-revisao-field {
+  background-color: #0f172a !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 65%, transparent) !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-btn-outline,
+html body #root .agendar-revisao-themed-modal > div:first-child > button {
+  background-color: #ffffff !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 75%, transparent) !important;
+  border-radius: 0.75rem !important;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-btn-outline:hover,
+html body #root .agendar-revisao-themed-modal > div:first-child > button:hover {
+  background-color: color-mix(in srgb, var(--primary-color) 10%, #ffffff) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 2px 8px -2px var(--chart-glow) !important;
+}
+
+html.dark body #root .agendar-revisao-themed-modal .agendar-revisao-btn-outline,
+html.dark-mode body #root .agendar-revisao-themed-modal .agendar-revisao-btn-outline,
+html.dark body #root .agendar-revisao-themed-modal > div:first-child > button,
+html.dark-mode body #root .agendar-revisao-themed-modal > div:first-child > button {
+  background-color: #0f172a !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 65%, transparent) !important;
+}
+
+html.dark body #root .agendar-revisao-themed-modal .agendar-revisao-btn-outline:hover,
+html.dark-mode body #root .agendar-revisao-themed-modal .agendar-revisao-btn-outline:hover,
+html.dark body #root .agendar-revisao-themed-modal > div:first-child > button:hover,
+html.dark-mode body #root .agendar-revisao-themed-modal > div:first-child > button:hover {
+  background-color: color-mix(in srgb, var(--primary-color) 18%, #0f172a) !important;
+  border-color: var(--primary-hover, var(--primary-color)) !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-btn-selected {
+  background-color: var(--primary-color) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--primary-color) !important;
+  border-radius: 0.75rem !important;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, filter 180ms ease !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-btn-selected:hover {
+  background-color: var(--primary-hover, var(--primary-color)) !important;
+  border-color: var(--primary-hover, var(--primary-color)) !important;
+  box-shadow: 0 6px 14px -4px var(--chart-glow) !important;
+}
+
+html body #root .agendar-revisao-themed-modal .agendar-revisao-themed-surface {
+  background-color: color-mix(in srgb, var(--primary-color) 10%, #ffffff) !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 42%, transparent) !important;
+}
+
+html.dark body #root .agendar-revisao-themed-modal .agendar-revisao-themed-surface,
+html.dark-mode body #root .agendar-revisao-themed-modal .agendar-revisao-themed-surface {
+  background-color: color-mix(in srgb, var(--primary-color) 16%, #0f172a) !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 45%, transparent) !important;
+}
+
+/* Campo de Busca Global do menu Resumos — Borda fina dinâmica conforme tema */
+html body #root input.resumos-search-input {
+  border: 1px solid color-mix(in srgb, var(--primary-color) 65%, transparent) !important;
+  box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--primary-color) 16%, transparent), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+html body #root input.resumos-search-input:hover,
+html body #root input.resumos-search-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--primary-color) 24%, transparent), 0 0 0 2px color-mix(in srgb, var(--primary-color) 18%, transparent) !important;
+}
+
+/* =========================================================================
+   WORKSPACE CADERNO DE RESUMOS - DEGRADÊ SUAVE & BORDA FINA POR TEMA
+   ========================================================================= */
+html body #root .resumos-workspace-themed-surface.resumos-workspace-themed-surface.resumos-workspace-themed-surface {
+  background-color: #ffffff !important;
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-color) 15%, transparent) 0%,
+    color-mix(in srgb, var(--primary-color) 5%, transparent) 55%,
+    #ffffff 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent) !important;
+}
+
+html.dark body #root .resumos-workspace-themed-surface.resumos-workspace-themed-surface.resumos-workspace-themed-surface,
+html.dark-mode body #root .resumos-workspace-themed-surface.resumos-workspace-themed-surface.resumos-workspace-themed-surface {
+  background-color: #0f172a !important;
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-color) 19%, rgba(15, 23, 42, 0.96)) 0%,
+    color-mix(in srgb, var(--primary-color) 7%, rgba(15, 23, 42, 0.98)) 55%,
+    #0f172a 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 40%, transparent) !important;
+}
+
+html body #root .resumos-workspace-doc-header.resumos-workspace-doc-header.resumos-workspace-doc-header {
+  background-color: #ffffff !important;
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-color) 15%, transparent) 0%,
+    color-mix(in srgb, var(--primary-color) 5%, transparent) 55%,
+    #ffffff 100%
+  ) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 22%, transparent) !important;
+}
+
+html.dark body #root .resumos-workspace-doc-header.resumos-workspace-doc-header.resumos-workspace-doc-header,
+html.dark-mode body #root .resumos-workspace-doc-header.resumos-workspace-doc-header.resumos-workspace-doc-header {
+  background-color: #0f172a !important;
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-color) 19%, rgba(15, 23, 42, 0.96)) 0%,
+    color-mix(in srgb, var(--primary-color) 7%, rgba(15, 23, 42, 0.98)) 55%,
+    #0f172a 100%
+  ) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--primary-color) 40%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 28%, transparent) !important;
+}
+
+/* =========================================================================
+   BLINDAGEM SEMÂNTICA FIXA - QUADRO "QUESTÕES" (CERTAS = VERDE / ERRADAS = VERMELHO)
+   Imune às sobrescritas de skins/temas (azul, rosa, roxo, laranja, verde)
+   ========================================================================= */
+html body #root .study-reg-certas-label {
+  color: #059669 !important; /* text-emerald-600 */
+}
+
+html.dark body #root .study-reg-certas-label,
+html.dark-mode body #root .study-reg-certas-label {
+  color: #34d399 !important; /* dark:text-emerald-400 */
+}
+
+html body #root input.study-reg-certas-input {
+  background-color: rgba(236, 253, 245, 0.6) !important; /* bg-emerald-50/60 */
+  border: 1px solid #6ee7b7 !important; /* border-emerald-300 */
+  color: #022c22 !important; /* text-emerald-950 */
+}
+
+html body #root input.study-reg-certas-input:focus {
+  border-color: #10b981 !important; /* focus:border-emerald-500 */
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important; /* focus:ring-emerald-500/20 */
+}
+
+html.dark body #root input.study-reg-certas-input,
+html.dark-mode body #root input.study-reg-certas-input {
+  background-color: rgba(2, 44, 34, 0.3) !important; /* dark:bg-emerald-950/30 */
+  border: 1px solid rgba(16, 185, 129, 0.4) !important; /* dark:border-emerald-500/40 */
+  color: #d1fae5 !important; /* dark:text-emerald-100 */
+}
+
+html.dark body #root input.study-reg-certas-input:focus,
+html.dark-mode body #root input.study-reg-certas-input:focus {
+  border-color: #34d399 !important; /* dark:focus:border-emerald-400 */
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2) !important;
+}
+
+html body #root .study-reg-erradas-label {
+  color: #e11d48 !important; /* text-rose-600 */
+}
+
+html.dark body #root .study-reg-erradas-label,
+html.dark-mode body #root .study-reg-erradas-label {
+  color: #fb7185 !important; /* dark:text-rose-400 */
+}
+
+html body #root input.study-reg-erradas-input {
+  background-color: rgba(255, 241, 242, 0.6) !important; /* bg-rose-50/60 */
+  border: 1px solid #fda4af !important; /* border-rose-300 */
+  color: #4c0519 !important; /* text-rose-950 */
+}
+
+html body #root input.study-reg-erradas-input:focus {
+  border-color: #f43f5e !important; /* focus:border-rose-500 */
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2) !important; /* focus:ring-rose-500/20 */
+}
+
+html.dark body #root input.study-reg-erradas-input,
+html.dark-mode body #root input.study-reg-erradas-input {
+  background-color: rgba(76, 5, 25, 0.3) !important; /* dark:bg-rose-950/30 */
+  border: 1px solid rgba(244, 63, 94, 0.4) !important; /* dark:border-rose-500/40 */
+  color: #ffe4e6 !important; /* dark:text-rose-100 */
+}
+
+html.dark body #root input.study-reg-erradas-input:focus,
+html.dark-mode body #root input.study-reg-erradas-input:focus {
+  border-color: #fb7185 !important; /* dark:focus:border-rose-400 */
+  box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.2) !important;
+}
+
+html body #root .study-reg-badge-verde {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #047857 !important;
+}
+
+html.dark body #root .study-reg-badge-verde,
+html.dark-mode body #root .study-reg-badge-verde {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #6ee7b7 !important;
+}
+
+html body #root .study-reg-badge-vermelho {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  color: #be123c !important;
+}
+
+html.dark body #root .study-reg-badge-vermelho,
+html.dark-mode body #root .study-reg-badge-vermelho {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  color: #fda4af !important;
+}

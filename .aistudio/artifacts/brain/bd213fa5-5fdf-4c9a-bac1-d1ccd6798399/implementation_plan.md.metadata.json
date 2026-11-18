@@ -1,6 +1,0 @@
-{
-  "summary": "Plano de implementação para adicionar o filtro por Tipo de Revisão (1d, 7d, 15d, 21d, etc.) com seleção múltipla e suporte aos 14 intervalos padrão mais intervalos personalizados, preservando integralmente o filtro por Período (datas e atalhos rápidos).",
-  "updatedAt": "2026-11-05T00:28:57.671332675Z",
-  "requestFeedback": true,
-  "userFacing": true
-}

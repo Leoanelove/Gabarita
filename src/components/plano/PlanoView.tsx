@@ -898,31 +898,31 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
             </div>
 
             {/* Métricas do Cronograma */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-primary/15 dark:border-primary/20 text-xs">
-              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                <span className="text-slate-400 font-medium block text-[11px]">Contagem Regressiva</span>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">{metrics.daysUntilExam}</span>
-                  <span className="text-slate-500 text-xs font-semibold">dias para a prova</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4 border-t border-primary/15 dark:border-primary/20 text-xs">
+              <div className="gabarita-card-hover-theme p-4 sm:py-5 min-h-[96px] flex flex-col justify-center bg-white/90 dark:bg-slate-900/80 rounded-xl border border-l-4 border-slate-200/80 dark:border-slate-800 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Contagem Regressiva</span>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100 font-mono">{metrics.daysUntilExam}</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">dias para a prova</span>
                 </div>
               </div>
-              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                <span className="text-slate-400 font-medium block text-[11px]">Carga Semanal</span>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{metrics.weeklyHours}h</span>
-                  <span className="text-slate-500 text-xs font-semibold">/ semana</span>
+              <div className="gabarita-card-hover-theme p-4 sm:py-5 min-h-[96px] flex flex-col justify-center bg-white/90 dark:bg-slate-900/80 rounded-xl border border-l-4 border-slate-200/80 dark:border-slate-800 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Carga Semanal</span>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{metrics.weeklyHours}h</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">/ semana</span>
                 </div>
               </div>
-              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                <span className="text-slate-400 font-medium block text-[11px]">Progresso do Plano</span>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl font-black text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] font-mono">{metrics.completionRate}%</span>
-                  <span className="text-slate-500 text-xs font-semibold">({metrics.completedSessions}/{metrics.totalSessions})</span>
+              <div className="gabarita-card-hover-theme p-4 sm:py-5 min-h-[96px] flex flex-col justify-center bg-white/90 dark:bg-slate-900/80 rounded-xl border border-l-4 border-slate-200/80 dark:border-slate-800 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Progresso do Plano</span>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-2xl font-black text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] font-mono">{metrics.completionRate}%</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">({metrics.completedSessions}/{metrics.totalSessions})</span>
                 </div>
               </div>
-              <div className="p-3 bg-white/80 dark:bg-slate-900/70 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                <span className="text-slate-400 font-medium block text-[11px]">Status</span>
-                <div className="flex items-center gap-1.5 mt-1">
+              <div className="gabarita-card-hover-theme p-4 sm:py-5 min-h-[96px] flex flex-col justify-center bg-white/90 dark:bg-slate-900/80 rounded-xl border border-l-4 border-slate-200/80 dark:border-slate-800 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Status</span>
+                <div className="flex items-center gap-1.5 mt-1.5">
                   {metrics.overdueSessions > 0 ? (
                     <Badge variant="rose" size="sm">{metrics.overdueSessions} atrasada(s)</Badge>
                   ) : (

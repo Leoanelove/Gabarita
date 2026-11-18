@@ -1831,9 +1831,9 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         bannerThemes={FLASHCARDS_BANNER_THEMES}
         alt="Banner Hub de Flashcards"
         minHeight="min-h-[190px] md:min-h-[210px]"
-        className="flashcards-banner w-full rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8"
-        bgWrapperClassName="absolute inset-0 overflow-hidden pointer-events-none select-none z-0"
-        imgClassName="w-full h-full object-cover object-[72%_center] scale-[1.38] origin-[72%_center] transition-transform duration-300"
+        className="flashcards-banner flashcards-main-banner w-full rounded-2xl border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8"
+        bgWrapperClassName="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0"
+        imgClassName="flashcards-banner-bg-img absolute -left-[7%] -top-[24%] w-[114%] h-[148%] max-w-none object-cover object-[78%_center] md:object-[74%_center] pointer-events-none select-none transition-transform duration-300"
         overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-950/20 pointer-events-none"
         contentClassName="w-full flex flex-col justify-center items-start max-w-3xl h-full gap-4"
       >
@@ -1905,7 +1905,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
       {/* 2. Barra Superior com Estatísticas / Métricas Resumidas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Baralhos Ativos */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
             <BrainCircuit className="w-5 h-5" />
           </div>
@@ -1925,7 +1925,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         </div>
 
         {/* Total Cards */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
             <Layers className="w-5 h-5" />
           </div>
@@ -1945,7 +1945,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         </div>
 
         {/* Para Revisar Hoje */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="w-11 h-11 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <Clock className="w-5 h-5" />
           </div>
@@ -1965,7 +1965,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         </div>
 
         {/* Progresso / Precisão */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+        <div className="gabarita-card-hover-theme p-4 rounded-xl border border-l-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="flashcards-retention-icon-box w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <TrendingUp className="w-5 h-5" />
           </div>

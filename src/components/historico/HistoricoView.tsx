@@ -1352,7 +1352,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
           {/* 2. Quatro Cards Superiores de Resumo (KPIs Consolidados) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: TEMPO DE ESTUDO */}
-            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
               <div className="space-y-1 min-w-0">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Tempo de Estudo
@@ -1377,7 +1377,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             </div>
 
             {/* Card 2: DESEMPENHO */}
-            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
               <div className="space-y-1 min-w-0">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Desempenho
@@ -1406,7 +1406,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             </div>
 
             {/* Card 3: PROGRESSO NO EDITAL */}
-            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
               <div className="space-y-1 min-w-0">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Progresso no Edital
@@ -1429,7 +1429,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             </div>
 
             {/* Card 4: PÁGINAS LIDAS */}
-            <div className="flashcards-daily-review-card relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3">
+            <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs flex items-start justify-between gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
               <div className="space-y-1 min-w-0">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Páginas Lidas
@@ -2436,17 +2436,11 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
             onClick={() => setIsModalOpen(false)}
           />
 
-          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-10 flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="registro-estudo-themed-modal relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-10 flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Cabeçalho do Modal */}
-            <div className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
+            <div className="registro-estudo-modal-header px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    backgroundColor: `${palette.primary}18`,
-                    color: palette.primary,
-                  }}
-                >
+                <div className="registro-estudo-header-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
@@ -2462,7 +2456,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="registro-estudo-close-btn p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all cursor-pointer"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -2480,7 +2474,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
               {/* Seletor de Data (Segmented Control: Hoje | Ontem | Outro) */}
               <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/70 dark:border-slate-700/70">
+                <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/85 border border-slate-200/70 dark:border-slate-700/70">
                   {(['hoje', 'ontem', 'outro'] as const).map(mode => {
                     const active = dateMode === mode;
                     const label =
@@ -2490,12 +2484,11 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                         key={mode}
                         type="button"
                         onClick={() => setDateMode(mode)}
-                        className={`py-2 px-3 rounded-lg text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           active
-                            ? 'bg-white dark:bg-slate-900 shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            ? 'registro-estudo-date-tab-active text-white shadow-sm'
+                            : 'registro-estudo-date-tab-inactive text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
                         }`}
-                        style={active ? { color: palette.primary } : undefined}
                       >
                         <Calendar className="w-3.5 h-3.5" />
                         <span>{label}</span>
@@ -2510,7 +2503,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                       type="date"
                       value={modalCustomDate}
                       onChange={e => setModalCustomDate(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white"
+                      className="registro-estudo-field w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-all"
                       required
                     />
                   </div>
@@ -2526,7 +2519,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   <select
                     value={modalCategory}
                     onChange={e => setModalCategory(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    className="registro-estudo-field w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-all"
                   >
                     {allCategoryOptions.map(c => (
                       <option key={c.value} value={c.value}>
@@ -2548,7 +2541,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                       const firstTopic = assuntos.find(a => a.disciplinaId === newDiscId);
                       setModalAssuntoId(firstTopic?.id || '');
                     }}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    className="registro-estudo-field w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-all"
                   >
                     {uniqueDisciplinas.map(d => (
                       <option key={d.id} value={d.id}>
@@ -2572,7 +2565,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                       onChange={e => setModalTimeStr(handleTimeMask(e.target.value))}
                       onBlur={e => setModalTimeStr(normalizeTimeOnBlur(e.target.value))}
                       placeholder="00:25:00"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-mono font-bold text-slate-900 dark:text-white focus:outline-none"
+                      className="registro-estudo-field w-full pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm font-mono font-bold text-slate-900 dark:text-white focus:outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -2587,7 +2580,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   <select
                     value={modalAssuntoId}
                     onChange={e => setModalAssuntoId(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    className="registro-estudo-field w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none transition-all"
                   >
                     <option value="">Estudo Geral da Disciplina</option>
                     {modalAvailableTopics.map((t, idx) => {
@@ -2606,13 +2599,16 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                     Material (opcional)
                   </label>
-                  <input
-                    type="text"
-                    value={modalMaterial}
-                    onChange={e => setModalMaterial(e.target.value)}
-                    placeholder="Ex: PDF Aula 02"
-                    className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
-                  />
+                  <div className="relative">
+                    <BookOpen className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={modalMaterial}
+                      onChange={e => setModalMaterial(e.target.value)}
+                      placeholder="Ex: PDF Aula 02"
+                      className="registro-estudo-field w-full pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none transition-all"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -2620,10 +2616,8 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Coluna Esquerda (Card 1): Teoria Finalizada */}
                 <label
-                  className={`p-4 rounded-2xl border flex flex-col justify-between gap-2.5 cursor-pointer select-none transition-all h-full ${
-                    modalTopicFinished
-                      ? 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-500/50 shadow-xs'
-                      : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                  className={`registro-estudo-highlight-card p-4 rounded-2xl border shadow-sm flex flex-col justify-between gap-2.5 cursor-pointer select-none transition-all h-full ${
+                    modalTopicFinished ? 'is-checked' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -2632,21 +2626,15 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                         type="checkbox"
                         checked={modalTopicFinished}
                         onChange={e => setModalTopicFinished(e.target.checked)}
-                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 cursor-pointer shrink-0"
-                        style={{ accentColor: palette.primary }}
+                        className="registro-estudo-checkbox w-4 h-4 rounded border-slate-300 dark:border-slate-600 cursor-pointer shrink-0"
+                        style={{ accentColor: 'var(--primary-color)' }}
                       />
                       <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">
-                        <GraduationCap className="w-4 h-4 shrink-0" style={{ color: palette.primary }} />
+                        <GraduationCap className="registro-estudo-theme-icon w-4 h-4 shrink-0" />
                         <span>Teoria Finalizada</span>
                       </span>
                     </div>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0"
-                      style={{
-                        backgroundColor: `${palette.primary}15`,
-                        color: palette.primary,
-                      }}
-                    >
+                    <span className="registro-estudo-theme-badge px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
                       Edital Verticalizado
                     </span>
                   </div>
@@ -2657,10 +2645,8 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
                 {/* Coluna Direita (Card 2): Programar Revisões */}
                 <label
-                  className={`p-4 rounded-2xl border flex flex-col justify-between gap-2.5 cursor-pointer select-none transition-all h-full ${
-                    modalScheduleRevisions
-                      ? 'bg-purple-50/70 dark:bg-purple-950/25 border-purple-500 dark:border-purple-500/70 shadow-xs'
-                      : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                  className={`registro-estudo-highlight-card p-4 rounded-2xl border shadow-sm flex flex-col justify-between gap-2.5 cursor-pointer select-none transition-all h-full ${
+                    modalScheduleRevisions ? 'is-checked' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -2669,14 +2655,15 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                         type="checkbox"
                         checked={modalScheduleRevisions}
                         onChange={e => setModalScheduleRevisions(e.target.checked)}
-                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 cursor-pointer shrink-0 accent-purple-600"
+                        className="registro-estudo-checkbox w-4 h-4 rounded border-slate-300 dark:border-slate-600 cursor-pointer shrink-0"
+                        style={{ accentColor: 'var(--primary-color)' }}
                       />
                       <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">
-                        <CalendarClock className="w-4 h-4 shrink-0 text-purple-600 dark:text-purple-400" />
+                        <CalendarClock className="registro-estudo-theme-icon w-4 h-4 shrink-0" />
                         <span>Programar Revisões</span>
                       </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0 bg-purple-500/15 text-purple-700 dark:text-purple-300">
+                    <span className="registro-estudo-theme-badge px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
                       SRS Ativo
                     </span>
                   </div>
@@ -2688,9 +2675,9 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
               {/* Expansão dinâmica das tags de revisões quando "Programar Revisões" estiver marcado */}
               {modalScheduleRevisions && (
-                <div className="p-3.5 rounded-2xl border border-purple-500/30 bg-purple-50/40 dark:bg-purple-950/15 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="registro-estudo-revisoes-panel p-3.5 rounded-2xl border space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300">
+                    <span className="registro-estudo-theme-text text-[11px] font-bold">
                       Prazos de retorno ({modalRevisaoDays.length} revisões programadas):
                     </span>
                     <span className="text-[10px] text-slate-400">
@@ -2702,13 +2689,13 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                     {modalRevisaoDays.map(day => (
                       <span
                         key={day}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-purple-500/30 text-xs font-bold text-purple-700 dark:text-purple-300 shadow-2xs"
+                        className="registro-estudo-revisao-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border text-xs font-bold shadow-2xs"
                       >
                         {day}d
                         <button
                           type="button"
                           onClick={() => handleRemoveModalRevisaoDay(day)}
-                          className="text-purple-400 hover:text-rose-500 transition-colors cursor-pointer"
+                          className="opacity-70 hover:opacity-100 hover:text-rose-500 transition-colors cursor-pointer"
                           title={`Remover revisão de ${day} dias`}
                         >
                           <X className="w-3 h-3" />
@@ -2720,12 +2707,12 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setIsAddingModalRevisaoDay(true)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-dashed border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 text-xs font-bold transition-all cursor-pointer"
+                        className="registro-estudo-revisao-add-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-dashed text-xs font-bold transition-all cursor-pointer"
                       >
                         <Plus className="w-3 h-3" /> Novo prazo
                       </button>
                     ) : (
-                      <div className="inline-flex items-center gap-1 bg-white dark:bg-slate-900 border border-purple-500 rounded-lg px-2 py-0.5">
+                      <div className="registro-estudo-revisao-pill inline-flex items-center gap-1 bg-white dark:bg-slate-900 border rounded-xl px-2 py-0.5">
                         <input
                           type="number"
                           min="1"
@@ -2745,7 +2732,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                         <button
                           type="button"
                           onClick={handleConfirmAddModalRevisaoDay}
-                          className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline px-1 cursor-pointer"
+                          className="registro-estudo-theme-text text-xs font-bold hover:underline px-1 cursor-pointer"
                         >
                           OK
                         </button>
@@ -2783,7 +2770,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                       : 'text-rose-700 dark:text-rose-300 bg-rose-500/15 border border-rose-500/30';
 
                   return (
-                    <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3 flex flex-col justify-between">
+                    <div className="registro-estudo-metric-card p-3.5 rounded-2xl bg-white dark:bg-slate-900 border shadow-sm space-y-3 flex flex-col justify-between">
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
                           Questões <span className="font-normal text-slate-400">(opcional)</span>
@@ -2803,7 +2790,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                             value={modalCorrect}
                             onChange={e => setModalCorrect(e.target.value)}
                             placeholder="Ex: 17"
-                            className="w-full h-10 px-2.5 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-500/30 focus:border-emerald-500 text-center text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 placeholder:text-emerald-600/40 dark:placeholder:text-emerald-400/40 focus:outline-none transition-all shadow-2xs"
+                            className="w-full h-10 px-2.5 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-300 dark:border-emerald-700/70 focus:border-emerald-500 text-center text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 placeholder:text-emerald-600/40 dark:placeholder:text-emerald-400/40 focus:outline-none transition-all shadow-2xs"
                           />
                         </div>
                         <div className="flex flex-col justify-end">
@@ -2816,7 +2803,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                             value={modalWrong}
                             onChange={e => setModalWrong(e.target.value)}
                             placeholder="Ex: 3"
-                            className="w-full h-10 px-2.5 rounded-xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-500/30 focus:border-rose-500 text-center text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 placeholder:text-rose-600/40 dark:placeholder:text-rose-400/40 focus:outline-none transition-all shadow-2xs"
+                            className="w-full h-10 px-2.5 rounded-xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-300 dark:border-rose-700/70 focus:border-rose-500 text-center text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 placeholder:text-rose-600/40 dark:placeholder:text-rose-400/40 focus:outline-none transition-all shadow-2xs"
                           />
                         </div>
                       </div>
@@ -2825,7 +2812,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                 })()}
 
                 {/* 2. Card Páginas */}
-                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+                <div className="registro-estudo-metric-card p-3.5 rounded-2xl bg-white dark:bg-slate-900 border shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
                       Páginas <span className="font-normal text-slate-400">(opcional)</span>
@@ -2838,7 +2825,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                           { id: `p_${Date.now()}_${prev.length}`, inicio: '', fim: '' },
                         ])
                       }
-                      className="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer"
+                      className="registro-estudo-mini-btn w-6 h-6 rounded-lg bg-white dark:bg-slate-900 flex items-center justify-center text-xs font-bold cursor-pointer transition-all"
                       title="Adicionar intervalo de páginas"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -2868,7 +2855,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                               );
                             }}
                             placeholder="1"
-                            className="w-full px-2.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none"
+                            className="registro-estudo-field w-full px-2.5 py-2 rounded-xl bg-white dark:bg-slate-900 text-center text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none transition-all"
                           />
                         </div>
                         <div>
@@ -2889,7 +2876,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                               );
                             }}
                             placeholder="0"
-                            className="w-full px-2.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none"
+                            className="registro-estudo-field w-full px-2.5 py-2 rounded-xl bg-white dark:bg-slate-900 text-center text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none transition-all"
                           />
                         </div>
                       </div>
@@ -2898,7 +2885,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                 </div>
 
                 {/* 3. Card Videoaulas */}
-                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2.5">
+                <div className="registro-estudo-metric-card p-3.5 rounded-2xl bg-white dark:bg-slate-900 border shadow-sm space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
                       Videoaulas <span className="font-normal text-slate-400">(opcional)</span>
@@ -2916,7 +2903,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                           },
                         ])
                       }
-                      className="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer"
+                      className="registro-estudo-mini-btn w-6 h-6 rounded-lg bg-white dark:bg-slate-900 flex items-center justify-center text-xs font-bold cursor-pointer transition-all"
                       title="Adicionar videoaula"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -2937,7 +2924,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                             )
                           }
                           placeholder={`Aula ${String(idx + 1).padStart(2, '0')}`}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none"
+                          className="registro-estudo-field w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none transition-all"
                         />
                         <div className="grid grid-cols-2 gap-1.5">
                           <input
@@ -2962,7 +2949,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                               );
                             }}
                             placeholder="00:00:00"
-                            className="w-full px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center text-[11px] font-mono text-slate-600 dark:text-slate-300 focus:outline-none"
+                            className="registro-estudo-field w-full px-2 py-1 rounded-xl bg-white dark:bg-slate-900 text-center text-[11px] font-mono text-slate-600 dark:text-slate-300 focus:outline-none transition-all"
                           />
                           <input
                             type="text"
@@ -2986,7 +2973,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                               );
                             }}
                             placeholder="00:00:00"
-                            className="w-full px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center text-[11px] font-mono text-slate-600 dark:text-slate-300 focus:outline-none"
+                            className="registro-estudo-field w-full px-2 py-1 rounded-xl bg-white dark:bg-slate-900 text-center text-[11px] font-mono text-slate-600 dark:text-slate-300 focus:outline-none transition-all"
                           />
                         </div>
                       </div>
@@ -3011,18 +2998,18 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                   value={modalComments}
                   onChange={e => setModalComments(e.target.value)}
                   placeholder="Dúvidas, tópicos que merecem revisão posterior, palavras-chave, macetes..."
-                  className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none resize-none"
+                  className="registro-estudo-field w-full p-3 rounded-xl bg-white dark:bg-slate-900 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none resize-none transition-all"
                 />
               </div>
 
               {/* Rodapé do Modal */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="registro-estudo-modal-footer pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   {editingSession && (
                     <button
                       type="button"
                       onClick={() => handleConfirmDelete(editingSession.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/35 transition-all cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span>Excluir registro</span>
@@ -3036,6 +3023,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                     variant="outline"
                     size="md"
                     onClick={() => setIsModalOpen(false)}
+                    className="registro-estudo-cancel-btn !rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
                   >
                     Cancelar
                   </Button>
@@ -3044,6 +3032,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                     variant="primary"
                     size="md"
                     disabled={isSavingModal}
+                    className="registro-estudo-save-btn !rounded-xl font-bold"
                   >
                     {isSavingModal ? 'Salvando...' : 'Salvar estudo'}
                   </Button>

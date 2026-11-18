@@ -94,8 +94,8 @@ export const MenuBannerFrame: React.FC<MenuBannerFrameProps> = ({
   minHeight = 'min-h-[190px] md:min-h-[220px]',
   className = '',
   contentClassName = 'w-full',
-  imgClassName = 'w-full h-full object-cover object-center scale-[1.12] pointer-events-none select-none transition-transform duration-300',
-  bgWrapperClassName = 'absolute -inset-2 overflow-hidden pointer-events-none select-none z-0',
+  imgClassName = 'w-full h-full object-cover object-center scale-[1.16] pointer-events-none select-none transition-transform duration-300',
+  bgWrapperClassName = 'absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0',
   overlayClassName,
   alt = 'Banner',
   fallbackSkin = 'verde',
@@ -144,7 +144,7 @@ export const MenuBannerFrame: React.FC<MenuBannerFrameProps> = ({
 
   return (
     <div
-      className={`menu-banner-frame relative overflow-hidden rounded-2xl md:rounded-3xl border bg-slate-900 dark:bg-slate-950 transition-all duration-300 ${minHeight} ${className}`.trim()}
+      className={`menu-banner-frame w-full relative overflow-hidden rounded-2xl md:rounded-3xl border bg-slate-900 dark:bg-slate-950 transition-all duration-300 ${minHeight} ${className}`.trim()}
       style={{
         boxShadow: bannerThemeGlowShadow.boxShadow,
         borderColor: bannerThemeGlowShadow.borderColor,
@@ -152,13 +152,13 @@ export const MenuBannerFrame: React.FC<MenuBannerFrameProps> = ({
       }}
     >
       {/* Camada absoluta blindada do background */}
-      <div className={bgWrapperClassName}>
+      <div className={`menu-banner-bg-wrapper ${bgWrapperClassName}`.trim()}>
         {bannerUrl && (
           <img
             key={bannerUrl}
             src={bannerUrl}
             alt={alt}
-            className={imgClassName}
+            className={`menu-banner-bg-img ${imgClassName}`.trim()}
           />
         )}
       </div>

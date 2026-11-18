@@ -1378,10 +1378,10 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
             bannerThemes={CONCURSOS_BANNER_THEMES}
             alt="Banner Concursos"
             minHeight="min-h-[190px] md:min-h-[220px]"
-            className="w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
-            bgWrapperClassName="absolute -inset-4 overflow-hidden pointer-events-none select-none z-0"
-            imgClassName="w-full h-full object-cover object-center scale-[1.38] md:scale-[1.40] pointer-events-none select-none transition-transform duration-300"
-            overlayClassName="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent pointer-events-none"
+            className="concursos-main-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
+            bgWrapperClassName="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0"
+            imgClassName="concursos-banner-bg-img absolute -left-[7%] -top-[24%] w-[114%] h-[148%] max-w-none object-cover object-[78%_center] md:object-[74%_center] pointer-events-none select-none transition-transform duration-300"
+            overlayClassName="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent pointer-events-none z-[1]"
             contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4"
           >
             <div className="space-y-2">

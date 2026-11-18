@@ -13,7 +13,6 @@ import {
   FileText, 
   AlertCircle, 
   Plus, 
-  CalendarClock,
   Pencil,
   Sparkles,
   MoreVertical,
@@ -938,7 +937,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <MenuBannerFrame
           bannerThemes={BANNER_THEMES}
           minHeight="min-h-[220px] md:min-h-[240px]"
-          className="card-banner banner-principal p-6 sm:p-8 text-white shadow-xl border border-slate-700/50 bg-slate-900 dark:bg-slate-950"
+          className="card-banner banner-principal painel-geral-main-banner p-6 sm:p-8 text-white shadow-xl border border-slate-700/50 bg-slate-900 dark:bg-slate-950"
+          bgWrapperClassName="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0"
+          imgClassName="painel-geral-banner-bg-img absolute -left-[7%] -top-[24%] w-[114%] h-[148%] max-w-none object-cover object-[78%_center] md:object-[74%_center] pointer-events-none select-none transition-transform duration-300"
           contentClassName="flex flex-col md:flex-row md:items-center justify-between gap-6"
           alt="Banner Painel Geral"
         >
@@ -1262,32 +1263,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         );
       })()}
-
-      {hasActivePlan && effectivePlan && (
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-purple-500/10 text-purple-500">
-              <CalendarClock className="w-5 h-5" />
-            </span>
-            <div>
-              <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                Cronograma Inteligente ({effectivePlan.concursoTitle})
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                {effectivePlan.sessions.filter(s => s.status === 'concluida').length} de {effectivePlan.sessions.length} sessões concluídas
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onNavigateTab('plano')}
-            rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
-          >
-            Acessar Plano
-          </Button>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Quadro 1 (Superior Esquerdo): Tópico Atual & Próximos Estudos (ou Empty State quando não houver plano) */}

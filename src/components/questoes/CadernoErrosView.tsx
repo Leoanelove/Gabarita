@@ -194,27 +194,37 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         return {
           color: '#8B5CF6',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(167, 139, 250, 0.95), 0 0 18px rgba(139, 92, 246, 0.85), 0 0 32px rgba(124, 58, 237, 0.65)',
+          modalBg: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 50%, #ffffff 100%)',
+          modalBorder: 'rgba(139, 92, 246, 0.28)',
         };
       case 'laranja':
         return {
           color: '#FF6B00',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(251, 146, 60, 0.95), 0 0 18px rgba(249, 115, 22, 0.85), 0 0 32px rgba(234, 88, 12, 0.65)',
+          modalBg: 'linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 50%, #ffffff 100%)',
+          modalBorder: 'rgba(249, 115, 22, 0.28)',
         };
       case 'azul':
         return {
           color: '#3b82f6',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(96, 165, 250, 0.95), 0 0 18px rgba(37, 99, 235, 0.8), 0 0 32px rgba(29, 78, 216, 0.6)',
+          modalBg: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 50%, #ffffff 100%)',
+          modalBorder: 'rgba(59, 130, 246, 0.28)',
         };
       case 'rosa':
         return {
           color: '#ec4899',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(244, 114, 182, 0.95), 0 0 18px rgba(219, 39, 119, 0.8), 0 0 32px rgba(190, 24, 93, 0.6)',
+          modalBg: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0.05) 50%, #ffffff 100%)',
+          modalBorder: 'rgba(236, 72, 153, 0.28)',
         };
       case 'verde':
       default:
         return {
           color: '#10b981',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(52, 211, 153, 0.95), 0 0 18px rgba(16, 185, 129, 0.8), 0 0 32px rgba(5, 150, 105, 0.6)',
+          modalBg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 50%, #ffffff 100%)',
+          modalBorder: 'rgba(16, 185, 129, 0.28)',
         };
     }
   }, [themeKey]);
@@ -563,7 +573,10 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       <MenuBannerFrame
         bannerThemes={CADERNO_ERROS_BANNER_THEMES}
         minHeight="min-h-[190px] md:min-h-[210px]"
-        className="caderno-erros-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8"
+        className="caderno-erros-banner caderno-erros-main-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950 p-6 md:p-8"
+        bgWrapperClassName="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0"
+        imgClassName="caderno-erros-banner-bg-img absolute -left-[7%] -top-[24%] w-[114%] h-[148%] max-w-none object-cover object-[78%_center] md:object-[74%_center] pointer-events-none select-none transition-transform duration-300"
+        overlayClassName="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent pointer-events-none z-[1]"
         contentClassName="w-full flex flex-col justify-center items-start max-w-2xl h-full gap-4"
         alt="Banner Caderno de Erros & Reincidências"
       >
@@ -682,7 +695,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
       {/* Grid de 5 KPIs / Métricas Analíticas Avançadas */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Total */}
-        <div className="flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs transition-all">
+        <div className="flashcards-daily-review-card gabarita-card-hover-theme p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Total Erros</span>
             <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center text-primary">
@@ -696,7 +709,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         {/* Pendentes */}
         <div 
           onClick={() => { setFilterStatus('pendente'); setCurrentPage(1); }}
-          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+          className={`flashcards-daily-review-card gabarita-card-hover-theme p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
             filterStatus === 'pendente' 
               ? 'ring-2 ring-rose-400/30' 
               : ''
@@ -715,7 +728,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         {/* Em Revisão */}
         <div 
           onClick={() => { setFilterStatus('em_revisao'); setCurrentPage(1); }}
-          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+          className={`flashcards-daily-review-card gabarita-card-hover-theme p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
             filterStatus === 'em_revisao' 
               ? 'ring-2 ring-amber-400/30' 
               : ''
@@ -734,7 +747,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         {/* Dominados */}
         <div 
           onClick={() => { setFilterStatus('dominado'); setCurrentPage(1); }}
-          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+          className={`flashcards-daily-review-card gabarita-card-hover-theme p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
             filterStatus === 'dominado' 
               ? 'ring-2 ring-emerald-400/30' 
               : ''
@@ -753,7 +766,7 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         {/* Reincidentes Críticos */}
         <div 
           onClick={() => { setFilterStatus('reincidente'); setCurrentPage(1); }}
-          className={`flashcards-daily-review-card p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all hover:scale-[1.01] col-span-2 lg:col-span-1 ${
+          className={`flashcards-daily-review-card gabarita-card-hover-theme p-4 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg col-span-2 lg:col-span-1 ${
             filterStatus === 'reincidente' 
               ? 'ring-2 ring-orange-400/30' 
               : ''
@@ -1531,7 +1544,26 @@ export const CadernoErrosView: React.FC<CadernoErrosViewProps> = ({
         title={editingItem ? "Editar Registro no Caderno de Erros" : "Novo Registro no Caderno de Erros"}
         maxWidth="lg"
       >
-        <form onSubmit={handleSaveItem} className="space-y-4 text-xs">
+        <form
+          onSubmit={handleSaveItem}
+          className="space-y-4 text-xs"
+          ref={(el) => {
+            if (!el) return;
+            const modalBox = (el.closest('[class*="max-w-"]') || el.parentElement?.parentElement || el.parentElement) as HTMLElement | null;
+            if (modalBox) {
+              modalBox.style.setProperty('background-color', '#ffffff', 'important');
+              modalBox.style.setProperty('background-image', themeGlowStyles.modalBg, 'important');
+              modalBox.style.setProperty('border-color', themeGlowStyles.modalBorder, 'important');
+              Array.from(modalBox.children).forEach((child) => {
+                (child as HTMLElement).style.setProperty('background-color', 'transparent', 'important');
+              });
+            }
+            // Aplica borda fina na cor do tema em todos os botões, seletores e campos do modal
+            el.querySelectorAll('select, input, textarea, button').forEach((field) => {
+              (field as HTMLElement).style.setProperty('border', `1px solid ${themeGlowStyles.color}`, 'important');
+            });
+          }}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {/* Disciplina */}
             <div>

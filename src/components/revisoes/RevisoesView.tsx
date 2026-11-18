@@ -320,13 +320,16 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
   const [formAssuntoName, setFormAssuntoName] = useState('');
   const [formMethod, setFormMethod] = useState<RevisionMethod | string>('24h');
   const [formIntervalDays, setFormIntervalDays] = useState<number>(1);
+  const [formSelectedIntervals, setFormSelectedIntervals] = useState<number[]>([1]);
   const [customIntervals, setCustomIntervals] = useState<number[]>(() => {
     const merged = Array.from(new Set([...DEFAULT_PRESET_INTERVALS, ...(settings.intervalDays || [])])).sort((a, b) => a - b);
     return merged;
   });
   const [isAddingCustomInterval, setIsAddingCustomInterval] = useState(false);
   const [newCustomDaysInput, setNewCustomDaysInput] = useState('');
-  const [formScheduledFor, setFormScheduledFor] = useState(PlannerService.formatLocalDate(new Date()));
+  const [formScheduledFor, setFormScheduledFor] = useState(() =>
+    PlannerService.formatLocalDate(new Date(Date.now() + 86400000))
+  );
   const [formNotes, setFormNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -791,9 +794,12 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
     if (!isNaN(parsed) && parsed > 0 && parsed <= 1000) {
       const next = Array.from(new Set([...customIntervals, parsed])).sort((a, b) => a - b);
       setCustomIntervals(next);
-      setFormIntervalDays(parsed);
-      setFormMethod(parsed === 1 ? '24h' : `${parsed}d`);
-      const targetDate = new Date(Date.now() + parsed * 86400000);
+      const nextSelected = Array.from(new Set([...formSelectedIntervals, parsed])).sort((a, b) => a - b);
+      setFormSelectedIntervals(nextSelected);
+      const primaryDays = nextSelected[0] || parsed;
+      setFormIntervalDays(primaryDays);
+      setFormMethod(primaryDays === 1 ? '24h' : `${primaryDays}d`);
+      const targetDate = new Date(Date.now() + primaryDays * 86400000);
       setFormScheduledFor(PlannerService.formatLocalDate(targetDate));
       setNewCustomDaysInput('');
       setIsAddingCustomInterval(false);
@@ -801,9 +807,33 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
   };
 
   const handleSelectIntervalOption = (days: number) => {
-    setFormIntervalDays(days);
-    setFormMethod(days === 1 ? '24h' : `${days}d`);
-    const targetDate = new Date(Date.now() + days * 86400000);
+    const isAlreadySelected = formSelectedIntervals.includes(days);
+    let nextSelected: number[];
+    if (isAlreadySelected) {
+      nextSelected = formSelectedIntervals.length > 1
+        ? formSelectedIntervals.filter(d => d !== days)
+        : [days];
+    } else {
+      nextSelected = [...formSelectedIntervals, days].sort((a, b) => a - b);
+    }
+    setFormSelectedIntervals(nextSelected);
+    const primaryDays = nextSelected[0] || days;
+    setFormIntervalDays(primaryDays);
+    setFormMethod(primaryDays === 1 ? '24h' : `${primaryDays}d`);
+    const targetDate = new Date(Date.now() + primaryDays * 86400000);
+    setFormScheduledFor(PlannerService.formatLocalDate(targetDate));
+  };
+
+  const handleToggleSelectAllIntervals = () => {
+    const allSelected = customIntervals.length > 0 && customIntervals.every(d => formSelectedIntervals.includes(d));
+    const nextSelected = allSelected
+      ? [customIntervals[0] || 1]
+      : [...customIntervals].sort((a, b) => a - b);
+    setFormSelectedIntervals(nextSelected);
+    const primaryDays = nextSelected[0] || 1;
+    setFormIntervalDays(primaryDays);
+    setFormMethod(primaryDays === 1 ? '24h' : `${primaryDays}d`);
+    const targetDate = new Date(Date.now() + primaryDays * 86400000);
     setFormScheduledFor(PlannerService.formatLocalDate(targetDate));
   };
 
@@ -812,24 +842,50 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
     const finalAssunto = formAssuntoName.trim() || (assuntos.find(a => a.id === formAssuntoId)?.name) || 'Revisão Geral';
     setIsSubmitting(true);
     try {
-      const intervalDays = formIntervalDays > 0 ? formIntervalDays : 1;
-      const methodLabel = intervalDays === 1 ? '24h' : `${intervalDays}d`;
+      const intervalsToSchedule = (
+        formSelectedIntervals.length > 0
+          ? [...formSelectedIntervals]
+          : [formIntervalDays > 0 ? formIntervalDays : 1]
+      ).sort((a, b) => a - b);
 
-      await onAddRevisao({
-        disciplinaId: formDisciplinaId,
-        assuntoId: formAssuntoId || undefined,
-        assuntoName: finalAssunto,
-        method: methodLabel,
-        scheduledFor: formScheduledFor,
-        notes: formNotes.trim() || undefined,
-        isAutomatic: false,
-        stage: 1,
-        intervalDays,
-      });
-      showFeedback('Revisão agendada com sucesso!');
+      const firstInterval = intervalsToSchedule[0] || 1;
+      const baseFirstDate = formScheduledFor
+        ? new Date(`${formScheduledFor}T12:00:00`)
+        : new Date(Date.now() + firstInterval * 86400000);
+
+      for (let idx = 0; idx < intervalsToSchedule.length; idx++) {
+        const intervalDays = intervalsToSchedule[idx];
+        const methodLabel = intervalDays === 1 ? '24h' : `${intervalDays}d`;
+        const deltaDays = intervalDays - firstInterval;
+        const scheduledDateStr = idx === 0 && formScheduledFor
+          ? formScheduledFor
+          : PlannerService.formatLocalDate(new Date(baseFirstDate.getTime() + deltaDays * 86400000));
+
+        await onAddRevisao({
+          disciplinaId: formDisciplinaId,
+          assuntoId: formAssuntoId || undefined,
+          assuntoName: finalAssunto,
+          method: methodLabel,
+          scheduledFor: scheduledDateStr,
+          notes: formNotes.trim() || undefined,
+          isAutomatic: false,
+          stage: idx + 1,
+          intervalDays,
+        });
+      }
+
+      showFeedback(
+        intervalsToSchedule.length > 1
+          ? `${intervalsToSchedule.length} revisões agendadas com sucesso!`
+          : 'Revisão agendada com sucesso!'
+      );
       setIsAddModalOpen(false);
       setFormAssuntoName('');
       setFormNotes('');
+      setFormSelectedIntervals([1]);
+      setFormIntervalDays(1);
+      setFormMethod('24h');
+      setFormScheduledFor(PlannerService.formatLocalDate(new Date(Date.now() + 86400000)));
     } finally {
       setIsSubmitting(false);
     }
@@ -1010,13 +1066,19 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
       <MenuBannerFrame
         bannerThemes={REVISOES_ESPACADAS_BANNER_THEMES}
         alt="Banner Revisões Espaçadas"
-        minHeight=""
-        className="revisoes-banner border border-purple-800/40 rounded-3xl p-6 text-white shadow-md bg-slate-950"
-        overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/40 to-slate-950/20 pointer-events-none z-[1]"
-        contentClassName="space-y-5"
+        minHeight="min-h-[190px] md:min-h-[220px]"
+        className="revisoes-banner w-full border border-slate-200/20 dark:border-slate-800 rounded-2xl md:rounded-3xl shadow-xl flex items-center bg-slate-950"
+        overlayClassName="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/45 to-transparent pointer-events-none z-[1]"
+        contentClassName="p-6 md:p-8 flex flex-col justify-between items-start max-w-2xl h-full gap-4"
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
+        <div className="space-y-2 max-w-2xl">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div
+              className="w-11 h-11 rounded-xl bg-black/50 border border-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-md"
+              style={{ color: themeGlowStyles.color }}
+            >
+              <CalendarClock className="w-6 h-6" />
+            </div>
             <h2
               ref={(el) => {
                 if (el) {
@@ -1033,31 +1095,109 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
               Retenção Ativa & Curva de Esquecimento
             </h2>
           </div>
+          <p className="text-xs sm:text-sm !text-white/90 leading-relaxed max-w-xl drop-shadow-xs">
+            Gerencie seus ciclos de repetição espaçada, acompanhe revisões pendentes e fortaleça a memória de longo prazo até a data da prova.
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
-          <div className="p-3.5 bg-slate-900/80 border border-slate-700/60 rounded-2xl">
-            <span className="text-sky-400 text-[11px] font-medium">Hoje</span>
-            <div className="text-2xl font-black font-mono text-sky-400">{srsStats.totalHoje}</div>
-          </div>
-          <div className="p-3.5 bg-slate-900/80 border border-rose-900/50 rounded-2xl">
-            <span className="text-rose-400 text-[11px] font-medium">Atrasadas</span>
-            <div className="text-2xl font-black font-mono text-rose-400">{srsStats.totalAtrasadas}</div>
-          </div>
-          <div className="p-3.5 bg-slate-900/80 border border-slate-700/60 rounded-2xl">
-            <span className="text-purple-300 text-[11px] font-medium">Próximas</span>
-            <div className="text-2xl font-black font-mono text-purple-300">{srsStats.totalProximas}</div>
-          </div>
-          <div className="p-3.5 bg-slate-900/80 border border-emerald-900/50 rounded-2xl">
-            <span className="text-emerald-400 text-[11px] font-medium">Concluídas</span>
-            <div className="text-2xl font-black font-mono text-emerald-400">{srsStats.totalConcluidas}</div>
-          </div>
-          <div className="p-3.5 bg-slate-900/80 border border-slate-700/60 rounded-2xl col-span-2 sm:col-span-1">
-            <span className="text-amber-300 text-[11px] font-medium">Retenção</span>
-            <div className="text-2xl font-black font-mono text-amber-400">{srsStats.retentionRate}%</div>
-          </div>
+        <div className="shrink-0 self-start pt-1">
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={() => setIsAddModalOpen(true)}
+            leftIcon={<Plus className="w-4 h-4 stroke-[2.5]" />}
+            className="font-bold shadow-lg shadow-black/25 cursor-pointer text-xs sm:text-sm px-5 py-2.5"
+          >
+            Agendar Revisão
+          </Button>
         </div>
       </MenuBannerFrame>
+
+      {/* Cards de Resumo (KPIs) posicionados logo abaixo do Banner */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+        <div
+          onClick={() => setActiveTab('hoje')}
+          className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between cursor-pointer hover:brightness-105 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+        >
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-sky-600 dark:text-sky-400 text-[11px] uppercase font-extrabold tracking-wider">
+              Hoje
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-sky-600 dark:text-sky-400 tracking-tight">
+            {srsStats.totalHoje}
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('atrasadas')}
+          className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between cursor-pointer hover:brightness-105 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+        >
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-rose-600 dark:text-rose-400 text-[11px] uppercase font-extrabold tracking-wider">
+              Atrasadas
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-rose-600 dark:text-rose-400 tracking-tight">
+            {srsStats.totalAtrasadas}
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('proximas')}
+          className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between cursor-pointer hover:brightness-105 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+        >
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-purple-600 dark:text-purple-300 text-[11px] uppercase font-extrabold tracking-wider">
+              Próximas
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-300 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-purple-600 dark:text-purple-300 tracking-tight">
+            {srsStats.totalProximas}
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('concluidas')}
+          className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between cursor-pointer hover:brightness-105 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+        >
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-emerald-600 dark:text-emerald-400 text-[11px] uppercase font-extrabold tracking-wider">
+              Concluídas
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Check className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">
+            {srsStats.totalConcluidas}
+          </div>
+        </div>
+
+        <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-amber-600 dark:text-amber-300 text-[11px] uppercase font-extrabold tracking-wider">
+              Retenção
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400 tracking-tight">
+            {srsStats.retentionRate}%
+          </div>
+        </div>
+      </div>
 
       {/* Abas de Navegação + Botão Filtros Popover + Agendar Revisão */}
       <div className="revisoes-nav-tabs flashcards-daily-review-card relative flex flex-wrap items-center justify-between gap-2 p-2 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-2xl border border-primary/25 dark:border-primary/20 text-xs shadow-xs">
@@ -1835,17 +1975,18 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
         onClose={() => setIsAddModalOpen(false)}
         title="Agendar Nova Revisão"
         maxWidth="md"
+        panelClassName="agendar-revisao-themed-modal"
       >
         <form onSubmit={handleSaveAddModal} className="space-y-4 text-xs">
           <div>
-            <label className="block font-bold mb-1">Disciplina *</label>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Disciplina *</label>
             <select
               value={formDisciplinaId}
               onChange={(e) => {
                 setFormDisciplinaId(e.target.value);
                 setFormAssuntoId('');
               }}
-              className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+              className="agendar-revisao-field w-full p-2.5 rounded-xl border border-[var(--primary-color)] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-all focus:outline-none"
             >
               {disciplinas.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
@@ -1855,7 +1996,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
 
           {availableAssuntos.length > 0 && (
             <div>
-              <label className="block font-bold mb-1">Tópico do Edital (opcional)</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tópico do Edital (opcional)</label>
               <select
                 value={formAssuntoId}
                 onChange={(e) => {
@@ -1864,7 +2005,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
                   const found = availableAssuntos.find(a => a.id === id);
                   if (found) setFormAssuntoName(found.name);
                 }}
-                className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className="agendar-revisao-field w-full p-2.5 rounded-xl border border-[var(--primary-color)] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-all focus:outline-none"
               >
                 <option value="">Selecionar tópico cadastrado ou digitar abaixo...</option>
                 {availableAssuntos.map(a => (
@@ -1875,48 +2016,96 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
           )}
 
           <div>
-            <label className="block font-bold mb-1">Assunto / Tópico *</label>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Assunto / Tópico *</label>
             <input
               type="text"
               value={formAssuntoName}
               onChange={(e) => setFormAssuntoName(e.target.value)}
               placeholder="Ex: Controle de Constitucionalidade"
-              className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+              className="agendar-revisao-field w-full p-2.5 rounded-xl border border-[var(--primary-color)] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all focus:outline-none"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="block font-bold">Prazo do Ciclo (Intervalo)</label>
-              <button
-                type="button"
-                onClick={() => setIsAddingCustomInterval(!isAddingCustomInterval)}
-                className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
-              >
-                + Novo prazo
-              </button>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">Prazo do Ciclo (Intervalo)</label>
+                {formSelectedIntervals.length > 1 && (
+                  <span className="agendar-revisao-themed-surface px-2.5 py-0.5 rounded-full text-[10px] font-extrabold text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] border border-[var(--primary-color)]">
+                    {formSelectedIntervals.length} prazos selecionados
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleToggleSelectAllIntervals}
+                  className="agendar-revisao-btn-outline inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white dark:bg-slate-900 border border-[var(--primary-color)] text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] transition-all cursor-pointer"
+                >
+                  <Check className="w-3 h-3" />
+                  {customIntervals.length > 0 && customIntervals.every(d => formSelectedIntervals.includes(d))
+                    ? 'Desmarcar todos'
+                    : 'Selecionar todos'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingCustomInterval(!isAddingCustomInterval)}
+                  className="agendar-revisao-btn-outline px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white dark:bg-slate-900 border border-[var(--primary-color)] text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] transition-all cursor-pointer"
+                >
+                  + Novo prazo
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
               {customIntervals.map(days => {
-                const isSelected = formIntervalDays === days;
+                const isSelected = formSelectedIntervals.includes(days);
                 return (
                   <button
                     key={days}
                     type="button"
                     onClick={() => handleSelectIntervalOption(days)}
-                    className={`px-2.5 py-1.5 rounded-lg font-bold text-[11px] border transition-all cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-xl font-bold text-[11px] border transition-all cursor-pointer inline-flex items-center gap-1 ${
                       isSelected
-                        ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-purple-400'
+                        ? 'agendar-revisao-btn-selected bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-xs'
+                        : 'agendar-revisao-btn-outline bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-[var(--primary-color)]'
                     }`}
                   >
-                    {days === 1 ? '1d (24h)' : `${days}d`}
+                    {isSelected && formSelectedIntervals.length > 1 && (
+                      <Check className="w-3 h-3 shrink-0" />
+                    )}
+                    <span>{days === 1 ? '1d (24h)' : `${days}d`}</span>
                   </button>
                 );
               })}
+
+              <button
+                type="button"
+                onClick={handleToggleSelectAllIntervals}
+                className={`px-2.5 py-1.5 rounded-xl font-bold text-[11px] border transition-all cursor-pointer inline-flex items-center gap-1 ${
+                  customIntervals.length > 0 && customIntervals.every(d => formSelectedIntervals.includes(d))
+                    ? 'agendar-revisao-btn-selected bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-xs'
+                    : 'agendar-revisao-btn-outline bg-white dark:bg-slate-900 text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] border-[var(--primary-color)]'
+                }`}
+              >
+                <Check className="w-3 h-3 shrink-0" />
+                <span>Todos</span>
+              </button>
             </div>
+
+            {formSelectedIntervals.length > 1 && (
+              <div className="agendar-revisao-themed-surface p-2.5 rounded-xl border border-[var(--primary-color)] text-[11px] text-slate-700 dark:text-slate-200 flex items-start gap-2">
+                <CalendarClock className="w-3.5 h-3.5 text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold text-[var(--primary-color)] dark:text-[var(--primary-text-dark)]">Ciclo múltiplo ativo:</span> serão agendadas{' '}
+                  <strong>{formSelectedIntervals.length} revisões</strong> para os prazos{' '}
+                  <span className="font-mono font-bold">
+                    {formSelectedIntervals.map(d => (d === 1 ? '1d' : `${d}d`)).join(', ')}
+                  </span>.
+                </div>
+              </div>
+            )}
 
             {isAddingCustomInterval && (
               <div className="flex items-center gap-2 pt-1">
@@ -1927,9 +2116,15 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
                   value={newCustomDaysInput}
                   onChange={(e) => setNewCustomDaysInput(e.target.value)}
                   placeholder="Digite o prazo em dias (ex: 45, 415)"
-                  className="flex-1 p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                  className="agendar-revisao-field flex-1 p-2 rounded-xl border border-[var(--primary-color)] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-all focus:outline-none"
                 />
-                <Button type="button" size="sm" variant="primary" onClick={handleAddCustomIntervalPill}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={handleAddCustomIntervalPill}
+                  className="agendar-revisao-btn-selected !rounded-xl"
+                >
                   Adicionar
                 </Button>
               </div>
@@ -1938,33 +2133,47 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold mb-1">Data Programada *</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                {formSelectedIntervals.length > 1 ? 'Data da 1ª Revisão *' : 'Data Programada *'}
+              </label>
               <input
                 type="date"
                 value={formScheduledFor}
                 onChange={(e) => setFormScheduledFor(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
+                className="agendar-revisao-field w-full p-2.5 rounded-xl border border-[var(--primary-color)] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono transition-all focus:outline-none"
                 required
               />
             </div>
             <div>
-              <label className="block font-bold mb-1">Observações (opcional)</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Observações (opcional)</label>
               <input
                 type="text"
                 value={formNotes}
                 onChange={(e) => setFormNotes(e.target.value)}
                 placeholder="Ex: Revisar grifos e súmulas"
-                className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                className="agendar-revisao-field w-full p-2.5 rounded-xl border border-[var(--primary-color)] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+          <div className="agendar-revisao-footer flex justify-end gap-2 pt-3 border-t border-slate-200/70 dark:border-slate-700/70">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddModalOpen(false)}
+              className="agendar-revisao-btn-outline !rounded-xl bg-white dark:bg-slate-900"
+            >
               Cancelar
             </Button>
-            <Button variant="primary" type="submit" isLoading={isSubmitting}>
-              Agendar
+            <Button
+              variant="primary"
+              type="submit"
+              isLoading={isSubmitting}
+              className="agendar-revisao-btn-selected !rounded-xl"
+            >
+              {formSelectedIntervals.length > 1
+                ? `Agendar (${formSelectedIntervals.length} Revisões)`
+                : 'Agendar'}
             </Button>
           </div>
         </form>

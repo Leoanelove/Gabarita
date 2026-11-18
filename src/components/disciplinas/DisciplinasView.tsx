@@ -1012,7 +1012,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
       {/* Global Summary Statistics */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+          <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
             <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Progresso do Edital</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
@@ -1030,7 +1030,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
             </div>
           </div>
 
-          <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+          <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
             <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Total de Matérias</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
@@ -1040,7 +1040,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
             </div>
           </div>
 
-          <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+          <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
             <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Questões Resolvidas</span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
@@ -1053,7 +1053,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
           {(() => {
             const globalAccStyle = getAccuracyConfig(editalStats.accuracyPct, editalStats.totalQuestions);
             return (
-              <div className="flashcards-daily-review-card relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-primary/25 dark:border-primary/20">
+              <div className="flashcards-daily-review-card gabarita-card-hover-theme relative overflow-hidden p-3.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-xl border border-l-4 border-primary/25 dark:border-primary/20 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <span className="text-slate-500 dark:text-slate-400 font-medium block text-[11px]">Taxa Geral de Acerto</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className={`text-xl font-black font-mono flex items-center gap-1.5 ${globalAccStyle.textClass}`}>

@@ -1513,10 +1513,10 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                       totalQuestoes === 0
                         ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800'
                         : taxaAcerto >= 75
-                        ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30'
+                        ? 'study-reg-badge-verde text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30'
                         : taxaAcerto >= 50
                         ? 'text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30'
-                        : 'text-rose-700 dark:text-rose-300 bg-rose-500/15 border border-rose-500/30'
+                        : 'study-reg-badge-vermelho text-rose-700 dark:text-rose-300 bg-rose-500/15 border border-rose-500/30'
                     }`}
                   >
                     {taxaAcerto}%
@@ -1525,7 +1525,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
 
                 <div className="grid grid-cols-2 gap-2.5 pt-0.5 items-end">
                   <div className="flex flex-col justify-end">
-                    <label className="block text-[11px] font-bold text-emerald-600 dark:text-emerald-400 min-h-[32px] flex items-end pb-1 leading-tight">
+                    <label className="study-reg-certas-label block text-[11px] font-bold text-emerald-600 dark:text-emerald-400 min-h-[32px] flex items-end pb-1 leading-tight">
                       Certas (Acertos)
                     </label>
                     <input
@@ -1538,12 +1538,12 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                         )
                       }
                       placeholder="Ex: 17"
-                      className="w-full h-10 px-2.5 rounded-xl border border-emerald-500/30 dark:border-emerald-500/30 bg-emerald-50/30 dark:bg-slate-800/60 text-slate-800 dark:text-white font-bold text-sm text-center focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all"
+                      className="study-reg-certas-input w-full h-10 px-2.5 rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-100 font-bold text-sm text-center focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
                     />
                   </div>
 
                   <div className="flex flex-col justify-end">
-                    <label className="block text-[11px] font-bold text-rose-600 dark:text-rose-400 min-h-[32px] flex items-end pb-1 leading-tight">
+                    <label className="study-reg-erradas-label block text-[11px] font-bold text-rose-600 dark:text-rose-400 min-h-[32px] flex items-end pb-1 leading-tight">
                       Erradas (Erros)
                     </label>
                     <input
@@ -1556,7 +1556,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                         )
                       }
                       placeholder="Ex: 3"
-                      className="w-full h-10 px-2.5 rounded-xl border border-rose-500/30 dark:border-rose-500/30 bg-rose-50/30 dark:bg-slate-800/60 text-slate-800 dark:text-white font-bold text-sm text-center focus:border-rose-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all"
+                      className="study-reg-erradas-input w-full h-10 px-2.5 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-rose-50/60 dark:bg-rose-950/30 text-rose-950 dark:text-rose-100 font-bold text-sm text-center focus:border-rose-500 dark:focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-all"
                     />
                   </div>
                 </div>

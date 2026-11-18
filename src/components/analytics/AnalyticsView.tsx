@@ -980,7 +980,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* 2. NOVOS CARDS DE MÉTRICAS ESPECÍFICAS & ANALÍTICAS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Card 1: Páginas Lidas */}
-        <div className="flashcards-daily-review-card p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-amber-400/50 transition-colors">
+        <div className="flashcards-daily-review-card gabarita-card-hover-theme p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700/60 flex items-center justify-center shrink-0">
@@ -1011,7 +1011,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
 
         {/* Card 2: Videoaulas */}
-        <div className="flashcards-daily-review-card p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-purple-400/50 transition-colors">
+        <div className="flashcards-daily-review-card gabarita-card-hover-theme p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-700/60 flex items-center justify-center shrink-0">
@@ -1042,7 +1042,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
 
         {/* Card 3: Constância nos Estudos */}
-        <div className="flashcards-daily-review-card p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+        <div className="flashcards-daily-review-card gabarita-card-hover-theme p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div 

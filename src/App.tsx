@@ -1061,6 +1061,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         studyMethod={studyMethod}
         concursos={concursos}
         activeConcursoId={activeConcursoId}
+        revisoes={revisoes}
+        disciplinas={disciplinas}
         onSetActiveConcurso={handleSetActiveConcurso}
       />
 

@@ -255,7 +255,9 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
       <MenuBannerFrame
         bannerThemes={PROVAS_BANNER_THEMES}
         minHeight="min-h-[190px] md:min-h-[220px]"
-        className="border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
+        className="provas-main-banner w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
+        bgWrapperClassName="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0"
+        imgClassName="provas-banner-bg-img absolute -left-[5%] -top-[20%] w-[110%] h-[136%] max-w-none object-cover object-[76%_center] md:object-center pointer-events-none select-none transition-transform duration-300"
         contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-lg h-full gap-4"
         alt="Banner Próximas Provas"
       >
