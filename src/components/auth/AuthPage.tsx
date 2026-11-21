@@ -234,7 +234,7 @@ export const AuthPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITEKEY || '0x4AAAAAAAF6vRO8n_yCS06wS';
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITEKEY || '0x4AAAAAAF6vRO8n_yCS06wS';
   const turnstileRef = useRef<TurnstileInstance>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
