@@ -674,6 +674,7 @@ function mapCadernoFromDb(row: any): ItemCadernoErros {
   return {
     id: row.id,
     userId: row.user_id,
+    concursoId: row.concurso_id || undefined,
     blocoQuestoesId: row.bloco_questoes_id || undefined,
     statementOrExcerpt: row.statement_or_excerpt,
     disciplinaId: row.disciplina_id,
@@ -4298,15 +4299,36 @@ export class DatabaseService {
     const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, INITIAL_DISCIPLINAS).filter(
       d => Boolean(d.concursoId && validConcursoIds.has(d.concursoId))
     );
+    const discConcursoMap = new Map<string, string>();
+    disciplinas.forEach(d => {
+      if (d.id && d.concursoId) discConcursoMap.set(d.id, d.concursoId);
+    });
     const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
+    const localStored = loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, INITIAL_CADERNO_ERROS);
+    const localConcursoMap = new Map<string, string>();
+    localStored.forEach(item => {
+      if (item?.id && item.concursoId) localConcursoMap.set(item.id, item.concursoId);
+    });
 
     const filterValid = (rawList: ItemCadernoErros[], uid?: string): ItemCadernoErros[] => {
       if (validConcursoIds.size === 0 || validDiscIds.size === 0) return [];
-      return rawList.filter(e => {
-        if (!e || !e.id || !e.disciplinaId) return false;
-        if (uid && uid !== 'user_demo_01' && e.userId && e.userId !== uid) return false;
-        return validDiscIds.has(e.disciplinaId);
-      });
+      const result: ItemCadernoErros[] = [];
+      for (const e of rawList) {
+        if (!e || !e.id || !e.disciplinaId) continue;
+        if (uid && uid !== 'user_demo_01' && e.userId && e.userId !== uid) continue;
+        if (!validDiscIds.has(e.disciplinaId)) continue;
+        const discConcursoId = discConcursoMap.get(e.disciplinaId);
+        const resolvedConcursoId =
+          discConcursoId ||
+          (e.concursoId && validConcursoIds.has(e.concursoId) ? e.concursoId : undefined) ||
+          localConcursoMap.get(e.id);
+        result.push(
+          resolvedConcursoId && e.concursoId !== resolvedConcursoId
+            ? { ...e, concursoId: resolvedConcursoId }
+            : e
+        );
+      }
+      return result;
     };
 
     try {
@@ -4328,9 +4350,11 @@ export class DatabaseService {
     } catch (e) {
       console.warn('Gabarita: Falha ao buscar caderno de erros do Supabase:', e);
     }
-    const stored = loadStored<ItemCadernoErros[]>(STORAGE_KEYS.CADERNO_ERROS, INITIAL_CADERNO_ERROS);
-    const valid = filterValid(stored);
-    if (valid.length !== stored.length) {
+    const valid = filterValid(localStored);
+    if (
+      valid.length !== localStored.length ||
+      valid.some((item, idx) => item.concursoId !== localStored[idx]?.concursoId)
+    ) {
       saveStored(STORAGE_KEYS.CADERNO_ERROS, valid);
     }
     return valid;
@@ -4344,10 +4368,14 @@ export class DatabaseService {
     const assuntos = await this.getAssuntos();
     const disc = disciplinas.find(d => d.id === item.disciplinaId);
     const assunto = assuntos.find(a => a.id === item.assuntoId);
+    const activeStoredConcursoId =
+      typeof window !== 'undefined' ? localStorage.getItem('gabarita_active_concurso_id') || undefined : undefined;
+    const resolvedConcursoId = disc?.concursoId || item.concursoId || activeStoredConcursoId;
     const now = new Date().toISOString();
     const newErro: ItemCadernoErros = {
       ...item,
       id: `err_${Date.now()}`,
+      concursoId: resolvedConcursoId,
       disciplinaName: item.disciplinaName || disc?.name || 'Geral',
       assuntoName: item.assuntoName || assunto?.name || 'Geral',
       reincidenciaCount: Math.max(1, item.reincidenciaCount || 1),
@@ -4359,9 +4387,9 @@ export class DatabaseService {
     saveStored(STORAGE_KEYS.CADERNO_ERROS, updated);
 
     getCurrentUserId().then(uid => {
-      const targetUid = item.userId || uid;
+      const targetUid = (uid && uid !== 'user_demo_01') ? uid : (item.userId || uid);
       if (targetUid) {
-        supabase.from('caderno_erros').insert([{
+        const basePayload = {
           id: newErro.id,
           user_id: targetUid,
           bloco_questoes_id: newErro.blocoQuestoesId || null,
@@ -4382,8 +4410,23 @@ export class DatabaseService {
           next_review_at: newErro.nextReviewAt || null,
           created_at: newErro.createdAt,
           updated_at: newErro.updatedAt,
-        }]).then(({ error }) => {
-          if (error) console.warn('Gabarita: Erro ao inserir caderno de erro no Supabase:', error.message);
+        };
+        const payloadWithConcurso = newErro.concursoId
+          ? { ...basePayload, concurso_id: newErro.concursoId }
+          : basePayload;
+
+        supabase.from('caderno_erros').insert([payloadWithConcurso]).then(({ error }) => {
+          if (error) {
+            if (newErro.concursoId && /concurso_id|schema cache|column/i.test(error.message || '')) {
+              supabase.from('caderno_erros').insert([basePayload]).then(({ error: retryError }) => {
+                if (retryError) {
+                  console.warn('Gabarita: Erro ao inserir caderno de erro no Supabase:', retryError.message);
+                }
+              });
+            } else {
+              console.warn('Gabarita: Erro ao inserir caderno de erro no Supabase:', error.message);
+            }
+          }
         });
       }
     });
@@ -4393,12 +4436,21 @@ export class DatabaseService {
 
   static async updateCadernoErro(id: string, partial: Partial<ItemCadernoErros>): Promise<ItemCadernoErros> {
     const list = await this.getCadernoErros();
+    let resolvedPartial: Partial<ItemCadernoErros> = { ...partial };
+    if (partial.disciplinaId && !partial.concursoId) {
+      const disciplinas = await this.getDisciplinas();
+      const disc = disciplinas.find(d => d.id === partial.disciplinaId);
+      if (disc?.concursoId) {
+        resolvedPartial.concursoId = disc.concursoId;
+      }
+    }
+
     let updatedItem: ItemCadernoErros | null = null;
     const updated = list.map(e => {
       if (e.id === id) {
         updatedItem = {
           ...e,
-          ...partial,
+          ...resolvedPartial,
           updatedAt: new Date().toISOString(),
         };
         return updatedItem;
@@ -4409,22 +4461,38 @@ export class DatabaseService {
     saveStored(STORAGE_KEYS.CADERNO_ERROS, updated);
 
     const snakeObj: any = { updated_at: new Date().toISOString() };
-    if (partial.statementOrExcerpt !== undefined) snakeObj.statement_or_excerpt = partial.statementOrExcerpt;
-    if (partial.disciplinaName !== undefined) snakeObj.disciplina_name = partial.disciplinaName;
-    if (partial.assuntoName !== undefined) snakeObj.assunto_name = partial.assuntoName;
-    if (partial.banca !== undefined) snakeObj.banca = partial.banca;
-    if (partial.difficulty !== undefined) snakeObj.difficulty = partial.difficulty;
-    if (partial.motivo !== undefined) snakeObj.motivo = partial.motivo;
-    if (partial.observation !== undefined) snakeObj.observation = partial.observation;
-    if (partial.correctAnswer !== undefined) snakeObj.correct_answer = partial.correctAnswer;
-    if (partial.questionUrl !== undefined) snakeObj.question_url = partial.questionUrl;
-    if (partial.statusRevisao !== undefined) snakeObj.status_revisao = partial.statusRevisao;
-    if (partial.reincidenciaCount !== undefined) snakeObj.reincidencia_count = partial.reincidenciaCount;
-    if (partial.lastReviewedAt !== undefined) snakeObj.last_reviewed_at = partial.lastReviewedAt || null;
-    if (partial.nextReviewAt !== undefined) snakeObj.next_review_at = partial.nextReviewAt || null;
+    if (resolvedPartial.disciplinaId !== undefined) snakeObj.disciplina_id = resolvedPartial.disciplinaId;
+    if (resolvedPartial.assuntoId !== undefined) snakeObj.assunto_id = resolvedPartial.assuntoId || null;
+    if (resolvedPartial.statementOrExcerpt !== undefined) snakeObj.statement_or_excerpt = resolvedPartial.statementOrExcerpt;
+    if (resolvedPartial.disciplinaName !== undefined) snakeObj.disciplina_name = resolvedPartial.disciplinaName;
+    if (resolvedPartial.assuntoName !== undefined) snakeObj.assunto_name = resolvedPartial.assuntoName;
+    if (resolvedPartial.banca !== undefined) snakeObj.banca = resolvedPartial.banca;
+    if (resolvedPartial.difficulty !== undefined) snakeObj.difficulty = resolvedPartial.difficulty;
+    if (resolvedPartial.motivo !== undefined) snakeObj.motivo = resolvedPartial.motivo;
+    if (resolvedPartial.observation !== undefined) snakeObj.observation = resolvedPartial.observation;
+    if (resolvedPartial.correctAnswer !== undefined) snakeObj.correct_answer = resolvedPartial.correctAnswer;
+    if (resolvedPartial.questionUrl !== undefined) snakeObj.question_url = resolvedPartial.questionUrl;
+    if (resolvedPartial.statusRevisao !== undefined) snakeObj.status_revisao = resolvedPartial.statusRevisao;
+    if (resolvedPartial.reincidenciaCount !== undefined) snakeObj.reincidencia_count = resolvedPartial.reincidenciaCount;
+    if (resolvedPartial.lastReviewedAt !== undefined) snakeObj.last_reviewed_at = resolvedPartial.lastReviewedAt || null;
+    if (resolvedPartial.nextReviewAt !== undefined) snakeObj.next_review_at = resolvedPartial.nextReviewAt || null;
 
-    supabase.from('caderno_erros').update(snakeObj).eq('id', id).then(({ error }) => {
-      if (error) console.warn('Gabarita: Erro ao atualizar item do caderno de erros no Supabase:', error.message);
+    const snakeWithConcurso = resolvedPartial.concursoId !== undefined
+      ? { ...snakeObj, concurso_id: resolvedPartial.concursoId || null }
+      : snakeObj;
+
+    supabase.from('caderno_erros').update(snakeWithConcurso).eq('id', id).then(({ error }) => {
+      if (error) {
+        if (resolvedPartial.concursoId !== undefined && /concurso_id|schema cache|column/i.test(error.message || '')) {
+          supabase.from('caderno_erros').update(snakeObj).eq('id', id).then(({ error: retryError }) => {
+            if (retryError) {
+              console.warn('Gabarita: Erro ao atualizar item do caderno de erros no Supabase:', retryError.message);
+            }
+          });
+        } else {
+          console.warn('Gabarita: Erro ao atualizar item do caderno de erros no Supabase:', error.message);
+        }
+      }
     });
 
     return updatedItem;
@@ -5581,6 +5649,7 @@ export class DatabaseService {
 
     const createdErro = await this.addCadernoErro({
       userId: simulado.userId,
+      concursoId: simulado.concursoId,
       statementOrExcerpt: `[${simulado.banca || 'Simulado'} - Q${q.numero}] ${q.statement}`,
       disciplinaId: q.disciplinaId,
       disciplinaName: q.disciplinaName,

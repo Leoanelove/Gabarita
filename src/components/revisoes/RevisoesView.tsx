@@ -43,13 +43,13 @@ import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { StudyTimerModal } from '../estudos/StudyTimerModal';
 import { handleTimeMask, normalizeTimeOnBlur } from '../estudos/StudyRegisterModal';
 
-// Banners do menu "Revisões Espaçadas" por tema (Supabase)
+// Banners do menu "Revisões Espaçadas" por tema
 export const REVISOES_ESPACADAS_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20revisoes/Banner-Revisoes-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSByZXZpc29lcy9CYW5uZXItUmV2aXNvZXMtdmVyZGUucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMzQ5NCwiZXhwIjo0OTQ2MjMzNDk0fQ.JSS_JWrtc3WP0dTm2J5aBw1tFDKBkLkq6EVPT7o__uCLsFov9FtGfoJJise_gh2Wkw-UJvSsPAqUAWh7cwkGQA',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20revisoes/Banner-Revisoes-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSByZXZpc29lcy9CYW5uZXItUmV2aXNvZXMtYXp1bC5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjMzNTE0LCJleHAiOjQ5NDYyMzM1MTR9.6B4KhoSlSlBNHrM8dY7G6YElFKkn31xDhLkOSsL0-FkIwFb3XEjmQP5pkv5uK1EONxOP4PLVBtlgakVYdqaXig',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20revisoes/Banner-Revisoes-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSByZXZpc29lcy9CYW5uZXItUmV2aXNvZXMtcm9zYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjMzNTI3LCJleHAiOjQ5NDYyMzM1Mjd9.wV1e6s_ThXDscunUqIlAmE6TRLnMJ1slnyukWLeWeSJ-IK_eVs__4dFCpVEvS8ZdswK2TT9ZhnM0oLn4bQKWfA',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20revisoes/Banner-Revisoes-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSByZXZpc29lcy9CYW5uZXItUmV2aXNvZXMtcm94by5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjMzNTQ2LCJleHAiOjQ5NDYyMzM1NDZ9.LJSZkR0YJFN0zh8c4l7Kznd8fTO4rvCz0yLz48eSbEKFROx7wabznwfJdidXj7TWBNIG0FQJS8H58HmAhVVXWQ',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20revisoes/Banner-Revisoes-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSByZXZpc29lcy9CYW5uZXItUmV2aXNvZXMtbGFyYW5qYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjMzNTYwLCJleHAiOjQ5NDYyMzM1NjB9.WfmhXZXh4OCIWBuNh3-rRIofzSGgjjrIDeXuJG23PkDe5CFhxTvBMKj4MU-YGisZUdmIbnPYvpJ996gRpayupw',
+  verde: '/assets/bannersrevisoes/Banner-Revisoes-verde.webp',
+  azul: '/assets/bannersrevisoes/Banner-Revisoes-azul.webp',
+  rosa: '/assets/bannersrevisoes/Banner-Revisoes-rosa.webp',
+  roxo: '/assets/bannersrevisoes/Banner-Revisoes-roxo.webp',
+  laranja: '/assets/bannersrevisoes/Banner-Revisoes-laranja.webp',
 };
 
 interface RevisoesViewProps {
@@ -1201,7 +1201,7 @@ export const RevisoesView: React.FC<RevisoesViewProps> = ({
 
       {/* Abas de Navegação + Botão Filtros Popover + Agendar Revisão */}
       <div className="revisoes-nav-tabs flashcards-daily-review-card relative flex flex-wrap items-center justify-between gap-2 p-2 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-2xl border border-primary/25 dark:border-primary/20 text-xs shadow-xs">
-        <div className="flex items-center gap-1.5 overflow-x-auto">
+        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('hoje')}

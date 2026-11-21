@@ -56,18 +56,12 @@ import { Button } from '../../design-system/Button';
 import { handleTimeMask, normalizeTimeOnBlur } from '../estudos/StudyRegisterModal';
 
 export const HISTORICO_BANNER_THEMES: Record<string, string> = {
-  verde:
-    'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Historico/Banner-Historico-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBIaXN0b3JpY28vQmFubmVyLUhpc3Rvcmljby12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzMjA5MjkwLCJleHAiOjQ5NDY4MDkyOTB9.7J-ygEmBbzt1UbNKoNRmufPcpB_f-r0KIZ_m1YZf0FFu0dooc4DjR0gArJcR0h8t_WAFn_519Z7fwSg2wulMpg',
-  azul:
-    'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Historico/Banner-Historico-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBIaXN0b3JpY28vQmFubmVyLUhpc3Rvcmljby1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMyMDkzMDgsImV4cCI6NDk0NjgwOTMwOH0.9NeugzqQiG8xV8k73ZTO9Okjmu5z0YNAyHmHazaMp1LT6r7opESe2_cvN8rj62oeh1VXSehMtcrE3gvw7HzfgA',
-  rosa:
-    'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Historico/Banner-Historico-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBIaXN0b3JpY28vQmFubmVyLUhpc3Rvcmljby1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMyMDkzMjAsImV4cCI6NDk0NjgwOTMyMH0.E3vCAk6RrkC-JbzYlqbuUXVN94KYFV-b9u3LB_d3HGvj1BZmoPAbJQgTxEmSD7636ISx6TrVN1YgnWDa2GQGyQ',
-  roxo:
-    'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Historico/Banner-Historico-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBIaXN0b3JpY28vQmFubmVyLUhpc3Rvcmljby1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMyMDkzMzEsImV4cCI6NDk0NjgwOTMzMX0.0Bw3uZ5k1MDd2B0tlGCQ57Oc7kKfB4dmvXMxadf3bPRSrNVecazXGW3u_cd8P5Vtw9KnGLvsEAZBmfuLytNDAg',
-  laranja:
-    'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Historico/Banner-Historico-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBIaXN0b3JpY28vQmFubmVyLUhpc3Rvcmljby1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMyMDkzNDIsImV4cCI6NDk0NjgwOTM0Mn0.3PTDDxDamF-UMfQ7kKDeZGKjKZAjidpLT-4T3HZxI43tJeBa7bIg7lMxocginTaubTYoFP6h9BWVX77NtzD1vg',
+  verde: '/assets/bannershistorico/Banner-Historico-verde.webp',
+  azul: '/assets/bannershistorico/Banner-Historico-azul.webp',
+  rosa: '/assets/bannershistorico/Banner-Historico-rosa.webp',
+  roxo: '/assets/bannershistorico/Banner-Historico-roxo.webp',
+  laranja: '/assets/bannershistorico/Banner-Historico-laranja.webp',
 };
-
 export interface HistoricoViewProps {
   sessoes: SessaoEstudo[];
   disciplinas: Disciplina[];
@@ -2109,7 +2103,91 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
+                  {/* Visão Mobile empilhada sem rolagem horizontal */}
+                  <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800/70">
+                    {displayedRecords.map(rec => {
+                      const dt = new Date(rec.completedAt || rec.createdAt);
+                      const dateFormatted = dt.toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit',
+                      });
+                      const catMeta = getCategoryMeta(rec.type);
+                      const assObj = assuntos.find(a => a.id === rec.assuntoId);
+                      const topicTitle = rec.assuntoName || assObj?.name || 'Estudo Dirigido';
+                      const secs =
+                        rec.durationSeconds && rec.durationSeconds > 0
+                          ? rec.durationSeconds
+                          : Math.round((rec.durationMinutes || 0) * 60);
+                      const { tableLabel: pagesTable } = normalizeSessionPages(rec);
+                      const qAttempted = rec.questionsAttempted || 0;
+                      const qCorrect = rec.questionsCorrect || 0;
+                      const qAcc =
+                        qAttempted > 0
+                          ? rec.accuracyRate ?? Math.round((qCorrect / qAttempted) * 100)
+                          : null;
+
+                      return (
+                        <div key={`mob-${rec.id}`} className="p-3.5 space-y-2 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <span className="font-semibold text-slate-600 dark:text-slate-300">
+                                {dateFormatted}
+                              </span>
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${catMeta.badgeClass}`}
+                              >
+                                {catMeta.label}
+                              </span>
+                            </div>
+                            <div className="inline-flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(rec)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                                title="Editar registro"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmDelete(rec.id)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                title="Excluir registro"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <p className="font-semibold text-slate-800 dark:text-slate-200 break-words leading-snug">
+                            {topicTitle}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+                            <span className="font-mono font-semibold">
+                              ⏱ {formatSecondsToHHMMSS(secs)}
+                            </span>
+                            {qAttempted > 0 && qAcc !== null && (
+                              <span className="inline-flex items-center gap-1">
+                                <span className="font-bold">{qCorrect}/{qAttempted}</span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${getAccuracyBadgeStyle(
+                                    qAcc
+                                  )}`}
+                                >
+                                  {qAcc}%
+                                </span>
+                              </span>
+                            )}
+                            {pagesTable && <span>Págs: {pagesTable}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -2272,7 +2350,109 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Visão Mobile empilhada do Edital Verticalizado */}
+              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800/70">
+                {subjectData.subjectTopics.map((topic, idx) => {
+                  const isDone = topic.completed || topic.status === 'dominado';
+                  const topicSessions = subjectData.subjectSessions.filter(
+                    s =>
+                      s.assuntoId === topic.id ||
+                      normalizeStr(s.assuntoName) === normalizeStr(topic.name)
+                  );
+                  const topicMins = topicSessions.reduce(
+                    (sum, s) => sum + (s.durationMinutes || 0),
+                    0
+                  );
+                  const sessQAttempted = topicSessions.reduce(
+                    (sum, s) => sum + (s.questionsAttempted || 0),
+                    0
+                  );
+                  const sessQCorrect = topicSessions.reduce(
+                    (sum, s) => sum + (s.questionsCorrect || 0),
+                    0
+                  );
+                  const totalQ = Math.max(topic.totalQuestionsSolved || 0, sessQAttempted);
+                  const correctQ = Math.max(topic.correctQuestionsSolved || 0, sessQCorrect);
+                  const acc = totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : null;
+                  const lastDateRaw =
+                    topicSessions[0]?.completedAt || topic.lastStudiedAt || null;
+                  const lastDateFormatted = lastDateRaw
+                    ? new Date(lastDateRaw).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit',
+                      })
+                    : null;
+                  const latestMaterial =
+                    topicSessions.find(s => s.material && s.material.trim())?.material || null;
+                  const hasNumberPrefix = /^\d+(\.\d+)*[\s.-]/.test(topic.name.trim());
+                  const displayTopicName = hasNumberPrefix
+                    ? topic.name
+                    : `${topic.order || idx + 1}. ${topic.name}`;
+
+                  return (
+                    <div key={`mob-topic-${topic.id}`} className="p-3.5 space-y-2 text-xs">
+                      <div className="flex items-start gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleTopicCompleted(topic)}
+                          className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                            isDone
+                              ? 'border-transparent text-white'
+                              : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
+                          }`}
+                          style={isDone ? { backgroundColor: palette.primary } : undefined}
+                          title={isDone ? 'Marcar como pendente' : 'Marcar tópico como concluído'}
+                        >
+                          {isDone && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </button>
+                        <span
+                          className={`font-medium break-words leading-snug flex-1 min-w-0 ${
+                            isDone
+                              ? 'line-through text-slate-400 dark:text-slate-500'
+                              : 'text-slate-800 dark:text-slate-100'
+                          }`}
+                        >
+                          {displayTopicName}
+                        </span>
+                      </div>
+
+                      <div className="pl-7 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+                        {totalQ > 0 && acc !== null ? (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="font-bold">{correctQ}/{totalQ}</span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${getAccuracyBadgeStyle(
+                                acc
+                              )}`}
+                            >
+                              {acc}%
+                            </span>
+                            {acc >= 90 && (
+                              <Crown className="w-3 h-3 text-amber-500 fill-amber-400 shrink-0" />
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500">Sem questões</span>
+                        )}
+                        {lastDateFormatted && <span>Último: {lastDateFormatted}</span>}
+                        {topicSessions.length > 0 && (
+                          <span>
+                            {formatHoursMinutes(topicMins)} ({topicSessions.length}x)
+                          </span>
+                        )}
+                        {latestMaterial && (
+                          <span className="text-slate-500 dark:text-slate-400 break-words">
+                            {latestMaterial}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">

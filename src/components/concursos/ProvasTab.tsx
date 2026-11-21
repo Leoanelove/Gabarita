@@ -29,11 +29,11 @@ import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 // Banners da aba "Provas" por tema
 export const PROVAS_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc192ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyOTUyODIyLCJleHAiOjQ5NDY1NTI4MjJ9.L8UMJCbDT1gJqmnQREm8SfK0Jvswu_LCEbQd5Rc1uieZA79NfInDu22L42zBMESAT_QlmIkh2NMHTCrYyAyGFA',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4NDQsImV4cCI6NDk0NjU1Mjg0NH0.4xbPBW95dU8TFdE12zB3HtiZbqDFSuI1Zxrzvx_9EnsBk8saeP3w2JwTtqpHshpU0wqJ588rhdSqN5dMFlmgSg',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4NTUsImV4cCI6MTgwMTU5Mjg1NX0.p93CYtnRYPEsl92qJ1k3QxBOUwm3oOz-SvIEAj-lymsPKfnBz2F9YcEa4nVoqHYDOYwySR7rsP1d1nIE4_RaFA',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4NjcsImV4cCI6NDk0NjU1Mjg2N30.c_T0CjrGd_mdB2CP6LMUM-BL2T8lzQQPnpuHtDCnAh5xjF_tvO2LGozDotDguWt-dlikXHQinsIC5Q0MKxNYxg',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Provas_laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX1Byb3Zhc19sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTI4ODEsImV4cCI6NDk0NjU1Mjg4MX0.VSm8s0do8a_KCR2TnR5SozTJXBuAnn-sMeBSUn9qp3I1QE6OkuOo9vUY1xkqMky6z1RSjMQDyRjHQBup-NxLZg',
+  verde: '/assets/bannersprovas/Banner_Provas_verde.webp',
+  azul: '/assets/bannersprovas/Banner_Provas_azul.webp',
+  rosa: '/assets/bannersprovas/Banner_Provas_rosa.webp',
+  roxo: '/assets/bannersprovas/Banner_Provas_roxo.webp',
+  laranja: '/assets/bannersprovas/Banner_Provas_laranja.webp',
 };
 
 // Aliases tolerantes a variações em inglês/português
@@ -271,7 +271,7 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
             </h1>
 
             {/* Subtítulo: "Cadastre datas, organize cadernos de provas e acompanhe seus simulados agendados." */}
-            <p className="text-white/90 text-xs md:text-sm leading-relaxed">
+            <p className="provas-banner-subtitle text-xs md:text-sm leading-relaxed">
               Cadastre datas, organize cadernos de provas e acompanhe seus simulados agendados.
             </p>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -59,11 +59,11 @@ const MAX_CONCURSOS = 3;
 
 // Banners da aba "Concursos" (desacoplados de PROVAS_BANNER_THEMES)
 export const CONCURSOS_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_verde1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc192ZXJkZTEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzYyNTM4OSwiZXhwIjo0OTQ3MjI1Mzg5fQ.BE9nGP7j0J3YoIF5Dmy_VIaPZCiTYJG3Z6-he1e24Of79amHeMI7GpANiCk3sGTBtiOmyK-mAo6btuyI5YppSQ',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_azul1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19henVsMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI1OTc5LCJleHAiOjQ5NDcyMjU5Nzl9.t8LyR9U0gCQmroY6dsh7AZec81Fjba5IkqnOLHeYhZ7WJWJP4gVGJFRgfLCsIclEBt6yWx3yp73sW8of8IvwsA',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_rosa1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19yb3NhMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI1OTk4LCJleHAiOjQ5NDcyMjU5OTh9.SqYjY4UaNPQadGVXSPE306jtukUjzn2bAqkcTrFtj0LuipegRqVuGsEeG3E5qdGw4sQXDhVTyrBD4stRnaohGw',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_roxo1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19yb3hvMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI2MDExLCJleHAiOjQ5NDcyMjYwMTF9.gShzy95wv-OQh_enqzIca3vcbRa0WF8IL3od1UZGLtdMDomUxGudxortHe5ttmghYN1lrLa4Uff3hs-BZIgIag',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Concursos%20&%20Provas/Banner_Concursos_laranja1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBDb25jdXJzb3MgJiBQcm92YXMvQmFubmVyX0NvbmN1cnNvc19sYXJhbmphMS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNjI2MDI3LCJleHAiOjQ5NDcyMjYwMjd9.Xg506W1uoN2wMYBl9jtO0ofsjwLelCLKdfYQVb-0r2LhLhopwzrBK4XZlmGW9b6DgLLdUJcf77RrEQ-Pn81N_g',
+  verde: '/assets/bannerconcursos/Banner_Concursos_verde1.webp',
+  azul: '/assets/bannerconcursos/Banner_Concursos_azul1.webp',
+  rosa: '/assets/bannerconcursos/Banner_Concursos_rosa1.webp',
+  roxo: '/assets/bannerconcursos/Banner_Concursos_roxo1.webp',
+  laranja: '/assets/bannerconcursos/Banner_Concursos_laranja1.webp',
 };
 
 const PALETTE_COLORS = [
@@ -110,6 +110,8 @@ interface ConcursosViewProps {
   onUpdateAssuntoStatus?: (id: string, status: TopicStatus) => Promise<void>;
   onOpenStudyTimer?: (disciplinaId?: string, assuntoId?: string) => void;
   onNavigateTab?: (tab: any) => void;
+  initialTab?: 'concursos' | 'provas';
+  initialTabTrigger?: number;
 }
 
 export const ConcursosView: React.FC<ConcursosViewProps> = ({
@@ -139,6 +141,8 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   onUpdateAssuntoStatus,
   onOpenStudyTimer,
   onNavigateTab,
+  initialTab = 'concursos',
+  initialTabTrigger = 0,
 }) => {
   const { colorSkin, palette } = useTheme();
   const currentTheme = (
@@ -208,7 +212,12 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
 
   // Navigation: Hub vs Drill-Down (Painel do Concurso)
   const [selectedConcursoId, setSelectedConcursoId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'concursos' | 'provas'>('concursos');
+  const [activeTab, setActiveTab] = useState<'concursos' | 'provas'>(initialTab);
+
+  useEffect(() => {
+    setSelectedConcursoId(null);
+    setActiveTab(initialTab);
+  }, [initialTab, initialTabTrigger]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sphereFilter, setSphereFilter] = useState<'todas' | ConcursoSphere>('todas');
   

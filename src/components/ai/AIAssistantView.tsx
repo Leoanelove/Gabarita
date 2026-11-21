@@ -7,11 +7,11 @@ import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const ASSISTENTE_IA_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzE2OTcsImV4cCI6NDk0NjU3MTY5N30.ttyglhw4yJRd8HQekm2xioI9wUTMmsVbExSYuimHBP4Jq3nhT_Bz8oSO-C8B-VwX9sA3HBKq824njk4kbkteBQ",
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTcxMCwiZXhwIjo0OTQ2NTcxNzEwfQ.Zc0CcMi_Mq_CF94Zh2hIhQW3P0lm3g50jODMQJgOejjT09jZn2DTa_QQdfomOXJnL74bNdA1nw7JQ3Equ3U1kg",
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLVJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTcxOSwiZXhwIjo0OTQ2NTcxNzE5fQ.lIkrPBdKUxA_-dHrm42Pd2-N1t-Su-cwgapfZjFkRqeCIdkeD0DJJhwRBome87mcqsxyGb2hp6tf7cuY48xR1A",
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLVJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTcyOSwiZXhwIjo0OTQ2NTcxNzI5fQ.koNmpPw3iMFhITuBZvZ4TgfYPtuNgRuCgKMGVp8TRUfYSLzU1KRWw_EPD2usToXE-Y_wcP9EfFPtHB-QBh9phg",
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Assistente%20IA/Banner-Assistente-Laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBBc3Npc3RlbnRlIElBL0Jhbm5lci1Bc3Npc3RlbnRlLUxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTc0MiwiZXhwIjo0OTQ2NTcxNzQyfQ.5i7zPq-9wX-6X8jNahv0P9gJLHBpNGgRtPWQCU9ETq-7sVn9uvKmC0f6w8ohd-euqu5x5mTJ9zeYr4Z0uP9jlA"
+  verde: '/assets/bannerassistenteia/Banner-Assistente-verde.webp',
+  azul: '/assets/bannerassistenteia/Banner-Assistente-azul.webp',
+  rosa: '/assets/bannerassistenteia/Banner-Assistente-Rosa.webp',
+  roxo: '/assets/bannerassistenteia/Banner-Assistente-Roxo.webp',
+  laranja: '/assets/bannerassistenteia/Banner-Assistente-Laranja.webp',
 };
 
 interface Message {

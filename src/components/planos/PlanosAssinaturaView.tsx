@@ -10,17 +10,12 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
 export const PLANOS_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Planos%20e%20Precos/Banner-Planos-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFub3MgZSBQcmVjb3MvQmFubmVyLVBsYW5vcy12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjgxMjMyLCJleHAiOjQ5NDYyODEyMzJ9.ZKORMkXE457LoKX9tEhc3W5g6MPo09tNmoRT4aCb3uhwwZrWWJe_TnXkKSG6_iMG7s3lA5Ze5givXGDXuOtyKA",
-
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Planos%20e%20Precos/Banner-Planos-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFub3MgZSBQcmVjb3MvQmFubmVyLVBsYW5vcy1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2ODEyNDYsImV4cCI6NDk0NjI4MTI0Nn0.xtz3XVW4kjEOTSfrBbd77E2fNpg9Wf-FyB-YHYnVoD5OD0uIXjcJnp9dQlT1vcQhXMH7Ruhw3jYvNkYuFgAj_Q",
-
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Planos%20e%20Precos/Banner-Planos-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFub3MgZSBQcmVjb3MvQmFubmVyLVBsYW5vcy1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2ODEyNjEsImV4cCI6NDk0NjI4MTI2MX0.GvRJNmTp73eL1oYIT-WTGrrty2P_uUCY1ey_jQxZ6FKYC5G26xFYD904bmWZpH00Thmw1C7Kq_qH9_nYN-QfgA",
-
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Planos%20e%20Precos/Banner-Planos-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFub3MgZSBQcmVjb3MvQmFubmVyLVBsYW5vcy1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2ODEyNzMsImV4cCI6NDk0NjI4MTI3M30.B1vB88vxbjpOYq3SBH7IfL8YP8W6hdItegzGbPzMAksv2lYU2lZjIUYvTqIWrj_2S9mbXIWndho1WP29MItnYA",
-
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Planos%20e%20Precos/Banner-Planos-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFub3MgZSBQcmVjb3MvQmFubmVyLVBsYW5vcy1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2ODEyODcsImV4cCI6NDk0NjI4MTI4N30.lt9dLGJm29C5tT0E11bj21Avwdx8-Fu36nSgmQ6Kv07AI9km7ZS3hycpLIhQv6zdvBcJqynbO46oW1QHikEGhw"
+  verde: '/assets/bannersplanoseassinaturas/Banner-Planos-verde.webp',
+  azul: '/assets/bannersplanoseassinaturas/Banner-Planos-azul.webp',
+  rosa: '/assets/bannersplanoseassinaturas/Banner-Planos-rosa.webp',
+  roxo: '/assets/bannersplanoseassinaturas/Banner-Planos-roxo.webp',
+  laranja: '/assets/bannersplanoseassinaturas/Banner-Planos-laranja.webp',
 };
-
 interface PlanosAssinaturaViewProps {
   user: UserProfile;
   onUpdateSubscription: (plan: UserPlan) => Promise<void>;

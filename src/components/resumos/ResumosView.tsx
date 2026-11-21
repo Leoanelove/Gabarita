@@ -91,13 +91,12 @@ const getConcursoDisplayName = (c?: Concurso): string => {
 };
 
 export const RESUMOS_BANNER_IMAGES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Resumos/Banner-resumos-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBSZXN1bW9zL0Jhbm5lci1yZXN1bW9zLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTM2NjcwNzgsImV4cCI6NDk0NzI2NzA3OH0.quzfk9QnxPTfDgepL2f_JXderMadoIlj75eDIkVfl90cg6HAGfLM93E-FhExE7JyLcikkaXlwbs2i_CMDecNiQ',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Resumos/Banner-resumos-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBSZXN1bW9zL0Jhbm5lci1yZXN1bW9zLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzY2NzA4OSwiZXhwIjo0OTQ3MjY3MDg5fQ.ZDzrN-n0wa5Bx0ycX6_4SUWslCsqZTm-vM6ShQ37EVv9YkInM9gLfpUtegKo1svj-xSfhu9mA9ffLWX9D5AYlw',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Resumos/Banner-resumos-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBSZXN1bW9zL0Jhbm5lci1yZXN1bW9zLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzY2NzEwMCwiZXhwIjo0OTQ3MjY3MTAwfQ.ONE6Q9MfnIjpT2sNTw_FuBzQ6Eg7i6BN96GRR1ADdGOShX7VxDQKImg5RYBqOc9A_Q5qiFRcPjqU8N7kltb1yA',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Resumos/Banner-resumos-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBSZXN1bW9zL0Jhbm5lci1yZXN1bW9zLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzY2NzExMSwiZXhwIjo0OTQ3MjY3MTExfQ.be_c-diaa3pBiQTJlqjb-gW2fylnYtAFJvo8BGIXxBNpirQmbV3fc3mytB-3vhXt7Bcy3A2tjA54YtD1fvhz2A',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Resumos/Banner-resumos-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBSZXN1bW9zL0Jhbm5lci1yZXN1bW9zLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzY2NzEyNSwiZXhwIjo0OTQ3MjY3MTI1fQ.3zjmB_S4PmM9lwVZgteYgs8YnE0dNl-qIjkb8f4OJnvyZH_bw9kcS15IrqNTvIs-_1WVJ3uohdtcdssb4n64lw',
+  verde: '/assets/bannersresumos/Banner-resumos-verde.webp',
+  azul: '/assets/bannersresumos/Banner-resumos-azul.webp',
+  rosa: '/assets/bannersresumos/Banner-resumos-rosa.webp',
+  roxo: '/assets/bannersresumos/Banner-resumos-roxo.webp',
+  laranja: '/assets/bannersresumos/Banner-resumos-laranja.webp',
 };
-
 RESUMOS_BANNER_IMAGES.green = RESUMOS_BANNER_IMAGES.verde;
 RESUMOS_BANNER_IMAGES.emerald = RESUMOS_BANNER_IMAGES.verde;
 RESUMOS_BANNER_IMAGES.blue = RESUMOS_BANNER_IMAGES.azul;

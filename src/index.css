@@ -151,7 +151,7 @@ body.theme-purple,
   --primary-800: #5b21b6;
   --primary-900: #4c1d95;
   --primary-200: #ddd6fe;
-  --primary-300: #c4b5fd;
+  --primary-300: #5B21B6;
   --primary-light: rgba(124, 58, 237, 0.12);
   --primary-light-border: rgba(124, 58, 237, 0.3);
   --secondary-color: #6D28D9;
@@ -197,7 +197,7 @@ body.theme-dbz,
   --primary-active: #D83100;
   --primary-text: #FF6B00;
   --primary-text-dark: #FFCC00;
-  --primary-800: #9a3412;
+  --primary-800: #FF6B00;
   --primary-900: #7c2d12;
   --primary-200: #fed7aa;
   --primary-300: #fdba74;
@@ -3236,6 +3236,70 @@ body.skin-laranja h1.provas-banner-title,
   -webkit-text-fill-color: #FFFFFF !important;
 }
 
+/* Subtítulo do Banner de Provas na cor do tema aplicado com o mesmo efeito neon de "Próximas Provas" */
+p.provas-banner-subtitle,
+.provas-banner-subtitle {
+  color: #6ee7b7 !important;
+  -webkit-text-fill-color: #6ee7b7 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(52, 211, 153, 0.95), 0 0 18px rgba(16, 185, 129, 0.8), 0 0 32px rgba(5, 150, 105, 0.6) !important;
+}
+
+.skin-verde .provas-banner-subtitle,
+body.theme-green .provas-banner-subtitle,
+body.skin-verde .provas-banner-subtitle,
+[data-skin="verde"] .provas-banner-subtitle {
+  color: #6ee7b7 !important;
+  -webkit-text-fill-color: #6ee7b7 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(52, 211, 153, 0.95), 0 0 18px rgba(16, 185, 129, 0.8), 0 0 32px rgba(5, 150, 105, 0.6) !important;
+}
+
+.skin-azul .provas-banner-subtitle,
+body.theme-blue .provas-banner-subtitle,
+body.skin-azul .provas-banner-subtitle,
+[data-skin="azul"] .provas-banner-subtitle {
+  color: #93c5fd !important;
+  -webkit-text-fill-color: #93c5fd !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(96, 165, 250, 0.95), 0 0 18px rgba(37, 99, 235, 0.8), 0 0 32px rgba(29, 78, 216, 0.6) !important;
+}
+
+.skin-rosa .provas-banner-subtitle,
+body.theme-pink .provas-banner-subtitle,
+body.skin-rosa .provas-banner-subtitle,
+[data-skin="rosa"] .provas-banner-subtitle {
+  color: #f9a8d4 !important;
+  -webkit-text-fill-color: #f9a8d4 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(244, 114, 182, 0.95), 0 0 18px rgba(219, 39, 119, 0.8), 0 0 32px rgba(190, 24, 93, 0.6) !important;
+}
+
+.skin-roxo .provas-banner-subtitle,
+.skin-purple .provas-banner-subtitle,
+body.theme-purple .provas-banner-subtitle,
+body.skin-roxo .provas-banner-subtitle,
+body.skin-purple .provas-banner-subtitle,
+[data-skin="roxo"] .provas-banner-subtitle,
+[data-skin="purple"] .provas-banner-subtitle {
+  color: #c4b5fd !important;
+  -webkit-text-fill-color: #c4b5fd !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(167, 139, 250, 0.95), 0 0 18px rgba(139, 92, 246, 0.85), 0 0 32px rgba(124, 58, 237, 0.65) !important;
+}
+
+.skin-laranja .provas-banner-subtitle,
+.skin-orange .provas-banner-subtitle,
+.skin-dbz .provas-banner-subtitle,
+body.theme-orange .provas-banner-subtitle,
+body.theme-laranja .provas-banner-subtitle,
+body.theme-dbz .provas-banner-subtitle,
+body.skin-laranja .provas-banner-subtitle,
+body.skin-orange .provas-banner-subtitle,
+body.skin-dbz .provas-banner-subtitle,
+[data-skin="laranja"] .provas-banner-subtitle,
+[data-skin="orange"] .provas-banner-subtitle,
+[data-skin="dbz"] .provas-banner-subtitle {
+  color: #fdba74 !important;
+  -webkit-text-fill-color: #fdba74 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(251, 146, 60, 0.95), 0 0 18px rgba(249, 115, 22, 0.85), 0 0 32px rgba(234, 88, 12, 0.65) !important;
+}
+
 /* =========================================================================
    Botões de Alternância de Aba ("Concursos" e "Provas") com Efeito Neon / Glow
    ========================================================================= */
@@ -4477,11 +4541,15 @@ html [data-skin="orange"] #root input.edital-search-input {
   box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.16), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Blindagem do Banner (.edital-selector-glass-banner) nos temas Roxo e Laranja */
+/* Blindagem do Banner (.edital-selector-glass-banner & .study-register-glass-banner) nos temas Roxo e Laranja */
 html:not(.dark):not(.dark-mode) body.theme-purple #root section.edital-selector-glass-banner,
 html:not(.dark):not(.dark-mode) .theme-purple #root section.edital-selector-glass-banner,
 html:not(.dark):not(.dark-mode) [data-skin="roxo"] #root section.edital-selector-glass-banner,
-html:not(.dark):not(.dark-mode) [data-skin="purple"] #root section.edital-selector-glass-banner {
+html:not(.dark):not(.dark-mode) [data-skin="purple"] #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) body.theme-purple #root div.study-register-glass-banner,
+html:not(.dark):not(.dark-mode) .theme-purple #root div.study-register-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] #root div.study-register-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] #root div.study-register-glass-banner {
   background: radial-gradient(circle at 95% 5%, rgba(139, 92, 246, 0.20), transparent 45%), linear-gradient(125deg, rgba(139, 92, 246, 0.08), rgba(255, 255, 255, 0.88) 55%, rgba(139, 92, 246, 0.08)) !important;
   border: 1px solid rgba(139, 92, 246, 0.45) !important;
   box-shadow: 0 8px 24px -4px rgba(139, 92, 246, 0.18), 0 2px 6px -1px rgba(0, 0, 0, 0.06) !important;
@@ -4490,7 +4558,11 @@ html:not(.dark):not(.dark-mode) [data-skin="purple"] #root section.edital-select
 html.dark body.theme-purple #root section.edital-selector-glass-banner,
 html.dark-mode body.theme-purple #root section.edital-selector-glass-banner,
 html.dark [data-skin="roxo"] #root section.edital-selector-glass-banner,
-html.dark-mode [data-skin="roxo"] #root section.edital-selector-glass-banner {
+html.dark-mode [data-skin="roxo"] #root section.edital-selector-glass-banner,
+html.dark body.theme-purple #root div.study-register-glass-banner,
+html.dark-mode body.theme-purple #root div.study-register-glass-banner,
+html.dark [data-skin="roxo"] #root div.study-register-glass-banner,
+html.dark-mode [data-skin="roxo"] #root div.study-register-glass-banner {
   background: radial-gradient(circle at 95% 5%, rgba(139, 92, 246, 0.20), transparent 45%), linear-gradient(125deg, rgba(139, 92, 246, 0.08), rgba(15, 23, 42, 0.92) 55%, rgba(139, 92, 246, 0.08)) !important;
   border: 1px solid rgba(139, 92, 246, 0.45) !important;
   box-shadow: 0 8px 24px -4px rgba(139, 92, 246, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.25) !important;
@@ -4499,7 +4571,11 @@ html.dark-mode [data-skin="roxo"] #root section.edital-selector-glass-banner {
 html:not(.dark):not(.dark-mode) body.theme-orange #root section.edital-selector-glass-banner,
 html:not(.dark):not(.dark-mode) body.theme-laranja #root section.edital-selector-glass-banner,
 html:not(.dark):not(.dark-mode) [data-skin="laranja"] #root section.edital-selector-glass-banner,
-html:not(.dark):not(.dark-mode) [data-skin="orange"] #root section.edital-selector-glass-banner {
+html:not(.dark):not(.dark-mode) [data-skin="orange"] #root section.edital-selector-glass-banner,
+html:not(.dark):not(.dark-mode) body.theme-orange #root div.study-register-glass-banner,
+html:not(.dark):not(.dark-mode) body.theme-laranja #root div.study-register-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] #root div.study-register-glass-banner,
+html:not(.dark):not(.dark-mode) [data-skin="orange"] #root div.study-register-glass-banner {
   background: radial-gradient(circle at 95% 5%, rgba(249, 115, 22, 0.20), transparent 45%), linear-gradient(125deg, rgba(249, 115, 22, 0.08), rgba(255, 255, 255, 0.88) 55%, rgba(249, 115, 22, 0.08)) !important;
   border: 1px solid rgba(249, 115, 22, 0.45) !important;
   box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.18), 0 2px 6px -1px rgba(0, 0, 0, 0.06) !important;
@@ -4510,7 +4586,13 @@ html.dark body.theme-laranja #root section.edital-selector-glass-banner,
 html.dark-mode body.theme-orange #root section.edital-selector-glass-banner,
 html.dark-mode body.theme-laranja #root section.edital-selector-glass-banner,
 html.dark [data-skin="laranja"] #root section.edital-selector-glass-banner,
-html.dark-mode [data-skin="laranja"] #root section.edital-selector-glass-banner {
+html.dark-mode [data-skin="laranja"] #root section.edital-selector-glass-banner,
+html.dark body.theme-orange #root div.study-register-glass-banner,
+html.dark body.theme-laranja #root div.study-register-glass-banner,
+html.dark-mode body.theme-orange #root div.study-register-glass-banner,
+html.dark-mode body.theme-laranja #root div.study-register-glass-banner,
+html.dark [data-skin="laranja"] #root div.study-register-glass-banner,
+html.dark-mode [data-skin="laranja"] #root div.study-register-glass-banner {
   background: radial-gradient(circle at 95% 5%, rgba(249, 115, 22, 0.20), transparent 45%), linear-gradient(125deg, rgba(249, 115, 22, 0.08), rgba(15, 23, 42, 0.92) 55%, rgba(249, 115, 22, 0.08)) !important;
   border: 1px solid rgba(249, 115, 22, 0.45) !important;
   box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.25) !important;
@@ -4934,3 +5016,83 @@ html.dark-mode body #root .study-reg-badge-vermelho {
   border-color: rgba(244, 63, 94, 0.35) !important;
   color: #fda4af !important;
 }
+
+/* =========================================================================
+   CONTENÇÃO DE VIEWPORT E REMOÇÃO DE BARRA DE ARRASTAR NO MODO MOBILE
+   Garante que nenhum elemento ultrapasse a largura da tela em dispositivos
+   móveis e oculta barras de rolagem visuais mantendo o scroll vertical fluido.
+   ========================================================================= */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+@media (max-width: 767px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  #root::-webkit-scrollbar,
+  *::-webkit-scrollbar:horizontal {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  main,
+  main > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+}/* =========================================================================
+   BLINDAGEM UNIVERSAL PARA BOTÕES E ELEMENTOS .bg-primary (TODOS OS TEMAS)
+   Impede que as regras de cartões (.rounded-xl.border) sobrescrevam o fundo
+   de botões ativos como "Filtros" nos temas Roxo e Laranja
+   ========================================================================= */
+html body #root button.bg-primary,
+html body #root .bg-primary,
+html:not(.dark):not(.dark-mode) body.theme-purple #root button.bg-primary,
+html:not(.dark):not(.dark-mode) body.theme-orange #root button.bg-primary,
+html:not(.dark):not(.dark-mode) body.theme-laranja #root button.bg-primary,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] #root button.bg-primary,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] #root button.bg-primary,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] #root button.bg-primary,
+html:not(.dark):not(.dark-mode) [data-skin="orange"] #root button.bg-primary,
+html.dark body.theme-purple #root button.bg-primary,
+html.dark body.theme-orange #root button.bg-primary,
+html.dark body.theme-laranja #root button.bg-primary,
+html.dark [data-skin="roxo"] #root button.bg-primary,
+html.dark [data-skin="laranja"] #root button.bg-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #ffffff !important;
+}
+
+html body #root button.bg-primary:hover,
+html:not(.dark):not(.dark-mode) body.theme-purple #root button.bg-primary:hover,
+html:not(.dark):not(.dark-mode) body.theme-orange #root button.bg-primary:hover,
+html:not(.dark):not(.dark-mode) body.theme-laranja #root button.bg-primary:hover,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] #root button.bg-primary:hover,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] #root button.bg-primary:hover,
+html.dark body.theme-purple #root button.bg-primary:hover,
+html.dark body.theme-orange #root button.bg-primary:hover,
+html.dark body.theme-laranja #root button.bg-primary:hover,
+html.dark [data-skin="roxo"] #root button.bg-primary:hover,
+html.dark [data-skin="laranja"] #root button.bg-primary:hover {
+  background-color: var(--primary-hover, var(--primary-color)) !important;
+  border-color: var(--primary-hover, var(--primary-color)) !important;
+  color: #ffffff !important;
+}
+

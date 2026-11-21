@@ -1,14 +1,9 @@
 import React from 'react';
 import { 
   LayoutDashboard, 
-  Target, 
   BookOpen, 
-  Repeat, 
-  HelpCircle, 
   UserCircle, 
-  CalendarClock, 
   PlayCircle,
-  History,
   NotebookPen
 } from 'lucide-react';
 import { NavigationTab, StudyMethod } from '../../types';
@@ -32,15 +27,13 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentTab, onSelectTab })
   }[] = [
     { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
     { id: 'estudos', label: 'Edital', icon: BookOpen },
-    { id: 'revisoes', label: 'Revisões', icon: Repeat },
     { id: 'plano', label: 'Estudar', icon: PlayCircle, isCenterFeatured: true },
     { id: 'resumos', label: 'Resumos', icon: NotebookPen },
-    { id: 'historico', label: 'Histórico', icon: History },
     { id: 'perfil', label: 'Perfil', icon: UserCircle },
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-1.5 py-1.5 grid grid-cols-7 items-center">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-1.5 py-1.5 grid grid-cols-5 items-center">
       {tabs.map(tab => {
         const Icon = tab.icon;
         const isActive =

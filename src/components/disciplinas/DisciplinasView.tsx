@@ -48,13 +48,13 @@ import { EmptyContestState } from '../common/EmptyContestState';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
-// Banners do menu "Edital Verticalizado" por tema (Supabase)
+// Banners do menu "Edital Verticalizado" por tema
 export const EDITAL_VERTICALIZADO_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NTc4ODksImV4cCI6NDk0NjU1Nzg4OX0.y-2f1TvSRR_2dsAsiFEVXUZrVWEosRMF3abA_ZE1WJkqpEK9nEFtaqIpwJulCf5EptCbcQrxazZ09rqdlZnwbg',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1NzkwNSwiZXhwIjo0OTQ2NTU3OTA1fQ.juuoZQPyCCzGgGK7PFBPJbJHkI3n3ZWOTlfmpCO_tdXgj4MrteKS26IYktPlGNRNLx6pWuSwXQJM1DjfL5kQIw',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1NzkxNiwiZXhwIjo0OTQ2NTU3OTE2fQ.MKO8InE8xt5qsWu7JMyg6exo7PHBdNafAbs-r1pCK71Z5ES74ZMky_Y1D1NSNxKt2s5_D6jNqe54f3Et7Ig1nQ',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1NzkyOCwiZXhwIjo0OTQ2NTU3OTI4fQ.vtswNEuLiMfH2LFNcPrLxHqDVcIvglKMZL8a2oH7yyYHmytPcqULo1asg9KxOFUc3H4aeFVMJYZ2SZ2lpD_Umw',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Edital%20Verticalizado/Banner-Edital-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFZGl0YWwgVmVydGljYWxpemFkby9CYW5uZXItRWRpdGFsLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk1Nzk0MCwiZXhwIjo0OTQ2NTU3OTQwfQ.BIPUFZh5LZjcDUZkeeA5qCAJ_1c0xdmTFyuGYIKmBZOnOso3-H-hS10P2jL4E3TAwNXp9kIbkYhm_UcMm3iapA',
+  verde: '/assets/bannersedital/Banner-Edital-verde.webp',
+  azul: '/assets/bannersedital/Banner-Edital-azul.webp',
+  rosa: '/assets/bannersedital/Banner-Edital-rosa.webp',
+  roxo: '/assets/bannersedital/Banner-Edital-roxo.webp',
+  laranja: '/assets/bannersedital/Banner-Edital-laranja.webp',
 };
 
 // Aliases tolerantes a variações em inglês/português
@@ -898,13 +898,13 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
         bannerThemes={EDITAL_VERTICALIZADO_BANNER_THEMES}
         minHeight="min-h-[190px] md:min-h-[220px]"
         className="w-full border border-slate-200/20 dark:border-slate-800 shadow-xl flex items-center bg-slate-950"
-        contentClassName="p-6 md:p-8 flex flex-col justify-center max-w-2xl h-full gap-4"
+        contentClassName="w-full min-w-0 p-4 sm:p-6 lg:p-8 flex flex-col justify-center lg:max-w-2xl h-full gap-3 lg:gap-4"
         alt="Banner Edital Verticalizado"
       >
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap">
+          <div className="space-y-1.5 lg:space-y-2 min-w-0 w-full">
+            <div className="flex flex-col items-start sm:flex-row sm:items-center gap-2 lg:gap-3 sm:flex-wrap min-w-0 w-full">
               <h1
-                className="provas-banner-title text-2xl md:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md"
+                className="provas-banner-title text-lg sm:text-xl lg:text-3xl font-extrabold !text-white tracking-tight leading-tight select-none drop-shadow-md"
                 style={{
                   color: '#FFFFFF',
                   textShadow: themeGlowStyles.textShadow,
@@ -923,7 +923,7 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                       onSetActiveConcurso(newId);
                     }
                   }}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs shrink-0 cursor-pointer outline-none"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs max-w-full lg:max-w-none lg:shrink-0 truncate cursor-pointer outline-none"
                 >
                   {concursos.map(c => (
                     <option key={c.id} value={c.id} className="bg-slate-900 text-white">
@@ -933,20 +933,20 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                 </select>
               ) : (
                 selectedConcurso?.title && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs shrink-0">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black/50 text-white/95 border border-white/20 backdrop-blur-md shadow-xs max-w-full lg:max-w-none lg:shrink-0 truncate">
                     {selectedConcurso.title}
                   </span>
                 )
               )}
             </div>
 
-            <p className="text-white/90 text-xs md:text-sm leading-relaxed max-w-lg">
+            <p className="text-white/90 text-xs lg:text-sm leading-relaxed max-w-full lg:max-w-lg">
               Acompanhamento minucioso por disciplina com lista expansível e controle de questões resolvidas.
             </p>
           </div>
 
           {/* Action buttons */}
-          <div className="pt-1 flex items-center gap-3 flex-wrap">
+          <div className="pt-1 w-full grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-2.5 lg:gap-3 lg:w-auto">
             <Button
               variant="primary"
               size="md"
@@ -960,8 +960,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                 setEditingAssunto(null);
                 setIsAddAssuntoOpen(true);
               }}
-              leftIcon={<Plus className="w-4 h-4" />}
-              className="theme-btn-primary font-bold shadow-lg shadow-black/25 cursor-pointer text-xs md:text-sm px-5 py-2.5"
+              leftIcon={<Plus className="w-4 h-4 shrink-0" />}
+              className="theme-btn-primary col-span-2 sm:col-span-1 w-full sm:w-auto justify-center font-bold shadow-lg shadow-black/25 cursor-pointer text-xs lg:text-sm px-4 py-2 lg:px-5 lg:py-2.5 whitespace-nowrap"
             >
               Novo Tópico
             </Button>
@@ -983,10 +983,10 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                 setEditingDisciplina(null);
                 setIsAddDisciplinaOpen(true);
               }}
-              className="btn-banner-secundario inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold bg-black hover:bg-neutral-900 text-white border border-white/25 transition-all cursor-pointer shadow-lg shadow-black/25"
+              className="btn-banner-secundario w-full sm:w-auto inline-flex items-center justify-center gap-1.5 lg:gap-2 px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl text-xs lg:text-sm font-bold bg-black hover:bg-neutral-900 text-white border border-white/25 transition-all cursor-pointer shadow-lg shadow-black/25 whitespace-nowrap"
               style={{ backgroundColor: '#000000', color: '#ffffff' }}
             >
-              <Plus className="w-4 h-4" style={{ color: themeGlowStyles.color }} />
+              <Plus className="w-4 h-4 shrink-0" style={{ color: themeGlowStyles.color }} />
               <span>Nova Matéria</span>
             </button>
 
@@ -1000,10 +1000,10 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                 }
               }}
               onClick={() => setIsAiImportModalOpen(true)}
-              className="btn-banner-secundario inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold bg-black hover:bg-neutral-900 text-white border border-white/25 transition-all cursor-pointer shadow-lg shadow-black/25"
+              className="btn-banner-secundario w-full sm:w-auto inline-flex items-center justify-center gap-1.5 lg:gap-2 px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl text-xs lg:text-sm font-bold bg-black hover:bg-neutral-900 text-white border border-white/25 transition-all cursor-pointer shadow-lg shadow-black/25 whitespace-nowrap"
               style={{ backgroundColor: '#000000', color: '#ffffff' }}
             >
-              <Sparkles className="w-4 h-4" style={{ color: themeGlowStyles.color }} />
+              <Sparkles className="w-4 h-4 shrink-0" style={{ color: themeGlowStyles.color }} />
               <span>Importar por IA</span>
             </button>
           </div>
@@ -1351,8 +1351,8 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
                   {/* Informações da matéria e estatísticas */}
                   <div className="pl-3 sm:pl-4 flex-1 space-y-2 min-w-0">
                     <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-                      <h3 className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2 shrink-0">
-                        <span className="text-[14px]" style={{ fontSize: '14px' }}>{disc.name}</span>
+                      <h3 className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2 min-w-0 max-w-full break-words">
+                        <span className="text-[14px] break-words" style={{ fontSize: '14px' }}>{disc.name}</span>
                       </h3>
 
                       {/* Questões Resolvidas (redimensionado e ao lado do nome) */}

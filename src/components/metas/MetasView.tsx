@@ -29,12 +29,12 @@ import { Modal } from '../../design-system/Modal';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
-export const METAS_DESEMPENHO_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NjAwMzgsImV4cCI6NDk0NjU2MDAzOH0.AE1he8ptW7TudarqrW5JaU0zvHqXSMMV3Qulkp8JJYtMsp6BqhOapL7uMHXy0j86rigY3uKhZZXL7JNepiWSxg",
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2MDA1MSwiZXhwIjo0OTQ2NTYwMDUxfQ.F9MGX-bUWjQxyT3CJbBbz_fHWSzLNBOkzwGm6jBnIbnKkqDxB2kT9AqpzLRsjy-EkelM5YN5xoRPcnZkTYi5zw",
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2MDA2MywiZXhwIjo0OTQ2NTYwMDYzfQ.3RqcuzADGEziq6DFpUT3oqOC9KWfB7PXF1ELOKRgu0IM_umFQmVvzqWgfvSZN6MSl9SCmAJqm8WR4TzDJE-qhA",
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-roxo1.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLXJveG8xLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NjA4MTQsImV4cCI6NDk0NjU2MDgxNH0.-tslxk6OZ5vBgRIF4IwjCFBLecH-kDQNraoE3CIJQGupBh-9q-_iMbGDHC2P8YI4CUyXWZZMvV2zNQwRixn-ww",
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Maior-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1haW9yLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2MDA4NywiZXhwIjo0OTQ2NTYwMDg3fQ.pAkwxxlUJsvo-Ax8yZlDhxqQQEDNg_3-3rc9JDXPUKRynFn5bPGGIl-0xk3iM4jWgp0HpzQoaLKBKXR8efvDlw"
+  export const METAS_DESEMPENHO_BANNER_THEMES: Record<string, string> = {
+  verde: '/assets/Bannersmetasmaior/Banner-Metas-Maior-verde.webp',
+  azul: '/assets/Bannersmetasmaior/Banner-Metas-Maior-azul.webp',
+  rosa: '/assets/Bannersmetasmaior/Banner-Metas-Maior-rosa.webp',
+  roxo: '/assets/Bannersmetasmaior/Banner-Metas-Maior-roxo.webp',
+  laranja: '/assets/Bannersmetasmaior/Banner-Metas-Maior-laranja.webp',
 };
 
 METAS_DESEMPENHO_BANNER_THEMES.green = METAS_DESEMPENHO_BANNER_THEMES.verde;
@@ -51,11 +51,11 @@ METAS_DESEMPENHO_BANNER_THEMES.amber = METAS_DESEMPENHO_BANNER_THEMES.laranja;
 METAS_DESEMPENHO_BANNER_THEMES.dbz = METAS_DESEMPENHO_BANNER_THEMES.laranja;
 
 export const METAS_MENOR_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NjYwMjMsImV4cCI6NDk0NjU2NjAyM30.QIh5JpbibB3tW6Vjx_dxklqrFRBeY8sScRoB9GqhoYEimzqY1_PiGaslKv4zlPgGHCLNgnoao2-OCLWD7pOdng",
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjAzNSwiZXhwIjo0OTQ2NTY2MDM1fQ.t4755035OiPcaH1cryIWbflCq2BvQI8_RAhwqPH1HoF2netj7OHtkml2PHExyBMYYVjaSxO5c7FmKJEPO_JYpA",
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjA0NCwiZXhwIjoxODAxNjA2MDQ0fQ.-WdmzDrVcxp0hqIlFJ4jRmmhzzZf9FEE2L5WRZdqNXgM70dFL9m_Xzw0vnLW7Z0EHMzdrldJDCTOOF-IbyuOtw",
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjA1NSwiZXhwIjo0OTQ2NTY2MDU1fQ.CJukRueRwnXgsO7xEPQVrvFfvL_cAYOGHxlR58EjSz4jOU5bgT8Io__mc3Kda_tg5sbkcnDt-LN1DL04Mtr80w",
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Metas%20e%20Desempenho/Banner-Metas-Menor-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBNZXRhcyBlIERlc2VtcGVuaG8vQmFubmVyLU1ldGFzLU1lbm9yLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk2NjA2NywiZXhwIjo0OTQ2NTY2MDY3fQ.4mUn0kgflDT1AyAfXu5mVE4YSDg4ak0T3zTaLpyGUgrLiB4rki2D-uMO8wBuIqWNcG7HfyZMrh3P9sVB1fsj_A"
+  verde: '/assets/bannermetasmenor/Banner-Metas-Menor-verde.webp',
+  azul: '/assets/bannermetasmenor/Banner-Metas-Menor-azul.webp',
+  rosa: '/assets/bannermetasmenor/Banner-Metas-Menor-rosa.webp',
+  roxo: '/assets/bannermetasmenor/Banner-Metas-Menor-roxo.webp',
+  laranja: '/assets/bannermetasmenor/Banner-Metas-Menor-laranja.webp',
 };
 
 METAS_MENOR_BANNER_THEMES.green = METAS_MENOR_BANNER_THEMES.verde;

@@ -44,11 +44,11 @@ import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const ESTATISTICAS_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzEzNDcsImV4cCI6NDk0NjU3MTM0N30.rFoGrGMktMmw4s-k7CZnZdTSutCEfzpePxkkhoWOu65yIweXzmoWEbXRT-TlTk61XDmnnLV1L7gtp5riUnDwNw",
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTM2NCwiZXhwIjo0OTQ2NTcxMzY0fQ.aV5m8u6wJO4hyhKY2qRKxfd75G_VJpIqZg5s9452J9hnWw1HQMtF9LO-0vZrsyyvbvNw2GXkFDumjWfNvpHlrg",
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTM3NywiZXhwIjo0OTQ2NTcxMzc3fQ.S1XB9peeeMvhA13xwturIoBYcSUyp-ThM-fnBNXaHuQtmK6cxika5U7QRiFIWkOqn4K2rgZPe-4sBR_1hoS0LA",
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTM5MCwiZXhwIjo0OTQ2NTcxMzkwfQ.QZY3f5K9dXlTZBV-L5FeuynMDmwxTaF6IIfeNef9NGWco4jrw17NpDK8mRu_SxdworXS5ISC-MFlFGf31g0eoA",
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Estatisticas/Banner-Estatistica-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBFc3RhdGlzdGljYXMvQmFubmVyLUVzdGF0aXN0aWNhLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mjk3MTQwNiwiZXhwIjo0OTQ2NTcxNDA2fQ.BVRQ-GLvvNjpLeY-Gq4r0oPqpFxRFZypZCBKdxVg1nquRmX9JS2k_Ar45jQEcM8ZUqosMPP-CCfKjoRz7fJyAg"
+  verde: '/assets/bannersestatisticas/Banner-Estatistica-verde.webp',
+  azul: '/assets/bannersestatisticas/Banner-Estatistica-azul.webp',
+  rosa: '/assets/bannersestatisticas/Banner-Estatistica-rosa.webp',
+  roxo: '/assets/bannersestatisticas/Banner-Estatistica-roxo.webp',
+  laranja: '/assets/bannersestatisticas/Banner-Estatistica-laranja.webp',
 };
 
 type PeriodOption = '7d' | '30d' | '90d' | 'inicio';
@@ -1251,8 +1251,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       </div>
 
       {/* ABAS DETALHADAS DE DESEMPENHO E EVOLUÇÃO */}
-      <div className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-2.5 flex items-center justify-between gap-2 overflow-x-auto text-xs shadow-xs">
-        <div className="flex items-center gap-2 shrink-0">
+      <div className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs shadow-xs">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setActiveTab('geral')}
             className={`px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer ${

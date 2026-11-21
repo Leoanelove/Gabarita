@@ -51,17 +51,12 @@ import {
 } from './GmailRichTextEditor';
 
 export const FLASHCARDS_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Flashcards/Banner-Flashcard-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBGbGFzaGNhcmRzL0Jhbm5lci1GbGFzaGNhcmQtdmVyZGUucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjY3MzAxOCwiZXhwIjo0OTQ2MjczMDE4fQ.bUX6pEhu81GWiSFf7TSYaSRDmwR77OUyqM2p9GqMXq-dKP0mDbjAFRwny2WwZnzAvDl397t51dWbYdaKEG4PVQ",
-
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Flashcards/Banner-Flashcard-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBGbGFzaGNhcmRzL0Jhbm5lci1GbGFzaGNhcmQtYXp1bC5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjczMDQ1LCJleHAiOjQ5NDYyNzMwNDV9.WsS0ZwZJtyT8nblcFoK52WVh3ro2JkA8SOSqwM9EDfUk0JedEdE4R-lb1NI-9S5K4RvEocQIuJgryHZwKPs1HA",
-
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Flashcards/Banner-Flashcard-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBGbGFzaGNhcmRzL0Jhbm5lci1GbGFzaGNhcmQtcm9zYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjczMDU5LCJleHAiOjQ5NDYyNzMwNTl9.sMJL9sVHBzjmrOHOkO7qPZsCtht4EYjAU33kar3g2W0ux86PBL-6kSduBZ_pmXfCc-Klxjf_fjGnWFOwJlG-EQ",
-
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Flashcards/Banner-Flashcard-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBGbGFzaGNhcmRzL0Jhbm5lci1GbGFzaGNhcmQtcm94by5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjczMDcyLCJleHAiOjQ5NDYyNzMwNzJ9.QDm0refGe36TQV3evtSlYWQhU4HCGBDAHDK_-_ZxUW11xP44w2I9YiOjodEMiI1GBDORAYzxJpyLjATqwqJRPQ",
-
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Flashcards/Banner-Flashcard-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBGbGFzaGNhcmRzL0Jhbm5lci1GbGFzaGNhcmQtbGFyYW5qYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyNjczNDU4LCJleHAiOjI2NTY2NzM0NTh9.3tsgwLoVmtZapR0_79uXisVqov5cDS7n4gVl1GolY640z1RRwJdpSx6dPh8hsn5zDt7EDXfhuJeJFfHyvMBicg"
+  verde: '/assets/bannersflashcards/Banner-Flashcard-verde.webp',
+  azul: '/assets/bannersflashcards/Banner-Flashcard-azul.webp',
+  rosa: '/assets/bannersflashcards/Banner-Flashcard-rosa.webp',
+  roxo: '/assets/bannersflashcards/Banner-Flashcard-roxo.webp',
+  laranja: '/assets/bannersflashcards/Banner-Flashcard-laranja.webp',
 };
-
 export interface FlashcardsProps {
   disciplinas?: Disciplina[];
   assuntos?: Assunto[];

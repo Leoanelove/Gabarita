@@ -27,7 +27,10 @@ import {
   EyeOff,
   PlusCircle,
   History,
-  HelpCircle
+  HelpCircle,
+  Eye,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { 
   Concurso, 
@@ -72,6 +75,7 @@ interface DashboardViewProps {
   isLoading?: boolean;
   errorMessage?: string | null;
   onNavigateTab: (tab: NavigationTab) => void;
+  onNavigateToProvas?: () => void;
   onOpenStudyTimer: (preSelectedDisciplinaId?: string, preSelectedAssuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual', contabilizarPlanejamento?: boolean) => void;
   onOpenStudyRegister?: (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string; contabilizarPlanejamento?: boolean }) => void;
   onCompleteRevisao: (
@@ -89,11 +93,11 @@ interface DashboardViewProps {
 }
 
 const BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyOTQ5NzAwLCJleHAiOjQ5NDY1NDk3MDB9.i7OM-fgyxszWN1uInDFexStQCElbxJT09kM-4kz-mI0xbnR8j_f9w_v5oE2UA1okrvVNr8ECFXccAT_V_AK03Q",
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3MjUsImV4cCI6NDk0NjU0OTcyNX0.wGZYLBnjGgYxW0JzmmwPRiBqwkl91QwR4zpCfat6sO0kRlO71-n_RA65sD5HV2DW2-lW867PLUZQaUeT8zijqQ",
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3MzYsImV4cCI6NDk0NjU0OTczNn0._YrS5RXScu3j5NrAxENk9gEJLyAkuPsKEAb3FhiDyt-uZIVfd8P2VrXKD8JY-xrd9N05H6XmmDz-P7ESnZgDgQ",
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3NTcsImV4cCI6NDk0NjU0OTc1N30.6bexjnIm7u6FdTp0T3M881N5bJdTXSxDiNkhZF7zBJp50-ixHRSQ5yl1WNsjwllzUjs9_CrdBzbBH6gZKmD04w",
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Painel%20Geral/Banner-painel-geral-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQYWluZWwgR2VyYWwvQmFubmVyLXBhaW5lbC1nZXJhbC1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NDk3NjksImV4cCI6NDk0NjU0OTc2OX0.rDHY-aqNny3su6V_W1oAVxBOHk0Gk5SmnaecKhXXsuTliJtlO5Hm3dK1Rl1oCTWofg40TavqwQG3ns2p_ET2tg",
+  verde: '/assets/bannerspainelgeral/Banner-painel-geral-verde.webp',
+  azul: '/assets/bannerspainelgeral/Banner-painel-geral-azul.webp',
+  rosa: '/assets/bannerspainelgeral/Banner-painel-geral-rosa.webp',
+  roxo: '/assets/bannerspainelgeral/Banner-painel-geral-roxo.webp',
+  laranja: '/assets/bannerspainelgeral/Banner-painel-geral-laranja.webp',
 };
 
 // Aliases tolerantes a variações em inglês/português e IDs compostos
@@ -188,6 +192,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   isLoading = false,
   errorMessage = null,
   onNavigateTab,
+  onNavigateToProvas,
   onOpenStudyTimer,
   onOpenStudyRegister,
   onCompleteRevisao,
@@ -688,6 +693,160 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
     return list;
   }, [provas, activeConcurso, todayStr]);
+
+  // Lista unificada e ordenada de provas agendadas (Concursos com data + Provas cadastradas)
+  const scheduledExams = useMemo(() => {
+    const parseExamDateLocal = (raw?: string): Date | null => {
+      if (!raw) return null;
+      const str = String(raw).trim();
+      if (!str) return null;
+      const datePart = str.includes('T') ? str.split('T')[0] : str;
+      const parts = datePart.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+          const d = new Date(year, month, day);
+          if (!isNaN(d.getTime())) return d;
+        }
+      }
+      const fallback = new Date(str);
+      if (isNaN(fallback.getTime())) return null;
+      fallback.setHours(0, 0, 0, 0);
+      return fallback;
+    };
+
+    const toDateKey = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
+
+    type ScheduledExamItem = {
+      id: string;
+      name: string;
+      formattedDate: string;
+      diffDays: number;
+      isActiveConcurso: boolean;
+      dateKey: string;
+      concursoId?: string;
+    };
+
+    const items: ScheduledExamItem[] = [];
+    const seenKeys = new Set<string>();
+    const seenConcursoDateKeys = new Set<string>();
+
+    const activeCId = activeConcurso?.id ? String(activeConcurso.id) : '';
+
+    // 1. Concursos não arquivados que possuem data de prova
+    concursos.forEach((c) => {
+      if (c.status === 'arquivado' || c.isArquivado) return;
+      const rawDate = c.examDate || (c as any).dataProva || (c as any).data_prova || (c as any).exam_date;
+      const dateObj = parseExamDateLocal(rawDate);
+      if (!dateObj) return;
+
+      const dateKey = toDateKey(dateObj);
+      const diffDays = Math.round((dateObj.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24));
+      const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      const displayName = (c.title || c.titulo || c.organ || c.orgao || c.nome || c.role || 'Concurso Agendado').trim();
+      const normalizedKey = `${(c.organ || displayName).toLowerCase().trim()}_${(c.role || '').toLowerCase().trim()}_${dateKey}`;
+
+      seenKeys.add(normalizedKey);
+      seenConcursoDateKeys.add(`${String(c.id)}_${dateKey}`);
+
+      items.push({
+        id: `concurso_${c.id}`,
+        name: displayName,
+        formattedDate,
+        diffDays,
+        isActiveConcurso: Boolean(activeCId && String(c.id) === activeCId),
+        dateKey,
+        concursoId: c.id,
+      });
+    });
+
+    // 2. Provas registradas em ProvasTab com data válida (sem duplicar com o concurso pai)
+    (provas || []).forEach((p) => {
+      const dateObj = parseExamDateLocal(p.examDate);
+      if (!dateObj) return;
+
+      const dateKey = toDateKey(dateObj);
+      if (p.concursoId && seenConcursoDateKeys.has(`${String(p.concursoId)}_${dateKey}`)) {
+        return;
+      }
+
+      const normalizedKey = `${(p.organ || '').toLowerCase().trim()}_${(p.role || '').toLowerCase().trim()}_${dateKey}`;
+      if (seenKeys.has(normalizedKey)) return;
+      seenKeys.add(normalizedKey);
+
+      const linkedConcurso = p.concursoId
+        ? concursos.find((c) => String(c.id) === String(p.concursoId))
+        : undefined;
+      if (linkedConcurso && (linkedConcurso.status === 'arquivado' || linkedConcurso.isArquivado)) {
+        return;
+      }
+
+      const diffDays = Math.round((dateObj.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24));
+      const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      const displayName = (linkedConcurso?.title || p.organ || p.role || 'Prova Agendada').trim();
+
+      items.push({
+        id: `prova_${p.id}`,
+        name: displayName,
+        formattedDate,
+        diffDays,
+        isActiveConcurso: Boolean(activeCId && p.concursoId && String(p.concursoId) === activeCId),
+        dateKey,
+        concursoId: p.concursoId,
+      });
+    });
+
+    items.sort((a, b) => {
+      if (a.isActiveConcurso !== b.isActiveConcurso) {
+        return a.isActiveConcurso ? -1 : 1;
+      }
+      const aFuture = a.diffDays >= 0;
+      const bFuture = b.diffDays >= 0;
+      if (aFuture !== bFuture) {
+        return aFuture ? -1 : 1;
+      }
+      if (aFuture && bFuture) {
+        return a.diffDays - b.diffDays;
+      }
+      return b.diffDays - a.diffDays;
+    });
+
+    return items;
+  }, [concursos, provas, activeConcurso]);
+
+  const [selectedExamIdx, setSelectedExamIdx] = useState(0);
+
+  useEffect(() => {
+    setSelectedExamIdx(0);
+  }, [activeConcurso?.id]);
+
+  const handleNavigateToProvas = () => {
+    if (onNavigateToProvas) {
+      onNavigateToProvas();
+    } else {
+      onNavigateTab('concursos');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -1331,32 +1490,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                 {/* Card Principal Destacado: PRÓXIMO ESTUDO */}
                 <div
-                  className="relative rounded-2xl p-6 sm:p-7 text-white shadow-md overflow-visible transition-all"
+                  className="relative rounded-2xl p-5 sm:p-6 text-white shadow-md overflow-visible transition-all"
                   style={{
                     background: `linear-gradient(135deg, ${palette.primary} 0%, ${palette.secondary || palette.primary} 100%)`,
                   }}
                 >
-                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-                    <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
+                  <div className="relative z-10 flex flex-col gap-4">
+                    {/* Parte Superior: Ícone + Matéria e Tópico ocupando toda a largura disponível */}
+                    <div className="flex items-start gap-3.5 min-w-0 w-full">
                       {/* Ícone da Disciplina em Box Arredondado */}
                       <div
-                        className="w-13 h-13 sm:w-15 sm:h-15 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-white/30"
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-white/30"
                         style={{
                           backgroundColor: '#ffffff',
                           color: primaryIconColor,
                         }}
                       >
-                        <PrimaryIcon className="w-7 h-7 stroke-[2]" />
+                        <PrimaryIcon className="w-6 h-6 stroke-[2]" />
                       </div>
 
-                      <div className="min-w-0 flex-1 space-y-2">
+                      <div className="min-w-0 flex-1 space-y-1.5">
                         <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-slate-900/75 text-white shadow-2xs">
                           Próximo
                         </span>
 
                         <h4
-                          className="proximo-estudo-title text-lg sm:text-xl md:text-2xl font-extrabold text-white !text-white tracking-tight truncate"
+                          className="proximo-estudo-title text-base sm:text-lg font-extrabold leading-snug text-white !text-white tracking-tight whitespace-normal break-words"
                           style={{ color: '#ffffff' }}
+                          title={primaryStudyItem.disciplinaName}
                         >
                           {primaryStudyItem.disciplinaName}
                         </h4>
@@ -1368,89 +1529,89 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               primaryStudyItem.disciplinaName
                             )
                           }
-                          className="group inline-flex items-center gap-1.5 max-w-full cursor-pointer text-white/95 hover:text-white"
+                          className="group inline-flex items-start gap-1.5 max-w-full cursor-pointer text-white/95 hover:text-white"
                           title="Alterar tópico da matéria a ser estudada"
                         >
-                          <span className="text-sm sm:text-base font-medium truncate border-b border-dashed border-white/60 pb-0.5">
+                          <span className="text-xs sm:text-sm font-medium leading-snug whitespace-normal break-words underline decoration-dashed decoration-white/60 underline-offset-4">
                             {primaryStudyItem.assuntoName}
                           </span>
-                          <Pencil className="w-3.5 h-3.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
-                        </div>
-
-                        <div className="pt-1">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-black/20 text-white backdrop-blur-xs border border-white/15">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>{primaryStudyItem.durationMinutes}min</span>
-                          </span>
+                          <Pencil className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-80 group-hover:opacity-100 transition-opacity" />
                         </div>
                       </div>
                     </div>
 
-                    {/* Ações do Card Principal */}
-                    <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenStudyTimer(
-                            primaryStudyItem.disciplinaId,
-                            primaryStudyItem.assuntoId,
-                            primaryStudyItem.durationMinutes
-                          )
-                        }
-                        className="px-5 py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95"
-                      >
-                        <Play className="w-4 h-4 fill-current" />
-                        <span>Iniciar Estudo</span>
-                      </button>
+                    {/* Linha Inferior: Duração à esquerda e Ações (Iniciar Estudo + Menu) na mesma linha à direita */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-black/20 text-white backdrop-blur-xs border border-white/15 shrink-0">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{primaryStudyItem.durationMinutes}min</span>
+                      </span>
 
-                      <div className="relative study-options-menu-container">
+                      <div className="flex items-center gap-2.5 shrink-0 ml-auto">
                         <button
                           type="button"
-                          onClick={() => {
-                            const menuKey = `primary_${primaryStudyItem.id}`;
-                            setStudyOptionsMenuId(prev => (prev === menuKey ? null : menuKey));
-                          }}
-                          className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white flex items-center justify-center transition-colors cursor-pointer"
-                          title="Opções para esta disciplina"
-                          aria-label="Opções do estudo"
+                          onClick={() =>
+                            onOpenStudyTimer(
+                              primaryStudyItem.disciplinaId,
+                              primaryStudyItem.assuntoId,
+                              primaryStudyItem.durationMinutes
+                            )
+                          }
+                          className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                         >
-                          <MoreVertical className="w-4 h-4" />
+                          <Play className="w-4 h-4 fill-current" />
+                          <span>Iniciar Estudo</span>
                         </button>
 
-                        {studyOptionsMenuId === `primary_${primaryStudyItem.id}` && (
-                          <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-40 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                triggerManualStudyRegister({
-                                  disciplinaId: primaryStudyItem.disciplinaId,
-                                  assuntoId: primaryStudyItem.assuntoId,
-                                  durationMinutes: primaryStudyItem.durationMinutes,
-                                })
-                              }
-                              className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
-                            >
-                              <PlusCircle className="w-4 h-4 text-slate-400 shrink-0" />
-                              <span>Registrar manualmente</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setStudyOptionsMenuId(null);
-                                setHistoryModalDisciplina({
-                                  id: primaryStudyItem.disciplinaId,
-                                  name: primaryStudyItem.disciplinaName,
-                                  assuntoId: primaryStudyItem.assuntoId,
-                                  durationMinutes: primaryStudyItem.durationMinutes,
-                                });
-                              }}
-                              className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
-                            >
-                              <History className="w-4 h-4 text-slate-400 shrink-0" />
-                              <span>Ver últimos estudos</span>
-                            </button>
-                          </div>
-                        )}
+                        <div className="relative study-options-menu-container">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const menuKey = `primary_${primaryStudyItem.id}`;
+                              setStudyOptionsMenuId(prev => (prev === menuKey ? null : menuKey));
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white flex items-center justify-center transition-colors cursor-pointer"
+                            title="Opções para esta disciplina"
+                            aria-label="Opções do estudo"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {studyOptionsMenuId === `primary_${primaryStudyItem.id}` && (
+                            <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-40 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  triggerManualStudyRegister({
+                                    disciplinaId: primaryStudyItem.disciplinaId,
+                                    assuntoId: primaryStudyItem.assuntoId,
+                                    durationMinutes: primaryStudyItem.durationMinutes,
+                                  })
+                                }
+                                className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                              >
+                                <PlusCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span>Registrar manualmente</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStudyOptionsMenuId(null);
+                                  setHistoryModalDisciplina({
+                                    id: primaryStudyItem.disciplinaId,
+                                    name: primaryStudyItem.disciplinaName,
+                                    assuntoId: primaryStudyItem.assuntoId,
+                                    durationMinutes: primaryStudyItem.durationMinutes,
+                                  });
+                                }}
+                                className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                              >
+                                <History className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span>Ver últimos estudos</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1461,7 +1622,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div className="space-y-3.5 pt-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Próximos Estudos
+                        Próximos Tópicos
                       </span>
 
                       <button
@@ -1469,7 +1630,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         onClick={() => onNavigateTab('plano')}
                         className="px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
                       >
-                        <span>Ver planejamento completo</span>
+                        <span>Ir para planejamento completo</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -1938,7 +2099,177 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
         </div>
+      </div>
 
+      {/* Faixa Horizontal: Provas Agendadas */}
+      {(() => {
+        const totalExams = scheduledExams.length;
+        const safeExamIdx = totalExams > 0 ? Math.min(selectedExamIdx, totalExams - 1) : 0;
+        const currentExam = totalExams > 0 ? scheduledExams[safeExamIdx] : null;
+
+        return (
+          <Card className="rounded-2xl overflow-hidden">
+            <CardHeader
+              title="Provas Agendadas"
+              className="dashboard-themed-header relative overflow-hidden px-6 py-5 items-center bg-gradient-to-r from-primary/15 via-primary/5 to-transparent !border-b !border-primary/25 dark:!border-primary/20"
+            />
+            <CardBody className="p-5 sm:p-6">
+              {currentExam ? (
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+                  {/* Esquerda: Informações da Prova + Seletor Vertical */}
+                  <div className="flex items-center justify-between md:justify-start gap-4 flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 leading-snug break-words">
+                        {currentExam.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                        <span>{currentExam.formattedDate}</span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 tabular-nums px-2.5 py-1 rounded-lg bg-slate-100/90 dark:bg-slate-800/80">
+                        {safeExamIdx + 1} / {totalExams}
+                      </span>
+                      <div className="flex flex-col rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/60">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedExamIdx((prev) => (prev - 1 + totalExams) % totalExams)}
+                          disabled={totalExams <= 1}
+                          aria-label="Prova anterior"
+                          title="Prova anterior"
+                          className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 disabled:opacity-35 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="h-px bg-slate-200 dark:bg-slate-700/80" />
+                        <button
+                          type="button"
+                          onClick={() => setSelectedExamIdx((prev) => (prev + 1) % totalExams)}
+                          disabled={totalExams <= 1}
+                          aria-label="Próxima prova"
+                          title="Próxima prova"
+                          className="p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 disabled:opacity-35 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Centro: Bloco de Contagem Regressiva */}
+                  <div
+                    className="relative rounded-2xl px-8 py-4 min-w-[200px] sm:min-w-[230px] text-center flex flex-col items-center justify-center shrink-0"
+                    style={{
+                      backgroundColor: `${palette.primary}14`,
+                      boxShadow: `inset 0 0 0 1px ${palette.primary}30`,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={handleNavigateToProvas}
+                      aria-label="Ajustar datas de provas"
+                      title="Ajustar datas de provas"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                    </button>
+
+                    {currentExam.diffDays > 0 ? (
+                      <>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          Faltam
+                        </span>
+                        <span
+                          className="text-3xl sm:text-4xl font-black leading-none my-1 font-mono"
+                          style={{ color: palette.primary }}
+                        >
+                          {currentExam.diffDays}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          {currentExam.diffDays === 1 ? 'dia para a prova' : 'dias para a prova'}
+                        </span>
+                      </>
+                    ) : currentExam.diffDays === 0 ? (
+                      <>
+                        <span
+                          className="text-[11px] font-bold uppercase tracking-wider"
+                          style={{ color: palette.primary }}
+                        >
+                          É hoje!
+                        </span>
+                        <span
+                          className="text-2xl sm:text-3xl font-black leading-none my-1"
+                          style={{ color: palette.primary }}
+                        >
+                          HOJE
+                        </span>
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          Dia da prova
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          Status
+                        </span>
+                        <span className="text-xl sm:text-2xl font-black leading-none my-1.5 text-slate-700 dark:text-slate-200">
+                          Realizada
+                        </span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                          Prova encerrada
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Direita: Botão de Ação Principal */}
+                  <div className="flex items-center justify-end shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleNavigateToProvas}
+                      className="w-full md:w-auto rounded-full px-6 py-3 text-sm font-bold text-white inline-flex items-center justify-center gap-2 shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shrink-0"
+                      style={{
+                        backgroundColor: palette.primary,
+                        boxShadow: `0 4px 14px ${palette.primary}38`,
+                      }}
+                    >
+                      <Eye className="w-4 h-4 shrink-0" />
+                      <span>Visualizar Provas</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      Nenhuma prova com data cadastrada no momento.
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Cadastre a data da sua prova em Concursos &amp; Provas para acompanhar a contagem regressiva por aqui.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleNavigateToProvas}
+                    className="w-full sm:w-auto rounded-full px-6 py-3 text-sm font-bold text-white inline-flex items-center justify-center gap-2 shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shrink-0"
+                    style={{
+                      backgroundColor: palette.primary,
+                      boxShadow: `0 4px 14px ${palette.primary}38`,
+                    }}
+                  >
+                    <Eye className="w-4 h-4 shrink-0" />
+                    <span>Visualizar Provas</span>
+                  </button>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        );
+      })()}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Quadro 3 (Inferior Esquerdo): Rendimento & Histórico de Estudos */}
         <Card className="h-full flex flex-col rounded-2xl overflow-hidden">
           <CardHeader
@@ -2182,10 +2513,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             })
           : disciplineTopics;
 
-        // Próximos tópicos dentro do ciclo de estudos (não concluídos primeiro, até 3 sugestões)
-        const pendingTopics = filteredTopics.filter(t => !t.completed);
-        const suggestedCycleTopics = (pendingTopics.length > 0 ? pendingTopics : filteredTopics).slice(0, 3);
-
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <div
@@ -2248,188 +2575,89 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </p>
                   </div>
                 ) : (
-                  <>
-                    {/* Seção 1: SUGESTÕES DO CICLO */}
-                    {suggestedCycleTopics.length > 0 && (
-                      <div className="space-y-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <Sparkles
-                            className="w-3.5 h-3.5 shrink-0"
-                            style={{ color: palette.primary }}
-                          />
-                          <span
-                            className="text-[11px] font-extrabold uppercase tracking-wider"
-                            style={{ color: palette.primary }}
-                          >
-                            Sugestões do Ciclo
-                          </span>
-                        </div>
+                  <div className="space-y-2.5 pb-2">
+                    <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Todos os Tópicos
+                    </span>
 
-                        <div className="space-y-2">
-                          {suggestedCycleTopics.map((topic) => {
-                            const originalIdx = disciplineTopics.findIndex(t => t.id === topic.id);
-                            const displayIndex = String(originalIdx >= 0 ? originalIdx + 1 : (topic.order || 1)).padStart(2, '0');
-                            const isSelected = topic.id === currentSelectedAssuntoId;
-                            const hasLeadingNumber = /^\d+(\.\d+)*\s/.test(topic.name.trim());
-                            const formattedTitle = hasLeadingNumber
-                              ? topic.name
-                              : `${displayIndex} ${topic.name}`;
+                    <div className="space-y-2">
+                      {filteredTopics.map((topic, idx) => {
+                        const originalIdx = disciplineTopics.findIndex(t => t.id === topic.id);
+                        const displayIndex = String(originalIdx >= 0 ? originalIdx + 1 : idx + 1).padStart(2, '0');
+                        const isSelected = topic.id === currentSelectedAssuntoId;
+                        const hasLeadingNumber = /^\d+(\.\d+)*\s/.test(topic.name.trim());
+                        const formattedTitle = hasLeadingNumber
+                          ? topic.name
+                          : `${displayIndex} ${topic.name}`;
 
-                            return (
-                              <button
-                                key={`sug-${topic.id}`}
-                                type="button"
-                                onClick={() =>
-                                  handleSelectCustomTopic(
-                                    topicSelectionModal.disciplinaId,
-                                    topic.id
-                                  )
-                                }
-                                className="w-full text-left p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all cursor-pointer"
-                                style={{
-                                  borderColor: isSelected ? palette.primary : undefined,
-                                  backgroundColor: isSelected ? `${palette.primary}12` : undefined,
-                                }}
-                              >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  <div
-                                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                                      isSelected
-                                        ? 'text-white'
-                                        : 'border-2 border-slate-300 dark:border-slate-600 bg-transparent'
-                                    }`}
-                                    style={
-                                      isSelected
-                                        ? { backgroundColor: palette.primary }
-                                        : undefined
-                                    }
-                                  >
-                                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                                  </div>
-                                  <span
-                                    className={`text-xs sm:text-sm truncate ${
-                                      isSelected
-                                        ? 'font-bold text-slate-900 dark:text-white'
-                                        : 'font-semibold text-slate-700 dark:text-slate-200'
-                                    }`}
-                                  >
-                                    {formattedTitle}
-                                  </span>
-                                </div>
-
-                                <span
-                                  className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0"
-                                  style={{
-                                    backgroundColor: `${palette.primary}20`,
-                                    color: palette.primary,
-                                  }}
-                                >
-                                  Sugerido
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Seção 2: TODOS OS TÓPICOS */}
-                    <div className="space-y-2.5 pb-2">
-                      <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Todos os Tópicos
-                      </span>
-
-                      <div className="space-y-2">
-                        {filteredTopics.map((topic, idx) => {
-                          const originalIdx = disciplineTopics.findIndex(t => t.id === topic.id);
-                          const displayIndex = String(originalIdx >= 0 ? originalIdx + 1 : idx + 1).padStart(2, '0');
-                          const isSelected = topic.id === currentSelectedAssuntoId;
-                          const isDefaultSuggested = topic.id === defaultSuggestedTopic?.id;
-                          const hasLeadingNumber = /^\d+(\.\d+)*\s/.test(topic.name.trim());
-                          const formattedTitle = hasLeadingNumber
-                            ? topic.name
-                            : `${displayIndex} ${topic.name}`;
-
-                          return (
-                            <button
-                              key={`all-${topic.id}`}
-                              type="button"
-                              onClick={() =>
-                                handleSelectCustomTopic(
-                                  topicSelectionModal.disciplinaId,
-                                  topic.id
-                                )
-                              }
-                              className={`w-full text-left p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all cursor-pointer ${
-                                isSelected
-                                  ? ''
-                                  : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/60'
-                              }`}
-                              style={
-                                isSelected
-                                  ? {
-                                      borderColor: palette.primary,
-                                      backgroundColor: `${palette.primary}12`,
-                                    }
-                                  : undefined
-                              }
-                            >
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div
-                                  className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                                    isSelected
-                                      ? 'text-white'
-                                      : topic.completed
-                                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40'
-                                      : 'border-2 border-slate-300 dark:border-slate-600 bg-transparent'
-                                  }`}
-                                  style={
-                                    isSelected
-                                      ? { backgroundColor: palette.primary }
-                                      : undefined
+                        return (
+                          <button
+                            key={`all-${topic.id}`}
+                            type="button"
+                            onClick={() =>
+                              handleSelectCustomTopic(
+                                topicSelectionModal.disciplinaId,
+                                topic.id
+                              )
+                            }
+                            className={`w-full text-left p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all cursor-pointer ${
+                              isSelected
+                                ? ''
+                                : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/60'
+                            }`}
+                            style={
+                              isSelected
+                                ? {
+                                    borderColor: palette.primary,
+                                    backgroundColor: `${palette.primary}12`,
                                   }
-                                >
-                                  {isSelected ? (
-                                    <Check className="w-3 h-3 stroke-[3]" />
-                                  ) : topic.completed ? (
-                                    <Check className="w-3 h-3 stroke-[2.5]" />
-                                  ) : null}
-                                </div>
-                                <span
-                                  className={`text-xs sm:text-sm truncate ${
-                                    isSelected
-                                      ? 'font-bold text-slate-900 dark:text-white'
-                                      : 'font-medium text-slate-700 dark:text-slate-300'
-                                  }`}
-                                >
-                                  {formattedTitle}
+                                : undefined
+                            }
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div
+                                className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                  isSelected
+                                    ? 'text-white'
+                                    : topic.completed
+                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40'
+                                    : 'border-2 border-slate-300 dark:border-slate-600 bg-transparent'
+                                }`}
+                                style={
+                                  isSelected
+                                    ? { backgroundColor: palette.primary }
+                                    : undefined
+                                }
+                              >
+                                {isSelected ? (
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                ) : topic.completed ? (
+                                  <Check className="w-3 h-3 stroke-[2.5]" />
+                                ) : null}
+                              </div>
+                              <span
+                                className={`text-xs sm:text-sm truncate ${
+                                  isSelected
+                                    ? 'font-bold text-slate-900 dark:text-white'
+                                    : 'font-medium text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                {formattedTitle}
+                              </span>
+                            </div>
+
+                            {topic.completed && (
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                  Concluído
                                 </span>
                               </div>
-
-                              <div className="flex items-center gap-2 shrink-0">
-                                {topic.completed && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                    Concluído
-                                  </span>
-                                )}
-                                {isDefaultSuggested && (
-                                  <span
-                                    className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider"
-                                    style={{
-                                      backgroundColor: `${palette.primary}20`,
-                                      color: palette.primary,
-                                    }}
-                                  >
-                                    Sugerido
-                                  </span>
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
 

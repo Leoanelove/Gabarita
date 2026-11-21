@@ -49,13 +49,13 @@ import { EmptyContestState } from '../common/EmptyContestState';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
 
-// Banners do menu "Plano de Estudos" por tema (Supabase)
+// Banners do menu "Plano de Estudos" por tema (local /assets)
 export const PLANO_ESTUDOS_BANNER_THEMES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Plano%20de%20Estudos/Banner-Plano-estudos-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFubyBkZSBFc3R1ZG9zL0Jhbm5lci1QbGFuby1lc3R1ZG9zLXZlcmRlLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI2MzE2OTcsImV4cCI6NDk0NjIzMTY5N30.fuUZHf_P8rQr-e4jWFuxzphsISVxqbCa1MLWgeAmhtvdn8Bma5ICgQC1s_lDLqaOVJ5-xmqRkS575WIq97cv4g',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Plano%20de%20Estudos/Banner-Plano-estudos-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFubyBkZSBFc3R1ZG9zL0Jhbm5lci1QbGFuby1lc3R1ZG9zLWF6dWwucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMTcxMSwiZXhwIjo0OTQ2MjMxNzExfQ.A-vYNqIBTzJVmEXzaHMvPYmBUbOFT-1ZizuUApUiMNyeEWUkajUiERH2qU7SprCmsjT5bdpwYwB6b_1beqdAlg',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Plano%20de%20Estudos/Banner-Plano-estudos-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFubyBkZSBFc3R1ZG9zL0Jhbm5lci1QbGFuby1lc3R1ZG9zLXJvc2EucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMTcyNiwiZXhwIjo0OTQ2MjMxNzI2fQ.ABVrQWqmVXLDtuqTRG30JXknSsTiCDrrF97i352vN94sx_4c1yLqtDVyh5RCTnUDB7rDnYCS28v7i1MVxePjJA',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Plano%20de%20Estudos/Banner-Plano-estudos-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFubyBkZSBFc3R1ZG9zL0Jhbm5lci1QbGFuby1lc3R1ZG9zLXJveG8ucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMTczOSwiZXhwIjo0OTQ2MjMxNzM5fQ.ul5N3Es_Q0GvhtCDnP6Gr7rjkkI67YHzyQhmTe-ceph1YJzZVo6gYNe3kseP4sAclN-_FoQ_GI7dfoIpbxBK0A',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Plano%20de%20Estudos/Banner-Plano-estudos-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBQbGFubyBkZSBFc3R1ZG9zL0Jhbm5lci1QbGFuby1lc3R1ZG9zLWxhcmFuamEucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MjYzMTc1MSwiZXhwIjo0OTQ2MjMxNzUxfQ.N1-1PYntQRZEOZQHwqhNPbttKJPtANgQwDn-ZMRALrJkVwDZHAsVL6Wh-Pg-id_GNlgUL9VrcE5cZ3dg0HoqZQ',
+  verde: '/assets/bannersplanosestudos/Banner-Plano-estudos-verde.webp',
+  azul: '/assets/bannersplanosestudos/Banner-Plano-estudos-azul.webp',
+  rosa: '/assets/bannersplanosestudos/Banner-Plano-estudos-rosa.webp',
+  roxo: '/assets/bannersplanosestudos/Banner-Plano-estudos-roxo.webp',
+  laranja: '/assets/bannersplanosestudos/Banner-Plano-estudos-laranja.webp',
 };
 export const PLANO_BANNER_THEMES = PLANO_ESTUDOS_BANNER_THEMES;
 

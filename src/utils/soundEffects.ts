@@ -10,57 +10,57 @@ export const ALARM_RINGTONES: AlarmRingtone[] = [
   {
     id: "toque-01",
     name: "Toque 01",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-01.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDEubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5ODkxMSwiZXhwIjo0OTQ2OTk4OTExfQ.MX8wjVZ7lRjoyFh9TpyAHrh-8GljzScgqG_ZjPqwbupxSga1AEhZNOWQ1YtvJpX0C0QCiu5eQeuEeBvpl-8wsQ",
+    url: "/assets/toques/Toque-01.mp3",
   },
   {
     id: "toque-02",
     name: "Toque 02",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-02.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDIubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5ODkyNCwiZXhwIjo0OTQ2OTk4OTI0fQ.Nv3RAOnse92IdZwwWkNAR2Wilh7A94RWdiIDaXAnRmVTDDl4q_zZ45-VDa-ovoIDH50a_pjbE7pYXukNuWd8vA",
+    url: "/assets/toques/Toque-02.mp3",
   },
   {
     id: "toque-03",
     name: "Toque 03",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-03.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDMubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5ODk0OCwiZXhwIjo0OTQ2OTk4OTQ4fQ.lui2q45XgqYHcAnDJG00YOUTzon08gs0PD3FVD58jeQJ8Vs6fcbg1RHZdcOOPTWXUdq6PZLzCY9OyIP77I2QTw",
+    url: "/assets/toques/Toque-03.mp3",
   },
   {
     id: "toque-04",
     name: "Toque 04",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-04.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDQubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5ODk2MSwiZXhwIjo0OTQ2OTk4OTYxfQ.uCSODRvuUPXjrhTAom8yho4BZkaA1XcDIb4hoRC5kc2pOxR6i2dRHugLrb_hHKjMRZinuUKSlNe9nYHScduuvQ",
+    url: "/assets/toques/Toque-04.mp3",
   },
   {
     id: "toque-05",
     name: "Toque 05",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-05.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDUubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5ODk3MSwiZXhwIjo0OTQ2OTk4OTcxfQ.mA-w2VfcIH88ehNJpfewBaeJYxLOdCPcU1BD9Ul_62EC9LLV8nw9KXJXmFwDQGCqfCEEr6XWF8BvCKUKfoI0cA",
+    url: "/assets/toques/Toque-05.mp3",
   },
   {
     id: "toque-06",
     name: "Toque 06",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-06.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDYubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5OTE2MSwiZXhwIjo0OTQ2OTk5MTYxfQ.trkXiaQEmCeUz-hIwye-OwP6VTRotHVNLiKbLt4h5MN-4vNa7yDutRX-UbtE6z-SzEdcHKz8_SMQGW_ZED_EvA",
+    url: "/assets/toques/Toque-06.mp3",
   },
   {
     id: "toque-07",
     name: "Toque 07",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-07.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDcubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5OTE3OCwiZXhwIjo0OTQ2OTk5MTc4fQ.TzRevaZrLptf522j-_2vA5WfmLxUAIH4Buu9MCK01SK6se_39ETDjQ0AXsfSWDwttpQVPwfGR1w9g4goEfx1tw",
+    url: "/assets/toques/Toque-07.mp3",
   },
   {
     id: "toque-08",
     name: "Toque 08",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-08.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDgubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5OTE5MCwiZXhwIjo0OTQ2OTk5MTkwfQ.cob6m9RohfT5ywFRflehM6tHdLTXu3eVPNPikhu8KxDbwmSVB3wfNTqmS3KYFcGUVYt55DrUj4aCuT-TMEDxLg",
+    url: "/assets/toques/Toque-08.mp3",
   },
   {
     id: "toque-09",
     name: "Toque 09",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-09.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMDkubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5OTIwMSwiZXhwIjo0OTQ2OTk5MjAxfQ.8xJYZRDR-I8Z8bsf6VE9f4_4rSpjBT3dlsy2iyy-E6DUYddGR-16du0H1FDuJl2UrpPMq72Hcu_6NhY-we9usQ",
+    url: "/assets/toques/Toque-09.mp3",
   },
   {
     id: "toque-10",
     name: "Toque 10",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-10.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMTAubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5OTIxNiwiZXhwIjo0OTQ2OTk5MjE2fQ.fWPM-qyVtWXl1OpOZZDt3A2nQva9ubD8w2LLPJZD1bSTHaKCWEmhT5TG55U4dOhfDgp529gb0P0jc2sRNGwNaA",
+    url: "/assets/toques/Toque-10.mp3",
   },
   {
     id: "toque-11",
     name: "Toque 11",
-    url: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/Toques/Toque-11.mp3?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJUb3F1ZXMvVG9xdWUtMTEubXAzIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5MzM5OTIyOCwiZXhwIjo0OTQ2OTk5MjI4fQ.OdMHAW6O8YPNcsScrBKeE9Dz9iO4HxbE0Csozp0L5VNNbRcVqPOpDvQIReoxeoylXCaTL80KuZBkp_ZNUr1u7g",
+    url: "/assets/toques/Toque-11.mp3",
   },
 ];
 

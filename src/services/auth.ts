@@ -239,10 +239,13 @@ export class AuthService {
     if (msg.includes('email not confirmed')) {
       return 'E-mail não confirmado. Por favor, verifique sua caixa de entrada e confirme o link recebido.';
     }
+    if (msg.includes('captcha')) {
+      return 'Falha na verificação anti-robô (CAPTCHA). Complete o desafio novamente e tente outra vez.';
+    }
     return raw || 'Ocorreu um erro na autenticação. Verifique suas credenciais.';
   }
 
-  static async loginWithEmail(email: string, pass: string): Promise<UserProfile> {
+  static async loginWithEmail(email: string, pass: string, captchaToken?: string): Promise<UserProfile> {
     const cleanEmail = email.trim();
     if (!cleanEmail) {
       const msg = 'Por favor, informe seu e-mail.';
@@ -268,6 +271,7 @@ export class AuthService {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: cleanEmail,
       password: pass,
+      ...(captchaToken ? { options: { captchaToken } } : {}),
     });
 
     if (error) {
@@ -301,7 +305,8 @@ export class AuthService {
     name: string,
     email: string,
     pass: string,
-    consentGiven: boolean = true
+    consentGiven: boolean = true,
+    captchaToken?: string
   ): Promise<RegisterResult> {
     const cleanEmail = email.trim();
     const cleanName = name.trim();
@@ -344,6 +349,7 @@ export class AuthService {
         data: {
           name: cleanName,
         },
+        ...(captchaToken ? { captchaToken } : {}),
       },
     });
 
@@ -451,7 +457,7 @@ export class AuthService {
     return profile;
   }
 
-  static async resetPassword(email: string): Promise<void> {
+  static async resetPassword(email: string, captchaToken?: string): Promise<void> {
     const cleanEmail = email.trim();
     if (!cleanEmail) {
       throw new Error('Informe seu e-mail para enviarmos o link de recuperação.');
@@ -463,6 +469,7 @@ export class AuthService {
     }
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
       redirectTo: `${window.location.origin}`,
+      ...(captchaToken ? { captchaToken } : {}),
     });
     if (error) {
       console.warn("[Gabarita Auth] Falha reset senha:", error.message);

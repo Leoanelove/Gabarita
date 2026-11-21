@@ -52,8 +52,8 @@ import { DisciplinasView } from './components/disciplinas/DisciplinasView';
 import { RevisoesView } from './components/revisoes/RevisoesView';
 import { HistoricoView } from './components/historico/HistoricoView';
 import { FlashcardsView } from './components/flashcards/FlashcardsView';
-import { QuestoesView } from './components/questoes/QuestoesView';
-import { CadernoErrosView } from './components/questoes/CadernoErrosView';
+import { QuestoesView } from './components/cadernoerros/QuestoesView';
+import { CadernoErrosView } from './components/cadernoerros/CadernoErrosView';
 import { MetasView } from './components/metas/MetasView';
 import { SimuladosView } from './components/simulados/SimuladosView';
 import { PerfilView } from './components/perfil/PerfilView';
@@ -87,7 +87,23 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     }
   }, [isAuthenticated, isLoginTransitioning, reapplyTheme]);
   const [currentTab, setCurrentTab] = useState<NavigationTab>('dashboard');
+  const [concursosSubTab, setConcursosSubTab] = useState<'concursos' | 'provas'>('concursos');
+  const [concursosSubTabTrigger, setConcursosSubTabTrigger] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleNavigateTab = (tab: NavigationTab) => {
+    if (tab === 'concursos') {
+      setConcursosSubTab('concursos');
+      setConcursosSubTabTrigger(prev => prev + 1);
+    }
+    setCurrentTab(tab);
+  };
+
+  const handleNavigateToProvas = () => {
+    setConcursosSubTab('provas');
+    setConcursosSubTabTrigger(prev => prev + 1);
+    setCurrentTab('concursos');
+  };
 
   const {
     isStudyTimerOpen,
@@ -923,12 +939,23 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   const handleAddCadernoErro = async (
     item: Omit<ItemCadernoErros, 'id' | 'createdAt' | 'updatedAt' | 'reincidenciaCount'> & { reincidenciaCount?: number }
   ) => {
-    const created = await DatabaseService.addCadernoErro(item);
+    const disc = disciplinas.find(d => d.id === item.disciplinaId);
+    const resolvedConcursoId = disc?.concursoId || item.concursoId || effectiveActiveConcursoId || undefined;
+    const created = await DatabaseService.addCadernoErro({
+      ...item,
+      userId: user.id,
+      concursoId: resolvedConcursoId,
+    });
     setCadernoErros(prev => [created, ...prev]);
   };
 
   const handleUpdateCadernoErro = async (id: string, partial: Partial<ItemCadernoErros>) => {
-    const updated = await DatabaseService.updateCadernoErro(id, partial);
+    const disc = partial.disciplinaId ? disciplinas.find(d => d.id === partial.disciplinaId) : undefined;
+    const resolvedConcursoId = partial.concursoId || disc?.concursoId;
+    const updated = await DatabaseService.updateCadernoErro(
+      id,
+      resolvedConcursoId ? { ...partial, concursoId: resolvedConcursoId } : partial
+    );
     setCadernoErros(prev => prev.map(e => e.id === id ? updated : e));
   };
 
@@ -1042,7 +1069,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
 
   return (
     <div 
-      className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex"
+      className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex"
       style={{
        backgroundImage: activeThemeBgUrl
           ? `linear-gradient(rgba(255, 255, 255, 0.60), rgba(255, 255, 255, 0.60)), url("${activeThemeBgUrl}")`
@@ -1055,7 +1082,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     >
       <Sidebar
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={handleNavigateTab}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         studyMethod={studyMethod}
@@ -1067,17 +1094,17 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
       />
 
       <div 
-        className="flex-1 flex flex-col min-w-0 lg:pl-64"
+        className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-clip lg:pl-64"
         
       >
         <Navbar
           currentTab={currentTab}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-          onOpenStudyTimer={() => setCurrentTab('plano')}
-          onNavigateTab={setCurrentTab}
+          onOpenStudyTimer={() => handleNavigateTab('plano')}
+          onNavigateTab={handleNavigateTab}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-12 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 pb-24 lg:pb-12 max-w-7xl w-full min-w-0 mx-auto">
           {currentTab === 'dashboard' && (
               <DashboardView
                 user={user}
@@ -1093,7 +1120,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
                 activeConcursoId={effectiveActiveConcursoId}
                 isLoading={isDataLoading}
                 errorMessage={dataError}
-                onNavigateTab={setCurrentTab}
+                onNavigateTab={handleNavigateTab}
+                onNavigateToProvas={handleNavigateToProvas}
                 onOpenStudyTimer={handleOpenStudyTimer}
                 onOpenStudyRegister={handleOpenStudyRegister}
                 onCompleteRevisao={handleCompleteRevisao}
@@ -1111,6 +1139,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               activeConcursoId={effectiveActiveConcursoId}
               disciplinas={disciplinas}
               assuntos={assuntos}
+              initialTab={concursosSubTab}
+              initialTabTrigger={concursosSubTabTrigger}
               onAddConcurso={handleAddConcurso}
               onAddConcursoWithDisciplinas={handleAddConcursoWithDisciplinas}
               onUpdateConcurso={handleUpdateConcurso}
@@ -1130,7 +1160,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               onDeleteAssunto={handleDeleteAssunto}
               onUpdateAssuntoStatus={handleUpdateAssuntoStatus}
               onOpenStudyTimer={handleOpenStudyTimer}
-              onNavigateTab={setCurrentTab}
+              onNavigateTab={handleNavigateTab}
             />
           )}
 
@@ -1264,38 +1294,29 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
             />
           )}
 
-          {currentTab === 'questoes' && (
-            <QuestoesView
-              questoes={questoes}
-              disciplinas={effectiveActiveConcursoId ? disciplinas.filter(d => d.concursoId === effectiveActiveConcursoId) : disciplinas}
-              assuntos={assuntos}
-              activeConcursoId={effectiveActiveConcursoId}
-              blocosQuestoes={blocosQuestoes}
-              cadernoErros={cadernoErros}
-              onNavigateTab={setCurrentTab}
-              onRecordBlocoQuestoes={handleRecordBlocoQuestoes}
-              onDeleteBlocoQuestoes={handleDeleteBlocoQuestoes}
-              onUpdateBlocoQuestoes={handleUpdateBlocoQuestoes}
-              onAddCadernoErro={handleAddCadernoErro}
-              onUpdateCadernoErro={handleUpdateCadernoErro}
-              onDeleteCadernoErro={handleDeleteCadernoErro}
-              onIncrementarReincidencia={handleIncrementarReincidencia}
-              onMarcarStatusRevisao={handleMarcarStatusRevisao}
-              onIniciarRevisaoAssunto={handleIniciarRevisaoAssunto}
-              onOpenStudyTimer={handleOpenStudyTimer}
-            />
-          )}
-
-          {currentTab === 'caderno_erros' && (
-            <div className="max-w-7xl mx-auto pb-12">
-              <CadernoErrosView
-                cadernoErros={cadernoErros}
-                disciplinas={effectiveActiveConcursoId ? disciplinas.filter(d => d.concursoId === effectiveActiveConcursoId) : disciplinas}
+          {currentTab === 'questoes' && (() => {
+            const activeDiscs = effectiveActiveConcursoId
+              ? disciplinas.filter(d => d.concursoId === effectiveActiveConcursoId)
+              : disciplinas;
+            const activeDiscIdSet = new Set(activeDiscs.map(d => d.id));
+            const filteredErros = effectiveActiveConcursoId
+              ? cadernoErros.filter(e => {
+                  if (e.concursoId) return e.concursoId === effectiveActiveConcursoId;
+                  return Boolean(e.disciplinaId && activeDiscIdSet.has(e.disciplinaId));
+                })
+              : cadernoErros;
+            return (
+              <QuestoesView
+                questoes={questoes}
+                disciplinas={activeDiscs}
                 assuntos={assuntos}
                 activeConcursoId={effectiveActiveConcursoId}
-                questoes={questoes}
                 blocosQuestoes={blocosQuestoes}
+                cadernoErros={filteredErros}
                 onNavigateTab={setCurrentTab}
+                onRecordBlocoQuestoes={handleRecordBlocoQuestoes}
+                onDeleteBlocoQuestoes={handleDeleteBlocoQuestoes}
+                onUpdateBlocoQuestoes={handleUpdateBlocoQuestoes}
                 onAddCadernoErro={handleAddCadernoErro}
                 onUpdateCadernoErro={handleUpdateCadernoErro}
                 onDeleteCadernoErro={handleDeleteCadernoErro}
@@ -1304,8 +1325,41 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
                 onIniciarRevisaoAssunto={handleIniciarRevisaoAssunto}
                 onOpenStudyTimer={handleOpenStudyTimer}
               />
-            </div>
-          )}
+            );
+          })()}
+
+          {currentTab === 'caderno_erros' && (() => {
+            const activeDiscs = effectiveActiveConcursoId
+              ? disciplinas.filter(d => d.concursoId === effectiveActiveConcursoId)
+              : disciplinas;
+            const activeDiscIdSet = new Set(activeDiscs.map(d => d.id));
+            const filteredErros = effectiveActiveConcursoId
+              ? cadernoErros.filter(e => {
+                  if (e.concursoId) return e.concursoId === effectiveActiveConcursoId;
+                  return Boolean(e.disciplinaId && activeDiscIdSet.has(e.disciplinaId));
+                })
+              : cadernoErros;
+            return (
+              <div className="max-w-7xl mx-auto pb-12">
+                <CadernoErrosView
+                  cadernoErros={filteredErros}
+                  disciplinas={activeDiscs}
+                  assuntos={assuntos}
+                  activeConcursoId={effectiveActiveConcursoId}
+                  questoes={questoes}
+                  blocosQuestoes={blocosQuestoes}
+                  onNavigateTab={setCurrentTab}
+                  onAddCadernoErro={handleAddCadernoErro}
+                  onUpdateCadernoErro={handleUpdateCadernoErro}
+                  onDeleteCadernoErro={handleDeleteCadernoErro}
+                  onIncrementarReincidencia={handleIncrementarReincidencia}
+                  onMarcarStatusRevisao={handleMarcarStatusRevisao}
+                  onIniciarRevisaoAssunto={handleIniciarRevisaoAssunto}
+                  onOpenStudyTimer={handleOpenStudyTimer}
+                />
+              </div>
+            );
+          })()}
 
           {/* Para reativar a rota "Metas & Desempenho", altere ENABLE_METAS_MODULE para true no topo do arquivo */}
           {ENABLE_METAS_MODULE && currentTab === 'metas' && (
@@ -1455,7 +1509,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
 
         <MobileNav
           currentTab={currentTab}
-          onSelectTab={setCurrentTab}
+          onSelectTab={handleNavigateTab}
           studyMethod={studyMethod}
         />
       </div>

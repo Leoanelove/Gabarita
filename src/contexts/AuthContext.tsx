@@ -5,11 +5,11 @@ import { UserProfile } from '../types';
 interface AuthContextType extends AuthState {
   isLoginTransitioning: boolean;
   setLoginTransitioning: (active: boolean) => void;
-  loginWithEmail: (email: string, pass: string) => Promise<UserProfile>;
-  registerWithEmail: (name: string, email: string, pass: string, consentGiven?: boolean) => Promise<RegisterResult>;
+  loginWithEmail: (email: string, pass: string, captchaToken?: string) => Promise<UserProfile>;
+  registerWithEmail: (name: string, email: string, pass: string, consentGiven?: boolean, captchaToken?: string) => Promise<RegisterResult>;
   loginWithGoogle: (credential: string) => Promise<UserProfile>;
   loginAsGuest: () => Promise<UserProfile>;
-  resetPassword: (email: string) => Promise<void>;
+  resetPassword: (email: string, captchaToken?: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string, captchaToken?: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
@@ -35,12 +35,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  const loginWithEmail = async (email: string, pass: string) => {
-    return await AuthService.loginWithEmail(email, pass);
+  const loginWithEmail = async (email: string, pass: string, captchaToken?: string) => {
+    return await AuthService.loginWithEmail(email, pass, captchaToken);
   };
 
-  const registerWithEmail = async (name: string, email: string, pass: string, consentGiven: boolean = true) => {
-    return await AuthService.registerWithEmail(name, email, pass, consentGiven);
+  const registerWithEmail = async (name: string, email: string, pass: string, consentGiven: boolean = true, captchaToken?: string) => {
+    return await AuthService.registerWithEmail(name, email, pass, consentGiven, captchaToken);
   };
 
   const loginWithGoogle = async (credential: string) => {
@@ -51,8 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await AuthService.loginAsGuest();
   };
 
-  const resetPassword = async (email: string) => {
-    return await AuthService.resetPassword(email);
+  const resetPassword = async (email: string, captchaToken?: string) => {
+    return await AuthService.resetPassword(email, captchaToken);
   };
 
   const changePassword = async (currentPassword: string, newPassword: string, captchaToken?: string) => {

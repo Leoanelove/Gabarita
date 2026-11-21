@@ -414,25 +414,25 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
       {/* 3. RODAPÉ DE REPETIÇÃO ESPAÇADA (SRS / ANKI - 4 BOTÕES) */}
       <div className="w-full max-w-4xl mx-auto pb-2">
         {isFlipped && !isSessionFinished && (
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl animate-fadeIn">
-            <div className="text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200/80 dark:border-slate-800 rounded-2xl p-2 sm:p-4 shadow-xl animate-fadeIn">
+            <div className="text-center text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 sm:mb-2.5 leading-tight">
               COMO FOI SUA RECORDAÇÃO? (SELECIONE OU USE AS TECLAS 1, 2, 3, 4)
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-1">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-3 md:gap-4 p-0.5 sm:p-1">
               {/* 🔴 Errei (Tecla 1) - Estilo Vermelho Vibrante Fixo */}
               <button
                 type="button"
                 onClick={() => handleRate('errei')}
-                className="flashcard-srs-btn flashcard-srs-btn-errei flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-red-700 to-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)] h-44 text-white cursor-pointer select-none"
+                className="flashcard-srs-btn flashcard-srs-btn-errei min-w-0 w-full flex flex-col items-center justify-between p-1.5 sm:p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-red-700 to-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)] min-h-[112px] h-full sm:h-36 md:h-44 text-white cursor-pointer select-none"
               >
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
-                  <X className="w-6 h-6 text-red-600 stroke-[3]" />
+                <div className="flex items-center justify-center w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white shadow-md border border-white/40 mb-1 sm:mb-1.5 md:mb-2 shrink-0">
+                  <X className="w-3.5 h-3.5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-red-600 stroke-[3]" />
                 </div>
-                <div className="text-center flex-1 flex flex-col justify-center">
-                  <span className="font-bold text-lg md:text-xl block text-white drop-shadow-sm">Errei</span>
-                  <span className="text-xs text-white/80 block mt-0.5">&lt; 1 min (rever hoje)</span>
+                <div className="text-center flex-1 flex flex-col justify-center w-full min-w-0">
+                  <span className="font-bold text-xs sm:text-base md:text-xl block text-white drop-shadow-sm leading-tight">Errei</span>
+                  <span className="text-[9px] sm:text-[11px] md:text-xs text-white/80 block mt-0.5 leading-tight">&lt; 1 min (rever hoje)</span>
                 </div>
-                <div className="mt-2 w-5 h-5 flex items-center justify-center rounded bg-red-950/80 border border-white/10 text-[10px] font-bold text-white/90">
+                <div className="mt-1 sm:mt-1.5 md:mt-2 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded bg-red-950/80 border border-white/10 text-[9px] sm:text-[10px] font-bold text-white/90 shrink-0">
                   1
                 </div>
               </button>
@@ -441,16 +441,16 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
               <button
                 type="button"
                 onClick={() => handleRate('dificil')}
-                className="flashcard-srs-btn flashcard-srs-btn-dificil flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-amber-600 to-amber-500 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)] h-44 text-white cursor-pointer select-none"
+                className="flashcard-srs-btn flashcard-srs-btn-dificil min-w-0 w-full flex flex-col items-center justify-between p-1.5 sm:p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-amber-600 to-amber-500 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.4)] min-h-[112px] h-full sm:h-36 md:h-44 text-white cursor-pointer select-none"
               >
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
-                  <span className="text-amber-500 font-black text-2xl leading-none select-none">~</span>
+                <div className="flex items-center justify-center w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white shadow-md border border-white/40 mb-1 sm:mb-1.5 md:mb-2 shrink-0">
+                  <span className="text-amber-500 font-black text-base sm:text-xl md:text-2xl leading-none select-none">~</span>
                 </div>
-                <div className="text-center flex-1 flex flex-col justify-center">
-                  <span className="font-bold text-lg md:text-xl block text-white drop-shadow-sm">Difícil</span>
-                  <span className="text-xs text-white/80 block mt-0.5">1 dia (+1d)</span>
+                <div className="text-center flex-1 flex flex-col justify-center w-full min-w-0">
+                  <span className="font-bold text-xs sm:text-base md:text-xl block text-white drop-shadow-sm leading-tight">Difícil</span>
+                  <span className="text-[9px] sm:text-[11px] md:text-xs text-white/80 block mt-0.5 leading-tight">1 dia (+1d)</span>
                 </div>
-                <div className="mt-2 w-5 h-5 flex items-center justify-center rounded bg-amber-950/80 border border-white/10 text-[10px] font-bold text-white/90">
+                <div className="mt-1 sm:mt-1.5 md:mt-2 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded bg-amber-950/80 border border-white/10 text-[9px] sm:text-[10px] font-bold text-white/90 shrink-0">
                   2
                 </div>
               </button>
@@ -459,16 +459,16 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
               <button
                 type="button"
                 onClick={() => handleRate('bom')}
-                className="flashcard-srs-btn flashcard-srs-btn-bom flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-blue-700 to-blue-500 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)] h-44 text-white cursor-pointer select-none"
+                className="flashcard-srs-btn flashcard-srs-btn-bom min-w-0 w-full flex flex-col items-center justify-between p-1.5 sm:p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-blue-700 to-blue-500 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)] min-h-[112px] h-full sm:h-36 md:h-44 text-white cursor-pointer select-none"
               >
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
-                  <Check className="w-6 h-6 text-blue-600 stroke-[3]" />
+                <div className="flex items-center justify-center w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white shadow-md border border-white/40 mb-1 sm:mb-1.5 md:mb-2 shrink-0">
+                  <Check className="w-3.5 h-3.5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600 stroke-[3]" />
                 </div>
-                <div className="text-center flex-1 flex flex-col justify-center">
-                  <span className="font-bold text-lg md:text-xl block text-white drop-shadow-sm">Bom</span>
-                  <span className="text-xs text-white/80 block mt-0.5">3 dias (+3d)</span>
+                <div className="text-center flex-1 flex flex-col justify-center w-full min-w-0">
+                  <span className="font-bold text-xs sm:text-base md:text-xl block text-white drop-shadow-sm leading-tight">Bom</span>
+                  <span className="text-[9px] sm:text-[11px] md:text-xs text-white/80 block mt-0.5 leading-tight">3 dias (+3d)</span>
                 </div>
-                <div className="mt-2 w-5 h-5 flex items-center justify-center rounded bg-blue-950/80 border border-white/10 text-[10px] font-bold text-white/90">
+                <div className="mt-1 sm:mt-1.5 md:mt-2 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded bg-blue-950/80 border border-white/10 text-[9px] sm:text-[10px] font-bold text-white/90 shrink-0">
                   3
                 </div>
               </button>
@@ -482,21 +482,21 @@ export const FlashcardPlayer: React.FC<FlashcardPlayerProps> = ({
                   borderColor: '#34d399',
                   boxShadow: '0 0 15px rgba(16, 185, 129, 0.45)'
                 }}
-                className="flashcard-srs-btn flashcard-srs-btn-facil flex flex-col items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-emerald-700 to-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.45)] h-44 text-white cursor-pointer select-none !text-white"
+                className="flashcard-srs-btn flashcard-srs-btn-facil min-w-0 w-full flex flex-col items-center justify-between p-1.5 sm:p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-b from-emerald-700 to-emerald-500 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.45)] min-h-[112px] h-full sm:h-36 md:h-44 text-white cursor-pointer select-none !text-white"
               >
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-white/40 mb-2 shrink-0">
+                <div className="flex items-center justify-center w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white shadow-md border border-white/40 mb-1 sm:mb-1.5 md:mb-2 shrink-0">
                   <Sparkles 
-                    className="w-6 h-6 shrink-0" 
+                    className="w-3.5 h-3.5 sm:w-5 sm:h-5 md:w-6 md:h-6 shrink-0" 
                     style={{ color: '#059669', fill: 'rgba(5, 150, 105, 0.25)', stroke: '#059669' }} 
                   />
                 </div>
-                <div className="text-center flex-1 flex flex-col justify-center">
-                  <span className="font-bold text-lg md:text-xl block text-white drop-shadow-sm">Fácil</span>
-                  <span className="text-xs text-white/80 block mt-0.5">8 dias (+8d)</span>
+                <div className="text-center flex-1 flex flex-col justify-center w-full min-w-0">
+                  <span className="font-bold text-xs sm:text-base md:text-xl block text-white drop-shadow-sm leading-tight">Fácil</span>
+                  <span className="text-[9px] sm:text-[11px] md:text-xs text-white/80 block mt-0.5 leading-tight">8 dias (+8d)</span>
                 </div>
                 <div 
                   style={{ backgroundColor: 'rgba(2, 44, 34, 0.8)' }}
-                  className="mt-2 w-5 h-5 flex items-center justify-center rounded bg-emerald-950/80 border border-white/10 text-[10px] font-bold text-white/90"
+                  className="mt-1 sm:mt-1.5 md:mt-2 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded bg-emerald-950/80 border border-white/10 text-[9px] sm:text-[10px] font-bold text-white/90 shrink-0"
                 >
                   4
                 </div>

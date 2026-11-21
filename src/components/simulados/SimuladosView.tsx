@@ -26,15 +26,11 @@ import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const SIMULADOS_BANNER_THEMES: Record<string, string> = {
-  verde: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy12ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkyOTcyNzMyLCJleHAiOjQ5NDY1NzI3MzJ9.Yay6JxY8kb3DEEFgd-dcU2mkoctLb1du6azx4UsR-4qH8qF3RBWEOWr0olVBAJxbSZzcbsASlklI1Dw2gqECDw",
-
-  azul: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI3ODQsImV4cCI6NDk0NjU3Mjc4NH0.S6RrlUR2ygq7i5uTZUuURdggDOI8o7nmsugpw_Iwqk-K_cG9h16btCfIHp37oqZvBMZv88Ur-mxyz26jiLQWBA",
-
-  rosa: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI3OTYsImV4cCI6NDk0NjU3Mjc5Nn0.oz4NE8HtUOY5O5e7i4IbnNUmmnKePv0P-2aF1YBydLYKlkxh_AUjbwuDCJO9Ont5jT4OTS4m0DJQni5XRUcl9g",
-
-  roxo: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI4MTAsImV4cCI6NDk0NjU3MjgxMH0.UENX5yNnr2vu-WPhGoHSrrmHQOPWPrXQ4bND73Ys2Fo3eQe7JTkfJKwWBsMZRKU_bbHmO3Y1THm_zzcSXEu2nQ",
-
-  laranja: "https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Menu%20Simulados/Banner-Simulados-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvTWVudSBTaW11bGFkb3MvQmFubmVyLVNpbXVsYWRvcy1sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTI5NzI4MjQsImV4cCI6NDk0NjU3MjgyNH0.QLXrHZtaDsYK8n5ZqvHv7RwvJvUNoFeW4zmSz4eqRBk0bP2aUUWMaWqArQ-9rBdJtxgykNasfuW0DKOXDa-5zQ"
+  verde: '/assets/bannerssimulados/Banner-Simulados-verde.webp',
+  azul: '/assets/bannerssimulados/Banner-Simulados-azul.webp',
+  rosa: '/assets/bannerssimulados/Banner-Simulados-rosa.webp',
+  roxo: '/assets/bannerssimulados/Banner-Simulados-roxo.webp',
+  laranja: '/assets/bannerssimulados/Banner-Simulados-laranja.webp',
 };
 
 interface SimuladosViewProps {

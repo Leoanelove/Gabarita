@@ -377,6 +377,7 @@ export type ErroStatusRevisao =
 export interface ItemCadernoErros {
   id: string;
   userId: string;
+  concursoId?: string;
   questaoId?: string;
   blocoQuestoesId?: string;
   statementOrExcerpt: string;

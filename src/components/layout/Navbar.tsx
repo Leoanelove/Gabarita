@@ -75,34 +75,34 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-4 sm:px-6 py-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5 sm:gap-3">
+    <header className="sticky top-0 z-30 w-full max-w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-2.5 sm:px-6 py-2.5 sm:py-3">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
           <button
             onClick={onOpenMobileMenu}
-            className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="lg:hidden p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
             aria-label="Abrir menu lateral"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <GezinhoLogo size={28} className="lg:hidden drop-shadow-xs" />
-          <div>
-            <h1 className="text-base sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <GezinhoLogo size={24} className="lg:hidden drop-shadow-xs shrink-0" />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate">
               {titles[currentTab]?.title || 'Gabarita'}
             </h1>
-            <p className="hidden md:block text-xs text-slate-500 dark:text-slate-400">
+            <p className="hidden md:block text-xs text-slate-500 dark:text-slate-400 truncate">
               {titles[currentTab]?.subtitle}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
           {/* Botão de Alternância de Modo Claro / Escuro (Sun / Moon) */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-xs">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-xs">
             <button
               type="button"
               onClick={() => setTheme('light')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+              className={`p-1 sm:p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
                 effectiveTheme === 'light'
                   ? 'bg-white dark:bg-slate-700 text-amber-500 shadow-xs ring-1 ring-slate-200/50'
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
@@ -110,12 +110,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Ativar Modo Claro (Light Mode)"
               aria-label="Ativar Modo Claro"
             >
-              <Sun className="w-4 h-4" />
+              <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               type="button"
               onClick={() => setTheme('dark')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+              className={`p-1 sm:p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
                 effectiveTheme === 'dark'
                   ? 'bg-slate-700 theme-mode-active shadow-xs ring-1 ring-slate-600'
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
@@ -123,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Ativar Modo Escuro (Dark Mode)"
               aria-label="Ativar Modo Escuro"
             >
-              <Moon className="w-4 h-4 theme-moon-icon" />
+              <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 theme-moon-icon" />
             </button>
           </div>
 
@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => setShowThemeMenu(!showThemeMenu)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-all cursor-pointer text-xs font-semibold shadow-xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition-all cursor-pointer text-xs font-semibold shadow-xs"
               title="Escolher Tema Visual (Skins)"
               aria-label="Escolher Tema Visual"
             >
@@ -216,10 +216,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="relative p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Notificações"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
               )}
@@ -231,7 +231,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="fixed inset-0 z-40"
                   onClick={() => setShowNotifications(false)}
                 />
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-4 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2 w-[calc(100vw-1.5rem)] max-w-80 sm:w-96 sm:max-w-none bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-4 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100">Notificações</span>
@@ -300,13 +300,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => onNavigateTab('perfil')}
-            className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="flex items-center gap-2 p-0.5 sm:p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title="Perfil & Configurações"
           >
             <img
               src={user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120'}
               alt={user?.name || 'Usuário'}
-              className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
             />
           </button>
 
@@ -314,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={logout}
             title="Sair (Voltar para a tela de Login)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer text-xs font-semibold shadow-xs"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer text-xs font-semibold shadow-xs"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Sair</span>

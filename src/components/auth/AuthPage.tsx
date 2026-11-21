@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import {
   Lock,
   Mail,
@@ -142,19 +143,19 @@ const LOGIN_THEMES: Record<string, LoginThemeStyles> = {
 };
 
 const LOGIN_BG_IMAGES: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi52ZXJkZS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzMDU3MjU4LCJleHAiOjQ5NDY2NTcyNTh9.x8KSdz4LpnqMD4T2BxspM7vnMx22B5be_oTnBM61uU0s691yOhYM4TAtDmXc7PfbFcfSx13vsURqV5s4AUJMpw',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5henVsLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTcyNzAsImV4cCI6NDk0NjY1NzI3MH0.ktLVIx5SZtgUka0yZ4PXZoaEx1FTSgEkIThXkgr6JbVHk3YWVz54XO_2lt6IsAB4MLbd0d3ZSa2AfgHjmjRw_w',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5yb3NhLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTcyODcsImV4cCI6NDk0NjY1NzI4N30.YD3TxMIjGolffysVnSPmn9kzxCWLE5b8ryREFXeM7dhwUbmxEaOvTnQlUGTemJhhV4v62JgJnREwgbNG4xPsPw',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5yb3hvLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTczMDEsImV4cCI6NDk0NjY1NzMwMX0.h4-HNjI7RQnqfsLa9OQLmdjQASlEpMWe_W1cRz_XeEcSUy_BgHlNvCp4G799QEq5v54CthVgev12JCqMShhuKw',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner_tela_login.laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXJfdGVsYV9sb2dpbi5sYXJhbmphLnBuZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3OTMwNTczMTUsImV4cCI6NDk0NjY1NzMxNX0.RiQAaIT2IdZMgutiU2asXnjwLWWj-yUQLgVcGQdMuKeUzKp4gXMTMLlWZ8V0SZh6s7CS2ADOYz1tRwOMKG9a7g',
+  verde: '/assets/bannersauthpage/Banner_tela_login.verde.webp',
+  azul: '/assets/bannersauthpage/Banner_tela_login.azul.webp',
+  rosa: '/assets/bannersauthpage/Banner_tela_login.rosa.webp',
+  roxo: '/assets/bannersauthpage/Banner_tela_login.roxo.webp',
+  laranja: '/assets/bannersauthpage/Banner_tela_login.laranja.webp',
 };
 
 const LOGIN_BANNERS: Record<string, string> = {
-  verde: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-verde.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tdmVyZGUucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc5Mzc1OTAxMywiZXhwIjo0OTQ3MzU5MDEzfQ.OUzmcG6S240R8_Q1OoxHsx-YuhyfV9G2sADN_rfdpwmdVmDkCcQz2ciSmrwATkMrHGaIoAZNmVZOcI_kif3BjQ',
-  azul: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-azul.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tYXp1bC5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDMzLCJleHAiOjQ5NDczNTkwMzN9.zK_SHGAcWTuqs0CXNrmq9uZEhrlLOB1hCIHtpQCMPeBK3yKnDZ5TW8BhkuLK8aXNusd9RWQ4nA3lfQBtQg814Q',
-  rosa: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-rosa.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tcm9zYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDQ1LCJleHAiOjQ5NDczNTkwNDV9.ci2W8oD5JWhTCIJdgE_0-Ym2MIdOw2acnBYY15TEY_sKcmvFlN36BGkMI-Rp6MbHac1BljQMfkrPr4rA3UCKmA',
-  roxo: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-roxo.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tcm94by5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDU4LCJleHAiOjQ5NDczNTkwNTh9.SJ3mN6o1B5j_k5iiwZwsyJuCgN8YJp1Qn4wLx7t1ZsYsqj2liHQHvpwoe12WpKkV3RXi5JiaIavQW1DdVw4hyg',
-  laranja: 'https://zuzzoqdytblgswwlevjc.supabase.co/storage/v1/object/sign/icones/Tela%20de%20Login/Banner-login-laranja.png?token=eyJraWQiOiIwZWY5NzNhOC1iN2EwLTQ3NTQtODU2MC1lOGNhZDUzZGI2OTAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJpY29uZXMvVGVsYSBkZSBMb2dpbi9CYW5uZXItbG9naW4tbGFyYW5qYS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzU5MDcxLCJleHAiOjQ5NDczNTkwNzF9.Vm9pYqQGQ0jBUAjQ7hTTUiMCXyhYslEu5HJh2WAlcUC0QRb_5y9IVhCy3DV7cRxA5NdDusbRNoi8tSzhUFMXOg',
+  verde: '/assets/bannerslogin/Banner-login-verde.webp',
+  azul: '/assets/bannerslogin/Banner-login-azul.webp',
+  rosa: '/assets/bannerslogin/Banner-login-rosa.webp',
+  roxo: '/assets/bannerslogin/Banner-login-roxo.webp',
+  laranja: '/assets/bannerslogin/Banner-login-laranja.webp',
 };
 
 export const AuthPage: React.FC = () => {
@@ -233,6 +234,15 @@ export const AuthPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITEKEY || '0x4AAAAAAAF6vRO8n_yCS06wS';
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
+  const resetTurnstile = () => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  };
+
   // Estados da transição cinematográfica pós-login (Banner Expansion)
   const [isExpanding, setIsExpanding] = useState(false);
   const [transitionProgress, setTransitionProgress] = useState(15);
@@ -274,6 +284,10 @@ export const AuthPage: React.FC = () => {
         setErrorMessage('Preencha a senha para continuar.');
         return;
       }
+      if (!captchaToken) {
+        setErrorMessage('Por favor, complete a verificação anti-robô (Cloudflare Turnstile) antes de prosseguir.');
+        return;
+      }
 
       try {
         if (rememberEmail) {
@@ -287,10 +301,11 @@ export const AuthPage: React.FC = () => {
       setLoginTransitioning(true);
 
       try {
-        const loggedUser = await loginWithEmail(cleanEmail, password);
+        const loggedUser = await loginWithEmail(cleanEmail, password, captchaToken);
         await triggerBannerExpansion(loggedUser?.name || cleanEmail.split('@')[0]);
       } catch (err: any) {
         console.warn('[AuthPage] Falha no login:', err.message);
+        resetTurnstile();
         setLoginTransitioning(false);
         setIsSubmitting(false);
         setIsExpanding(false);
@@ -318,13 +333,18 @@ export const AuthPage: React.FC = () => {
         setErrorMessage('Você deve aceitar os Termos de Uso e Política de Privacidade para criar uma conta.');
         return;
       }
+      if (!captchaToken) {
+        setErrorMessage('Por favor, complete a verificação anti-robô (Cloudflare Turnstile) antes de prosseguir.');
+        return;
+      }
 
       setIsSubmitting(true);
       setLoginTransitioning(true);
 
       try {
-        const result = await registerWithEmail(cleanName, cleanEmail, password, acceptedTerms);
+        const result = await registerWithEmail(cleanName, cleanEmail, password, acceptedTerms, captchaToken);
         if (result?.needsEmailConfirmation) {
+          resetTurnstile();
           setLoginTransitioning(false);
           setIsSubmitting(false);
           setSuccessMessage('Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de entrar.');
@@ -333,6 +353,7 @@ export const AuthPage: React.FC = () => {
         }
       } catch (err: any) {
         console.warn('[AuthPage] Falha no cadastro:', err.message);
+        resetTurnstile();
         setLoginTransitioning(false);
         setIsSubmitting(false);
         setIsExpanding(false);
@@ -418,12 +439,18 @@ export const AuthPage: React.FC = () => {
       setErrorMessage('Informe seu e-mail no campo acima para enviarmos o link de recuperação de senha.');
       return;
     }
+    if (!captchaToken) {
+      setErrorMessage('Por favor, complete a verificação anti-robô (Cloudflare Turnstile) antes de prosseguir.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await resetPassword(cleanEmail);
+      await resetPassword(cleanEmail, captchaToken);
+      resetTurnstile();
       setSuccessMessage('Link de redefinição de senha enviado para seu e-mail!');
     } catch (err: any) {
       console.warn('[AuthPage] Falha na recuperação de senha:', err.message);
+      resetTurnstile();
       setErrorMessage(err.message || 'Não foi possível enviar o e-mail de recuperação.');
     } finally {
       setIsSubmitting(false);
@@ -535,6 +562,7 @@ export const AuthPage: React.FC = () => {
                   setActiveTab(prev => (prev === 'login' ? 'register' : 'login'));
                   setErrorMessage(null);
                   setSuccessMessage(null);
+                  resetTurnstile();
                 }}
                 className="text-xs font-bold hover:underline cursor-pointer transition-colors"
                 style={{ color: themeStyles.primary }}
@@ -713,6 +741,22 @@ export const AuthPage: React.FC = () => {
                 </div>
               )}
 
+              {/* Widget de Autenticação Anti-Robô Cloudflare Turnstile */}
+              <div className="pt-0.5">
+                <div className="min-h-[65px] flex items-center">
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={turnstileSiteKey}
+                    options={{
+                      theme: 'light',
+                    }}
+                    onSuccess={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                  />
+                </div>
+              </div>
+
               {/* Alertas de Erro */}
               {errorMessage && (
                 <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs flex flex-col gap-2 animate-fade-in">
@@ -729,6 +773,7 @@ export const AuthPage: React.FC = () => {
                           onClick={() => {
                             setActiveTab('register');
                             setErrorMessage(null);
+                            resetTurnstile();
                           }}
                           className="text-[11px] font-bold underline hover:opacity-80 cursor-pointer"
                           style={{ color: themeStyles.primary }}

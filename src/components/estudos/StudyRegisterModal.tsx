@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   X, 
   CheckCircle2, 
-  Sparkles, 
   Clock, 
   BookOpen, 
   Layers, 
@@ -18,7 +17,8 @@ import {
   CalendarCheck,
   Calendar,
   Lock,
-  Search
+  Search,
+  Layers3
 } from 'lucide-react';
 import { 
   Disciplina, 
@@ -117,6 +117,62 @@ const DEFAULT_REVISAO_DAYS = [
   1, 7, 15, 21, 30, 45, 60, 90, 120, 180, 215, 265, 315, 365
 ];
 
+const STUDY_GLASS_PALETTES: Record<'verde' | 'azul' | 'rosa' | 'roxo' | 'laranja', {
+  primary: string;
+  secondary: string;
+  glow: string;
+  soft: string;
+}> = {
+  verde: {
+    primary: '#10B981',
+    secondary: '#059669',
+    glow: 'rgba(16,185,129,0.20)',
+    soft: 'rgba(16,185,129,0.08)',
+  },
+  azul: {
+    primary: '#3B82F6',
+    secondary: '#2563EB',
+    glow: 'rgba(59,130,246,0.20)',
+    soft: 'rgba(59,130,246,0.08)',
+  },
+  rosa: {
+    primary: '#EC4899',
+    secondary: '#DB2777',
+    glow: 'rgba(236,72,153,0.20)',
+    soft: 'rgba(236,72,153,0.08)',
+  },
+  roxo: {
+    primary: '#8B5CF6',
+    secondary: '#7C3AED',
+    glow: 'rgba(139,92,246,0.20)',
+    soft: 'rgba(139,92,246,0.08)',
+  },
+  laranja: {
+    primary: '#F97316',
+    secondary: '#EA580C',
+    glow: 'rgba(249,115,22,0.20)',
+    soft: 'rgba(249,115,22,0.08)',
+  },
+};
+
+function getStudyGlassThemeKey(context: any): 'verde' | 'azul' | 'rosa' | 'roxo' | 'laranja' {
+  const raw = String(
+    context?.colorSkin ||
+    context?.palette?.id ||
+    context?.palette?.name ||
+    context?.activeTheme ||
+    context?.theme ||
+    'verde'
+  ).toLowerCase();
+
+  if (/azul|blue|sky|cyan/.test(raw)) return 'azul';
+  if (/rosa|pink|rose/.test(raw)) return 'rosa';
+  if (/roxo|purple|violet/.test(raw)) return 'roxo';
+  if (/laranja|orange|amber|dbz/.test(raw)) return 'laranja';
+
+  return 'verde';
+}
+
 export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   isOpen,
   onClose,
@@ -135,7 +191,11 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   onAdvanceCycle,
   onBackToTimer,
 }) => {
-  const { palette } = useTheme();
+  const themeContext = useTheme();
+  const { palette } = themeContext;
+  const glassThemeKey = getStudyGlassThemeKey(themeContext);
+  const glassPalette = STUDY_GLASS_PALETTES[glassThemeKey];
+  const isDark = themeContext?.effectiveTheme === 'dark';
 
   // Validação de tempo e Assunto / Tópico
   const [erroTempo, setErroTempo] = useState<boolean>(false);
@@ -534,15 +594,6 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
       return acc;
     }, 0);
   }, [pageIntervals]);
-
-  // Estimativa de XP
-  const xpEstimate = useMemo(() => {
-    const baseMinutesXP = activeDurationMinutes * 2;
-    const questionsXP = numCorrect * 5;
-    const pagesXP = Math.floor(totalPagesRead * 1.5);
-    const theoryBonus = teoriaFinalizada ? 15 : 0;
-    return baseMinutesXP + questionsXP + pagesXP + theoryBonus;
-  }, [activeDurationMinutes, numCorrect, totalPagesRead, teoriaFinalizada]);
 
   // Gerenciamento de Tipos de Estudo Customizados
   const handleAddCustomType = () => {
@@ -969,8 +1020,34 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         <div ref={scrollContainerRef} className="overflow-y-auto p-4 sm:p-5 space-y-5 custom-scrollbar text-xs sm:text-sm">
           
           {/* SEÇÃO 1: CAMPOS BASE (Disciplina, Assunto, Tempo de Estudo Editável, Tipo de Estudo) */}
-          <div className="space-y-4 bg-slate-50 dark:bg-slate-950/60 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-            {/* Selects: Disciplina, Assunto e Tempo de estudo (sempre visível e 100% editável) */}
+          <div
+            className="study-register-glass-banner relative rounded-2xl border p-4 sm:p-5 transition-all duration-300"
+            style={{
+              borderColor: `${glassPalette.primary}66`,
+              background: isDark
+                ? `radial-gradient(circle at 95% 5%, ${glassPalette.glow}, transparent 45%), linear-gradient(125deg, ${glassPalette.soft}, rgba(15,23,42,0.92) 55%, ${glassPalette.soft})`
+                : `radial-gradient(circle at 95% 5%, ${glassPalette.glow}, transparent 45%), linear-gradient(125deg, ${glassPalette.soft}, rgba(255,255,255,0.88) 55%, ${glassPalette.soft})`,
+              boxShadow: `0 8px 24px -4px ${glassPalette.glow}, 0 2px 6px -1px rgba(0,0,0,0.06)`,
+              backdropFilter: 'blur(18px)',
+              WebkitBackdropFilter: 'blur(18px)',
+            }}
+          >
+            {/* Elementos vetoriais decorativos */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+              <div
+                className="pointer-events-none absolute -right-8 -top-12 h-36 w-36 rounded-full blur-2xl"
+                style={{ background: glassPalette.glow }}
+              />
+              <div className="pointer-events-none absolute right-8 bottom-0 opacity-10">
+                <Layers3
+                  className="h-24 w-24"
+                  style={{ color: glassPalette.primary }}
+                />
+              </div>
+            </div>
+
+            <div className="relative z-10 space-y-4">
+              {/* Selects: Disciplina, Assunto e Tempo de estudo (sempre visível e 100% editável) */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-start">
               <div className="sm:col-span-4">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
@@ -1348,6 +1425,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
             </div>
           </div>
 
@@ -1737,15 +1815,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
 
         {/* RODAPÉ E AÇÕES FINAIS */}
         <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 text-xs w-full sm:w-auto justify-between sm:justify-start">
-            <div 
-              className="flex items-center gap-1.5 font-bold transition-colors"
-              style={{ color: palette.primary }}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span className="text-sm">+{xpEstimate} XP</span>
-            </div>
-            
+          <div className="flex items-center gap-3 text-xs w-full sm:w-auto justify-start">
             <div className="bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg text-xs font-medium">
               Duração: <strong className="font-mono text-slate-900 dark:text-white">{formattedDurationFooter}</strong>
             </div>

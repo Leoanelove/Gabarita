@@ -493,9 +493,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           ========================================================================= */}
       {viewMode === 'mensal' && (
         <div className="space-y-3">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 sm:p-4 shadow-xs overflow-hidden">
             {/* Cabeçalho dos Dias da Semana */}
-            <div className="grid grid-cols-7 gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800 text-center font-bold text-xs text-slate-500 dark:text-slate-400">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800 text-center font-bold text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
               <span>SEG</span>
               <span>TER</span>
               <span>QUA</span>
@@ -506,7 +506,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
 
             {/* Grid dos Dias do Mês */}
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {monthData.days.map((day) => {
                 const daySessions = sessionsByDate[day.dateStr] || [];
                 const isSelected = day.dateStr === selectedDateStr;
@@ -518,7 +518,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       setSelectedDateStr(day.dateStr);
                       setViewMode('diario');
                     }}
-                    className={`min-h-24 p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`min-w-0 min-h-16 sm:min-h-24 p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer flex flex-col justify-between overflow-hidden ${
                       day.isToday
                         ? 'border-[var(--primary-color)] bg-[var(--primary-light)] ring-1 ring-[var(--primary-light-border)]'
                         : isSelected
@@ -528,9 +528,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         : 'border-slate-100 dark:border-slate-800/40 bg-slate-50/40 dark:bg-slate-900/20 opacity-40'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-xs mb-1">
+                    <div className="flex items-center justify-between gap-0.5 text-xs mb-1">
                       <span
-                        className={`font-mono font-bold rounded-full w-5 h-5 flex items-center justify-center text-[11px] ${
+                        className={`font-mono font-bold rounded-full w-5 h-5 flex items-center justify-center text-[10px] sm:text-[11px] shrink-0 ${
                           day.isToday 
                             ? 'theme-btn-primary' 
                             : isSelected 
@@ -541,8 +541,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         {day.dayNumber}
                       </span>
                       {daySessions.length > 0 && (
-                        <span className="text-[10px] font-bold text-slate-400">
-                          {daySessions.length} {daySessions.length === 1 ? 'bloco' : 'blocos'}
+                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 truncate">
+                          {daySessions.length}
+                          <span className="hidden sm:inline"> {daySessions.length === 1 ? 'bloco' : 'blocos'}</span>
                         </span>
                       )}
                     </div>

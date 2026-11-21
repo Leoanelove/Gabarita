@@ -803,14 +803,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
           3. CARD BANNER "PRÓXIMA SESSÃO" (DESTAQUE CENTRAL)
           ========================================================================= */}
       {currentBlock && pendingBlocks.length > 0 && (
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Camada de gradiente sutil no canto direito com a cor do tema ativo */}
-          <div 
-            className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none rounded-r-2xl"
-            style={{
-              background: `linear-gradient(to left, ${palette.primary}18, ${palette.primary}08 50%, transparent 100%)`
-            }}
-          />
+        <div className="flashcards-daily-review-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-sm p-5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
 
           {/* Lado Esquerdo */}
           <div className="flex items-start gap-4 relative z-10">
@@ -884,7 +877,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
           ========================================================================= */}
       <div className="space-y-6">
         {/* SEÇÃO 4.1: BLOCOS PENDENTES / A CONCLUIR */}
-        <div className="space-y-3.5">
+        <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3.5">
           {/* Cabeçalho da Seção */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -961,10 +954,10 @@ export const CicloView: React.FC<CicloViewProps> = ({
                           }
                         : undefined
                     }
-                    className={`border rounded-xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 transition-all shadow-xs ${
+                    className={`flashcards-daily-review-card relative overflow-hidden bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 transition-all shadow-xs ${
                       isCurrent
-                        ? 'bg-white dark:bg-slate-900/70'
-                        : 'border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900/70 hover:border-slate-300 dark:hover:border-slate-700/80'
+                        ? 'ring-1 ring-primary/20'
+                        : 'hover:brightness-[0.99] dark:hover:brightness-105'
                     }`}
                   >
                     {/* Coluna 1 & Coluna 2 */}
