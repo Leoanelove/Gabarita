@@ -9,7 +9,8 @@ import {
   BookOpen, 
   FolderPlus, 
   Search, 
-  ChevronRight, 
+  ChevronRight,
+  ChevronDown, 
   RotateCw,
   Eye,
   EyeOff,
@@ -81,6 +82,14 @@ interface ParsedImportCard {
 
 const STORAGE_KEY_FLASHCARDS = '@gabarita:flashcards';
 const STORAGE_KEY_DECKS = '@gabarita:decks';
+
+// Retorna a meia-noite (00:00:00) do dia seguinte para agendar cartões recém-criados
+const getNextMidnightIso = (): string => {
+  const nextMidnight = new Date();
+  nextMidnight.setDate(nextMidnight.getDate() + 1);
+  nextMidnight.setHours(0, 0, 0, 0);
+  return nextMidnight.toISOString();
+};
 
 // Helper para selecionar ícone temático conforme a disciplina
 const getDisciplinaIcon = (disciplinaNome: string) => {
@@ -772,6 +781,8 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
   const [deckToDelete, setDeckToDelete] = useState<Deck | null>(null);
   const [cardToDelete, setCardToDelete] = useState<Flashcard | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'anki'>('cards');
+  const [collapsedDisciplinas, setCollapsedDisciplinas] = useState<Record<string, boolean>>({});
 
   // Estados de Exportação
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -1002,12 +1013,32 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
       .map(a => a.name);
   }, [activeDisciplinas, assuntos, formDisciplina]);
 
+  // Verifica se o cartão já atingiu sua data/hora agendada (ex: após 00:00:00 do dia seguinte)
+  const isCardDueNow = (card: Flashcard): boolean => {
+    if (card.dificuldade === 'errei') return true;
+    if (!card.proximaRevisao) return true;
+    const dueTime = new Date(card.proximaRevisao).getTime();
+    if (Number.isNaN(dueTime)) return true;
+    return dueTime <= Date.now();
+  };
+
+  // Calcula quantos cartões de cada baralho estão pendentes hoje
+  const deckDueCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    concursoFlashcards.forEach(c => {
+      if (isCardDueNow(c)) {
+        map.set(c.deckId, (map.get(c.deckId) || 0) + 1);
+      }
+    });
+    return map;
+  }, [concursoFlashcards]);
+
   // Métricas do Hub (estritamente do concurso atual)
   const totalCards = concursoFlashcards.length;
   const totalDecks = concursoDecks.length;
   const pendentesHoje = useMemo(() => {
-    return concursoDecks.reduce((acc, d) => acc + (d.pendentesHoje || 0), 0);
-  }, [concursoDecks]);
+    return concursoDecks.reduce((acc, d) => acc + (deckDueCountMap.get(d.id) || 0), 0);
+  }, [concursoDecks, deckDueCountMap]);
 
   // Taxa de precisão / retenção calculada para o concurso atual
   const precisaoCalculada = useMemo(() => {
@@ -1074,7 +1105,7 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
   // Cards para sessão de revisão interativa (restritos ao concurso atual)
   const cardsParaRevisar = useMemo(() => {
     if (!reviewDeckId) {
-      return concursoFlashcards.filter(c => (c.intervaloDias || 1) <= 2 || c.dificuldade !== 'facil');
+      return concursoFlashcards.filter(isCardDueNow);
     }
     return concursoFlashcards.filter(c => c.deckId === reviewDeckId);
   }, [concursoFlashcards, reviewDeckId]);
@@ -1180,7 +1211,7 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
           nome: targetDeckName,
           disciplina: formDisciplina.trim(),
           totalCards: 1,
-          pendentesHoje: 1,
+          pendentesHoje: 0,
         };
         saveDecksToStorage([newDeck, ...decks]);
       } else {
@@ -1226,7 +1257,7 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
         nome: targetDeckName,
         disciplina: formDisciplina.trim(),
         totalCards: 1,
-        pendentesHoje: 1,
+        pendentesHoje: 0,
       };
       const updatedDecks = [newDeck, ...decks];
       saveDecksToStorage(updatedDecks);
@@ -1241,7 +1272,7 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
             concursoId: d.concursoId || d.concurso_id || targetConcursoId,
             concurso_id: d.concurso_id || d.concursoId || targetConcursoId,
             totalCards: (d.totalCards || 0) + 1,
-            pendentesHoje: (d.pendentesHoje || 0) + 1,
+            pendentesHoje: d.pendentesHoje || 0,
           };
         }
         return d;
@@ -1261,7 +1292,7 @@ export const Flashcards: React.FC<FlashcardsProps> = ({
       verso: sanitizedVerso,
       dificuldade: 'bom',
       intervaloDias: 1,
-      proximaRevisao: new Date().toISOString(),
+      proximaRevisao: getNextMidnightIso(),
       criadoEm: new Date().toISOString(),
       revisoesTotal: 0,
     };
@@ -1575,6 +1606,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
     const updatedDecks = [...decks];
     const newFlashcards: Flashcard[] = [];
     const nowIso = new Date().toISOString();
+    const nextMidnightIso = getNextMidnightIso();
 
     const isApkgImport = importTab === 'file' && importFileName.toLowerCase().endsWith('.apkg');
 
@@ -1609,6 +1641,10 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         );
       }
 
+      const isDueImmediately = rawCard.proximaRevisao
+        ? new Date(rawCard.proximaRevisao).getTime() <= Date.now()
+        : false;
+
       if (!targetDeck) {
         targetDeck = {
           id: `deck-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1617,12 +1653,14 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
           disciplina: cardDisc,
           nome: desiredDeckName,
           totalCards: 1,
-          pendentesHoje: 1,
+          pendentesHoje: isDueImmediately ? 1 : 0,
         };
         updatedDecks.unshift(targetDeck);
       } else {
         targetDeck.totalCards = (targetDeck.totalCards || 0) + 1;
-        targetDeck.pendentesHoje = (targetDeck.pendentesHoje || 0) + 1;
+        if (isDueImmediately) {
+          targetDeck.pendentesHoje = (targetDeck.pendentesHoje || 0) + 1;
+        }
         targetDeck.concursoId = targetCid;
         targetDeck.concurso_id = targetCid;
       }
@@ -1638,7 +1676,7 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         verso: rawCard.verso.trim(),
         dificuldade: rawCard.dificuldade || 'bom',
         intervaloDias: rawCard.intervaloDias || 1,
-        proximaRevisao: rawCard.proximaRevisao || nowIso,
+        proximaRevisao: rawCard.proximaRevisao || nextMidnightIso,
         criadoEm: nowIso,
         revisoesTotal: rawCard.revisoesTotal || 0,
       });
@@ -1758,6 +1796,10 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
 
   const toggleCardReveal = (cardId: string) => {
     setCardRevealedIds(prev => ({ ...prev, [cardId]: !prev[cardId] }));
+  };
+
+  const toggleDisciplinaCollapse = (disciplinaNome: string) => {
+    setCollapsedDisciplinas(prev => ({ ...prev, [disciplinaNome]: !prev[disciplinaNome] }));
   };
 
   // Excluir Baralho completo e seus cartões vinculados
@@ -2019,32 +2061,33 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
         <div className="absolute right-0 top-0 translate-x-12 -translate-y-8 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* 4. Barra de Controles: Busca, Seletor Rápido de Concurso, Filtro de Disciplinas e Ações de Importar/Exportar */}
-      <div className="flashcards-daily-review-card flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-3.5 rounded-2xl border border-primary/25 dark:border-primary/20 shadow-xs overflow-hidden">
-        <div className="relative flex-1 min-w-0">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      {/* 4. Barra de Controles: Busca Compacta, Concurso, Filtro de Disciplinas, Alternador Cards/Anki e Ações */}
+      <div className="flashcards-daily-review-card flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-3.5 rounded-2xl border border-primary/25 dark:border-primary/20 shadow-xs overflow-hidden">
+        {/* Campo de busca compacto */}
+        <div className="relative w-full xl:w-52 2xl:w-64 shrink-0">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar baralho ou conteúdo..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white/90 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+            className="w-full pl-9 pr-3 py-2 text-xs bg-white/90 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
           />
         </div>
 
-        <div className="flex items-center gap-2 min-w-0 flex-wrap max-w-full">
+        <div className="flex items-center justify-end gap-2 min-w-0 flex-wrap flex-1">
           {/* Seletor Rápido de Concurso */}
           {availableConcursos.length > 0 && (
-            <div className="flex items-center gap-1.5 min-w-0 max-w-full sm:max-w-[260px]">
+            <div className="flex items-center gap-1.5 min-w-0 max-w-full sm:max-w-[205px]">
               <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
                 <Briefcase className="w-3.5 h-3.5 text-primary" />
-                <span className="hidden md:inline">Concurso:</span>
+                <span className="hidden 2xl:inline">Concurso:</span>
               </div>
               <select
                 value={currentConcursoId}
                 onChange={(e) => handleQuickSwitchConcurso(e.target.value)}
                 title="Alternar Concurso"
-                className="w-full min-w-0 truncate text-xs font-bold px-3 py-2 bg-white/90 dark:bg-slate-900/80 border border-primary/25 dark:border-primary/30 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                className="w-full min-w-0 truncate text-xs font-bold px-2.5 py-2 bg-white/90 dark:bg-slate-900/80 border border-primary/25 dark:border-primary/30 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
               >
                 {availableConcursos.map(c => (
                   <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
@@ -2056,21 +2099,47 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
           )}
 
           {/* Filtro por Disciplina do Concurso Selecionado */}
-          <div className="flex items-center gap-1.5 min-w-0 max-w-full sm:max-w-[240px]">
+          <div className="flex items-center gap-1.5 min-w-0 max-w-full sm:max-w-[195px]">
             <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
               <Filter className="w-3.5 h-3.5 text-primary" />
-              <span className="hidden md:inline">Filtrar:</span>
+              <span className="hidden 2xl:inline">Filtrar:</span>
             </div>
             <select
               value={filterDisciplina}
               onChange={(e) => setFilterDisciplina(e.target.value)}
-              className="w-full min-w-0 truncate text-xs font-semibold px-3 py-2 bg-white/90 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+              className="w-full min-w-0 truncate text-xs font-semibold px-2.5 py-2 bg-white/90 dark:bg-slate-900/80 border border-primary/20 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
               <option value="todas">Todas as Disciplinas</option>
               {availableDisciplinasList.map(disc => (
                 <option key={disc} value={disc}>{disc}</option>
               ))}
             </select>
+          </div>
+
+          {/* Alternador Segmented Control: Cards | Lista Anki */}
+          <div className="inline-flex items-center p-0.5 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-primary/25 dark:border-slate-700 shadow-2xs shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('cards')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'cards'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              Cards
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('anki')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'anki'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              Lista Anki
+            </button>
           </div>
 
           {/* Botões rápidos de Importar e Exportar na barra de controles */}
@@ -2187,26 +2256,39 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                 (acc, d) => acc + concursoFlashcards.filter(c => c.deckId === d.id).length, 0
               );
               const pendentesDaDisciplina = disciplinaDecks.reduce(
-                (acc, d) => acc + (d.pendentesHoje || 0), 0
+                (acc, d) => acc + (deckDueCountMap.get(d.id) || 0), 0
               );
 
+              const isCollapsed = !!collapsedDisciplinas[disciplinaNome];
+
               return (
-                <div key={disciplinaNome} className="space-y-4">
-                  {/* Cabeçalho da Disciplina Agrupadora */}
+                <div key={disciplinaNome} className="space-y-3">
+                  {/* Cabeçalho Expansível da Disciplina Agrupadora */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => toggleDisciplinaCollapse(disciplinaNome)}
+                      className="flex items-center gap-2.5 flex-wrap text-left group cursor-pointer"
+                    >
+                      <span className="text-slate-400 group-hover:text-primary transition-colors">
+                        {isCollapsed ? (
+                          <ChevronRight className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </span>
                       <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
                         <IconComp className="w-4 h-4" />
                       </div>
                       <div>
-                        <h2 className="text-base font-black text-slate-900 dark:text-slate-100">
+                        <h2 className="text-base font-black text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">
                           {disciplinaNome}
                         </h2>
                       </div>
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                         {disciplinaDecks.length} {disciplinaDecks.length === 1 ? 'baralho' : 'baralhos'}
                       </span>
-                    </div>
+                    </button>
 
                     <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
                       <span>Total: <strong className="text-slate-700 dark:text-slate-300 font-bold">{totalCardsDaDisciplina} cards</strong></span>
@@ -2233,98 +2315,193 @@ Frente (Pergunta objetiva ou caso prático) ; Verso (Resposta direta, fundamenta
                     </div>
                   </div>
 
-                  {/* Grade de Cards de Baralhos da Disciplina */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {disciplinaDecks.map((deck) => {
-                      const deckCards = concursoFlashcards.filter(c => c.deckId === deck.id);
-                      return (
-                        <div
-                          key={deck.id}
-                          className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-2xl border border-primary/25 dark:border-primary/20 p-5 flex flex-col justify-between hover:border-primary/50 dark:hover:border-primary/50 transition-all shadow-xs hover:shadow-md group"
-                        >
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-primary/20 dark:border-slate-700/60 truncate max-w-[170px]">
-                                {deck.disciplina}
-                              </span>
+                  {/* Conteúdo da Disciplina (oculto quando recolhida) */}
+                  {!isCollapsed && (
+                    viewMode === 'anki' ? (
+                      /* MODO LISTA ANKI (Baralho | Novo | Aprender | Revisar | Ações) */
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-xs sm:text-sm min-w-[540px]">
+                          <thead>
+                            <tr className="border-b border-slate-200/80 dark:border-slate-800 text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-800/40">
+                              <th className="py-3 px-4">Baralho</th>
+                              <th className="py-3 px-4 text-center w-24 text-blue-600 dark:text-blue-400">Novo</th>
+                              <th className="py-3 px-4 text-center w-24 text-amber-600 dark:text-amber-400">Aprender</th>
+                              <th className="py-3 px-4 text-center w-24 text-emerald-600 dark:text-emerald-400">Revisar</th>
+                              <th className="py-3 px-4 text-right w-40">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                            {disciplinaDecks.map((deck) => {
+                              const deckCards = concursoFlashcards.filter(c => c.deckId === deck.id);
+                              const countNovo = deckCards.filter(c => (c.revisoesTotal || 0) === 0 && isCardDueNow(c)).length;
+                              const countAprender = deckCards.filter(c => c.dificuldade === 'errei' || (c.dificuldade === 'dificil' && isCardDueNow(c))).length;
+                              const countRevisar = deckCards.filter(c => (c.revisoesTotal || 0) > 0 && c.dificuldade !== 'errei' && c.dificuldade !== 'dificil' && isCardDueNow(c)).length;
 
-                              {deck.pendentesHoje > 0 ? (
-                                <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0">
-                                  {deck.pendentesHoje} hoje
-                                </span>
-                              ) : (
-                                <span className="flashcards-em-dia-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-                                  Em dia
-                                </span>
-                              )}
-                            </div>
-
-                            <div>
-                              <h3 className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors text-base line-clamp-2">
-                                {deck.nome}
-                              </h3>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                                {deckCards.length} {deckCards.length === 1 ? 'cartão cadastrado' : 'cartões cadastrados'}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Rodapé do Card do Baralho */}
-                          <div className="pt-4 mt-4 border-t border-primary/15 dark:border-primary/20 flex items-center justify-between gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedDeckId(deck.id)}
-                              className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
+                              return (
+                                <tr
+                                  key={deck.id}
+                                  className="hover:bg-primary/5 dark:hover:bg-slate-800/40 transition-colors group"
+                                >
+                                  <td className="py-3.5 px-4">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartReview(deck.id)}
+                                      className="font-bold text-slate-800 dark:text-slate-100 hover:text-primary transition-colors text-left flex items-center gap-2.5 cursor-pointer"
+                                    >
+                                      <BookOpen className="w-4 h-4 text-slate-400 group-hover:text-primary shrink-0 transition-colors" />
+                                      <span className="line-clamp-1">{deck.nome}</span>
+                                      <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 shrink-0">
+                                        ({deckCards.length} {deckCards.length === 1 ? 'cartão' : 'cartões'})
+                                      </span>
+                                    </button>
+                                  </td>
+                                  <td className={`py-3.5 px-4 text-center font-extrabold ${countNovo > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-700'}`}>
+                                    {countNovo}
+                                  </td>
+                                  <td className={`py-3.5 px-4 text-center font-extrabold ${countAprender > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-300 dark:text-slate-700'}`}>
+                                    {countAprender}
+                                  </td>
+                                  <td className={`py-3.5 px-4 text-center font-extrabold ${countRevisar > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-700'}`}>
+                                    {countRevisar}
+                                  </td>
+                                  <td className="py-3.5 px-4 text-right">
+                                    <div className="inline-flex items-center justify-end gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedDeckId(deck.id)}
+                                        title={`Ver Cards (${deckCards.length})`}
+                                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenCreateModal(deck)}
+                                        title="Adicionar flashcard neste baralho"
+                                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                      >
+                                        <Plus className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenExportModal({ scope: 'deck', deckId: deck.id })}
+                                        title="Exportar este baralho"
+                                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                      >
+                                        <Download className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setDeckToDelete(deck)}
+                                        title="Excluir baralho"
+                                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      /* MODO CARDS CLÁSSICO */
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {disciplinaDecks.map((deck) => {
+                          const deckCards = concursoFlashcards.filter(c => c.deckId === deck.id);
+                          const deckDueToday = deckDueCountMap.get(deck.id) || 0;
+                          return (
+                            <div
+                              key={deck.id}
+                              className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-2xl border border-primary/25 dark:border-primary/20 p-5 flex flex-col justify-between hover:border-primary/50 dark:hover:border-primary/50 transition-all shadow-xs hover:shadow-md group"
                             >
-                              <Eye className="w-3.5 h-3.5" /> Ver Cards ({deckCards.length})
-                            </button>
+                              <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-primary/20 dark:border-slate-700/60 truncate max-w-[170px]">
+                                    {deck.disciplina}
+                                  </span>
 
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenExportModal({ scope: 'deck', deckId: deck.id });
-                                }}
-                                title="Exportar este baralho"
-                                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeckToDelete(deck);
-                                }}
-                                title="Excluir baralho"
-                                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCreateModal(deck)}
-                                title="Adicionar flashcard neste baralho"
-                                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleStartReview(deck.id)}
-                                className="text-xs font-bold"
-                                rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
-                              >
-                                Revisar
-                              </Button>
+                                  {deckDueToday > 0 ? (
+                                    <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                                      {deckDueToday} hoje
+                                    </span>
+                                  ) : (
+                                    <span className="flashcards-em-dia-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                      Em dia
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <h3 className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors text-base line-clamp-2">
+                                    {deck.nome}
+                                  </h3>
+                                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                    {deckCards.length} {deckCards.length === 1 ? 'cartão cadastrado' : 'cartões cadastrados'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Rodapé do Card do Baralho */}
+                              <div className="pt-4 mt-4 border-t border-primary/15 dark:border-primary/20 flex items-center justify-between gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedDeckId(deck.id)}
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5" /> Ver Cards ({deckCards.length})
+                                </button>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenExportModal({ scope: 'deck', deckId: deck.id });
+                                    }}
+                                    title="Exportar este baralho"
+                                    className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeckToDelete(deck);
+                                    }}
+                                    title="Excluir baralho"
+                                    className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCreateModal(deck)}
+                                    title="Adicionar flashcard neste baralho"
+                                    className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </button>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => handleStartReview(deck.id)}
+                                    className="text-xs font-bold"
+                                    rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
+                                  >
+                                    Revisar
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  )}
                 </div>
               );
             })
