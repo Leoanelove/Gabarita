@@ -271,7 +271,7 @@ export const ProvasTab: React.FC<ProvasTabProps> = ({
             </h1>
 
             {/* Subtítulo: "Cadastre datas, organize cadernos de provas e acompanhe seus simulados agendados." */}
-            <p className="provas-banner-subtitle text-xs md:text-sm leading-relaxed">
+            <p className="provas-banner-subtitle text-xs md:text-sm leading-relaxed font-medium !text-white/95 ![text-shadow:0_1px_3px_rgba(0,0,0,0.9),0_0_10px_rgba(0,0,0,0.6)]">
               Cadastre datas, organize cadernos de provas e acompanhe seus simulados agendados.
             </p>
           </div>
