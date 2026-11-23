@@ -147,13 +147,12 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     setIsDataLoading(true);
     setDataError(null);
     try {
-      await DatabaseService.purgeDuplicateGhostSessions();
       await DatabaseService.sanitizeOrphanData();
-      const [c, p, d, a, ses, r, srsSettings, q, bq, errs, m, achs, mrcs, st, s, sm] = await Promise.all([
-        DatabaseService.getConcursos(),
+      const c = await DatabaseService.getConcursos();
+      const d = await DatabaseService.getDisciplinas();
+      const a = await DatabaseService.getAssuntos();
+      const [p, ses, r, srsSettings, q, bq, errs, m, achs, mrcs, st, s, sm] = await Promise.all([
         DatabaseService.getProvas(),
-        DatabaseService.getDisciplinas(),
-        DatabaseService.getAssuntos(),
         DatabaseService.getSessoes(),
         DatabaseService.getRevisoes(),
         DatabaseService.getRevisionSettings(),
@@ -305,30 +304,15 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     refreshProfile({ subscription });
   };
 
-  const handleAddConcurso = async (newConcurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const created = await DatabaseService.addConcurso(newConcurso);
-    const isNewActive = Boolean(created.active || created.isAtivo);
-    if (isNewActive) {
-      setConcursos(prev => [created, ...prev.map(c => ({ ...c, active: false, isAtivo: false }))]);
-      refreshProfile({
-        targetConcursoId: created.id,
-        targetConcursoTitle: `${created.organ} - ${created.role}`,
-      });
-    } else {
-      setConcursos(prev => [created, ...prev]);
-    }
-    const updatedProvas = await DatabaseService.getProvas();
-    setProvas(updatedProvas);
-  };
-
   const handleAddConcursoWithDisciplinas = async (
     concursoData: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>,
-    disciplinasData: any[]
+    disciplinasData: EditalAiImportPayload['disciplinas'],
+    draftId: string
   ) => {
-    const result = await DatabaseService.addConcursoWithDisciplinas(concursoData, disciplinasData);
+    const result = await DatabaseService.addConcursoWithDisciplinas(concursoData, disciplinasData, draftId);
     setConcursos(prev => [result.concurso, ...prev.filter(c => String(c.id) !== String(result.concurso.id)).map(c => ({ ...c, active: false, isAtivo: false, is_ativo: false }))]);
-    setDisciplinas(prev => [...prev, ...result.disciplinas]);
-    setAssuntos(prev => [...prev, ...result.assuntos]);
+    setDisciplinas(prev => [...prev.filter(d => !result.disciplinas.some(imported => imported.id === d.id)), ...result.disciplinas]);
+    setAssuntos(prev => [...prev.filter(a => !result.assuntos.some(imported => imported.id === a.id)), ...result.assuntos]);
     refreshProfile({
       targetConcursoId: result.concurso.id,
       targetConcursoTitle: `${result.concurso.organ} - ${result.concurso.role}`,
@@ -1141,7 +1125,6 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               assuntos={assuntos}
               initialTab={concursosSubTab}
               initialTabTrigger={concursosSubTabTrigger}
-              onAddConcurso={handleAddConcurso}
               onAddConcursoWithDisciplinas={handleAddConcursoWithDisciplinas}
               onUpdateConcurso={handleUpdateConcurso}
               onDeleteConcurso={handleDeleteConcurso}

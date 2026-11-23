@@ -2,6 +2,13 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-23] — Sincronização das matérias de editais
+
+- A seleção no catálogo carrega o conteúdo pelo ID do edital e informa quando a grade está indisponível.
+- O cadastro de concurso com matérias e a importação por mesclagem gravam disciplinas e tópicos no Supabase, na ordem dos vínculos. Repetir uma gravação interrompida reaproveita o concurso e os registros já gravados.
+- O Edital Verticalizado permite mesclar o conteúdo de um edital cadastrado em um concurso existente.
+- A carga inicial lê concursos, disciplinas e tópicos em sequência. A limpeza de órfãos é local.
+
 ## [2026-11-20] — Botões de Recordação de Flashcards em Linha Única no Mobile
 
 ### Alterado

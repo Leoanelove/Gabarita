@@ -111,10 +111,15 @@ O servidor roda na porta `3000` (com mapeamento explícito de `PORT === 8080` $\
    - `AuthService.init()` verifica sessão ativa no Supabase Auth (`supabase.auth.getSession()`). Se não houver, verifica se existe sessão demo (`user_demo_01` em `localStorage`).
    - Em paralelo, `AuthService.syncProfileInBackground()` consulta a tabela `profiles` no Supabase para enriquecer `name`, `role`, `photoURL` e preferências.
 2. **Carga e Sincronização de Dados (`loadData` em `src/App.tsx`)**:
-   - Executa `purgeDuplicateGhostSessions()` e `sanitizeOrphanData()` e, em seguida, carrega em paralelo (`Promise.all`) concursos, provas, disciplinas, assuntos, sessões, revisões, configurações de revisão, questões, blocos, caderno de erros, metas, conquistas, marcos, estatísticas, simulados e método de estudo.
+   - Carrega concursos, disciplinas e assuntos em sequência para hidratar o cache dos registros pai. A higienização de órfãos usa apenas o cache local. Após essa etapa, carrega em paralelo (`Promise.all`) provas, sessões, revisões, configurações de revisão, questões, blocos, caderno de erros, metas, conquistas, marcos, estatísticas, simulados e método de estudo.
    - `DatabaseService` mantém espelhamento com `localStorage` (`gabarita_*`), permitindo operação imediata na UI mesmo em modo demo/offline e sincronização com o Supabase quando há usuário autenticado.
 3. **Importação de Edital via IA**:
    - O usuário envia texto ou PDF no `EditalImportModal` / `NovoConcursoModal` $\rightarrow$ Frontend chama `POST /api/edital/parse` $\rightarrow$ `server.ts` aciona Gemini AI (ou `parseSyllabusLocally` se sem chave/falha) $\rightarrow$ retorna árvore sanitizada $\rightarrow$ Frontend grava via `DatabaseService.importEditalTree()`.
+
+4. **Importação do catálogo Supabase**:
+   - O seletor busca o registro por `editais.id` e lê `materias` como JSONB ou texto JSON. A grade é exibida para revisão com o cargo da origem.
+   - No cadastro com edital e na mesclagem, as novas disciplinas são gravadas em `disciplinas` com `concurso_id`. Os tópicos são gravados em `assuntos` com `disciplina_id`. A confirmação aguarda as duas gravações. Uma nova tentativa usa o ID do mesmo concurso e reaproveita as disciplinas e os tópicos já gravados.
+   - O fluxo do catálogo no Edital Verticalizado usa mesclagem para recuperar matérias em concursos existentes.
 
 ## 5. Pendências Técnicas para Verificação
 

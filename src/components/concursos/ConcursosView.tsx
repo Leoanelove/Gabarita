@@ -34,7 +34,8 @@ import {
 } from 'lucide-react';
 import { 
   Concurso, 
-  ConcursoSphere, 
+  ConcursoSphere,
+  EditalAiImportPayload,
   ConcursoStatus, 
   Prova, 
   UserProfile, 
@@ -47,7 +48,7 @@ import { Button } from '../../design-system/Button';
 import { Input } from '../../design-system/Input';
 import { Badge } from '../../design-system/Badge';
 import { Modal } from '../../design-system/Modal';
-import { NovoConcursoModal, ExtractedDiscipline } from './NovoConcursoModal';
+import { NovoConcursoModal } from './NovoConcursoModal';
 import { SubjectIcon } from '../common/SubjectIcon';
 import { NovaMateriaModal } from '../disciplinas/NovaMateriaModal';
 import { ProvasTab } from './ProvasTab';
@@ -84,10 +85,10 @@ interface ConcursosViewProps {
   activeConcursoId?: string;
   disciplinas?: Disciplina[];
   assuntos?: Assunto[];
-  onAddConcurso: (concurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  onAddConcursoWithDisciplinas?: (
+  onAddConcursoWithDisciplinas: (
     concurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>,
-    disciplinas: ExtractedDiscipline[]
+    disciplinas: EditalAiImportPayload['disciplinas'],
+    draftId: string
   ) => Promise<void>;
   onUpdateConcurso: (id: string, partial: Partial<Concurso>) => Promise<void>;
   onDeleteConcurso: (id: string) => Promise<void>;
@@ -121,7 +122,6 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   activeConcursoId,
   disciplinas = [],
   assuntos = [],
-  onAddConcurso,
   onAddConcursoWithDisciplinas,
   onUpdateConcurso,
   onDeleteConcurso,
@@ -373,13 +373,10 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
 
   const handleSaveNewConcursoWithDisciplinas = async (
     concursoData: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>,
-    disciplinasData: ExtractedDiscipline[]
+    disciplinasData: EditalAiImportPayload['disciplinas'],
+    draftId: string
   ) => {
-    if (onAddConcursoWithDisciplinas) {
-      await onAddConcursoWithDisciplinas(concursoData, disciplinasData);
-    } else {
-      await onAddConcurso(concursoData);
-    }
+    await onAddConcursoWithDisciplinas(concursoData, disciplinasData, draftId);
     showFeedback('success', `Concurso "${concursoData.title}" e ${disciplinasData.length} disciplinas cadastrados com sucesso!`);
   };
 

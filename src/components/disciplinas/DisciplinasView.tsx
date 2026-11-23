@@ -2221,17 +2221,19 @@ export const DisciplinasView: React.FC<DisciplinasViewProps> = ({
       </Modal>
 
       {/* Modal: Importar Edital com IA */}
-      <EditalImportModal
-        isOpen={isAiImportModalOpen}
-        onClose={() => setIsAiImportModalOpen(false)}
-        concursos={concursos}
-        selectedConcursoId={selectedConcurso?.id}
-        hasExistingDisciplinas={currentConcursoDisciplinas.length > 0}
-        onConfirmImport={async (payload, concursoId, mode) => {
-          await onImportEditalTree(payload, concursoId, mode);
-          showFeedback('success', 'Edital importado e estruturado com sucesso!');
-        }}
-      />
+      {isAiImportModalOpen && (
+        <EditalImportModal
+          isOpen
+          onClose={() => setIsAiImportModalOpen(false)}
+          concursos={concursos}
+          selectedConcursoId={selectedConcurso?.id}
+          hasExistingDisciplinas={currentConcursoDisciplinas.length > 0}
+          onConfirmImport={async (payload, concursoId, mode) => {
+            await onImportEditalTree(payload, concursoId, mode);
+            showFeedback('success', 'Edital importado e estruturado com sucesso!');
+          }}
+        />
+      )}
 
       {/* Modal: Registrar / Editar Questões do Tópico (Estilo "Estudei") */}
       <Modal

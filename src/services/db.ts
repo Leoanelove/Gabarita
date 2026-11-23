@@ -868,86 +868,10 @@ function saveStored<T>(key: string, data: T): void {
 export class DatabaseService {
   // --- SELF-HEALING & ORPHAN DATA SANITIZATION ---
   static async sanitizeOrphanData(): Promise<{ removedCount: number }> {
-    const syncResult = sanitizeOrphanStorageSync();
-    let totalRemoved = syncResult.removedCount;
-
-    try {
-      const uid = await getCurrentUserId();
-      const concursos = loadStored<Concurso[]>(STORAGE_KEYS.CONCURSOS, []);
-      const validConcursoIds = new Set(concursos.map(c => c.id).filter(Boolean));
-      const disciplinas = loadStored<Disciplina[]>(STORAGE_KEYS.DISCIPLINAS, []);
-      const validDiscIds = new Set(disciplinas.map(d => d.id).filter(Boolean));
-      const assuntos = loadStored<Assunto[]>(STORAGE_KEYS.ASSUNTOS, []);
-      const validAssuntoIds = new Set(assuntos.map(a => a.id).filter(Boolean));
-
-      if (uid && uid !== 'user_demo_01') {
-        // Verifica e remove disciplinas órfãs no Supabase
-        const { data: remoteDiscs } = await supabase
-          .from('disciplinas')
-          .select('id, concurso_id')
-          .eq('user_id', uid);
-        if (Array.isArray(remoteDiscs)) {
-          const orphanDiscIds = remoteDiscs
-            .filter(d => !d.concurso_id || !validConcursoIds.has(d.concurso_id))
-            .map(d => d.id);
-          if (orphanDiscIds.length > 0) {
-            totalRemoved += orphanDiscIds.length;
-            await supabase.from('disciplinas').delete().in('id', orphanDiscIds);
-          }
-        }
-
-        // Verifica e remove assuntos órfãos no Supabase
-        const { data: remoteAssuntos } = await supabase
-          .from('assuntos')
-          .select('id, disciplina_id')
-          .eq('user_id', uid);
-        if (Array.isArray(remoteAssuntos)) {
-          const orphanAssIds = remoteAssuntos
-            .filter(a => !a.disciplina_id || !validDiscIds.has(a.disciplina_id))
-            .map(a => a.id);
-          if (orphanAssIds.length > 0) {
-            totalRemoved += orphanAssIds.length;
-            await supabase.from('assuntos').delete().in('id', orphanAssIds);
-          }
-        }
-
-        // Verifica e remove sessões órfãs no Supabase
-        const { data: remoteSessoes } = await supabase
-          .from('sessoes_estudo')
-          .select('id, disciplina_id, assunto_id')
-          .eq('user_id', uid);
-        if (Array.isArray(remoteSessoes)) {
-          const orphanSessIds = remoteSessoes
-            .filter(s => !s.disciplina_id || !validDiscIds.has(s.disciplina_id) || (s.assunto_id && !validAssuntoIds.has(s.assunto_id)))
-            .map(s => s.id);
-          if (orphanSessIds.length > 0) {
-            totalRemoved += orphanSessIds.length;
-            await supabase.from('sessoes_estudo').delete().in('id', orphanSessIds);
-          }
-        }
-
-        // Verifica e remove revisões órfãs no Supabase
-        const { data: remoteRevisoes } = await supabase
-          .from('revisoes')
-          .select('id, disciplina_id, assunto_id')
-          .eq('user_id', uid);
-        if (Array.isArray(remoteRevisoes)) {
-          const orphanRevIds = remoteRevisoes
-            .filter(r => !r.disciplina_id || !validDiscIds.has(r.disciplina_id) || (r.assunto_id && !validAssuntoIds.has(r.assunto_id)))
-            .map(r => r.id);
-          if (orphanRevIds.length > 0) {
-            totalRemoved += orphanRevIds.length;
-            await supabase.from('revisoes').delete().in('id', orphanRevIds);
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('Gabarita: Aviso ao limpar registros órfãos na nuvem:', err);
-    }
-
-    await this.purgeDuplicateGhostSessions();
     await this.syncActiveContestStorage();
-    return { removedCount: totalRemoved };
+    const result = sanitizeOrphanStorageSync();
+    await this.purgeDuplicateGhostSessions();
+    return result;
   }
 
   /**
@@ -1052,8 +976,8 @@ export class DatabaseService {
     // Remover também do Supabase caso exista conexão
     try {
       const uid = await getCurrentUserId();
-      if (uid && purgedIds.length > 0) {
-        await supabase.from('sessoes_estudo').delete().in('id', purgedIds);
+      if (uid && uid !== 'user_demo_01' && purgedIds.length > 0) {
+        await supabase.from('sessoes_estudo').delete().eq('user_id', uid).in('id', purgedIds);
       }
     } catch (e) {
       console.warn('Gabarita: Erro ao purgar sessões duplicadas no Supabase:', e);
@@ -1410,7 +1334,7 @@ export class DatabaseService {
     }
   }
 
-  static async addConcurso(concurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>): Promise<Concurso> {
+  static async addConcurso(concurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>, draftId?: string): Promise<Concurso> {
     const list = await this.getConcursos();
     const organ = (concurso.organ || concurso.orgao || concurso.nome || '').trim();
     const cleanRole = (concurso.role || '').trim();
@@ -1420,9 +1344,7 @@ export class DatabaseService {
 
     const isNewActive = concurso.active !== undefined ? Boolean(concurso.active) : true;
     const nowIso = new Date().toISOString();
-    const generatedId = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : `conc_${Date.now()}`;
+    const generatedId = draftId ?? (globalThis.crypto?.randomUUID?.() ?? `conc_${Date.now()}`);
 
     let newConcurso: Concurso = {
       ...concurso,
@@ -2086,110 +2008,20 @@ export class DatabaseService {
 
   static async addConcursoWithDisciplinas(
     concursoData: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>,
-    disciplinasList: Array<{
-      name: string;
-      weight?: number;
-      color?: string;
-      code?: string;
-      icon?: string;
-      topicos?: Array<{
-        name: string;
-        importance?: AssuntoImportance;
-        difficulty?: TopicDifficulty;
-        subtopicos?: string[];
-        notes?: string;
-      }>;
-    }>
+    disciplinasList: EditalAiImportPayload['disciplinas'],
+    draftId: string
   ): Promise<{ concurso: Concurso; disciplinas: Disciplina[]; assuntos: Assunto[] }> {
-    // 1. Executa o INSERT na tabela concursos gerando o novo registro antes de tentar qualquer ativação de foco
-    const newConcurso = await this.addConcurso({
-      ...concursoData,
-      active: true,
-      isAtivo: true,
-      is_ativo: true,
-    });
-    try {
-      await this.setActiveConcurso(newConcurso.id);
-    } catch (actErr) {
-      console.warn('Gabarita: Ativação secundária finalizada por addConcurso:', actErr);
-    }
+    const existing = (await this.getConcursos()).find(concurso => concurso.id === draftId);
+    const concurso = existing ?? await this.addConcurso({ ...concursoData, active: true }, draftId);
+    const result = await this.importEditalTree({
+      concursoTitle: concurso.title,
+      cargo: concurso.role,
+      disciplinas: disciplinasList,
+    }, concurso.id);
 
-    const createdDisciplinas: Disciplina[] = [];
-    const createdAssuntos: Assunto[] = [];
-
-    // 2. Criar Disciplinas e Tópicos vinculados
-    const currentDisciplinas = await this.getDisciplinas();
-    const currentAssuntos = await this.getAssuntos();
-
-    const newDisciplinasList = [...currentDisciplinas];
-    const newAssuntosList = [...currentAssuntos];
-
-    for (let i = 0; i < disciplinasList.length; i++) {
-      const discInput = disciplinasList[i];
-      const discId = `disc_${Date.now()}_${i}`;
-      const newDisc: Disciplina = {
-        id: discId,
-        concursoId: newConcurso.id,
-        name: discInput.name,
-        code: discInput.code || discInput.name.slice(0, 4).toUpperCase(),
-        color: discInput.color || '#10b981',
-        icon: discInput.icon || 'BookOpen',
-        weight: discInput.weight || 2.0,
-        order: newDisciplinasList.length + 1,
-        topicsCount: discInput.topicos?.length || 0,
-        completedTopicsCount: 0,
-        totalStudyMinutes: 0,
-        createdAt: new Date().toISOString(),
-      };
-      newDisciplinasList.push(newDisc);
-      createdDisciplinas.push(newDisc);
-
-      if (discInput.topicos && discInput.topicos.length > 0) {
-        for (let j = 0; j < discInput.topicos.length; j++) {
-          const topInput = discInput.topicos[j];
-          const assId = `ass_${Date.now()}_${i}_${j}`;
-          const newAssunto: Assunto = {
-            id: assId,
-            disciplinaId: discId,
-            name: topInput.name,
-            order: j + 1,
-            masteryLevel: 0,
-            totalQuestionsSolved: 0,
-            correctQuestionsSolved: 0,
-            accuracyRate: 0,
-            completed: false,
-            status: 'nao_iniciado',
-            difficulty: topInput.difficulty || 'media',
-            importance: topInput.importance || 'alta',
-            notes: topInput.notes || '',
-            subtopicos: (topInput.subtopicos || []).map((subName, sIdx) => ({
-              id: `sub_${Date.now()}_${i}_${j}_${sIdx}`,
-              assuntoId: assId,
-              name: subName,
-              order: sIdx + 1,
-              status: 'nao_iniciado',
-              completed: false,
-              createdAt: new Date().toISOString(),
-            })),
-            createdAt: new Date().toISOString(),
-          };
-          newAssuntosList.push(newAssunto);
-          createdAssuntos.push(newAssunto);
-        }
-      }
-    }
-
-    saveStored(STORAGE_KEYS.DISCIPLINAS, newDisciplinasList);
-    saveStored(STORAGE_KEYS.ASSUNTOS, newAssuntosList);
-
-    // 3. Sincronizar o JSON Gabarita Active Contest Single Source of Truth
-    await this.syncActiveContestStorage();
-
-    return {
-      concurso: newConcurso,
-      disciplinas: createdDisciplinas,
-      assuntos: createdAssuntos,
-    };
+    const disciplinas = result.disciplinas.filter(disciplina => disciplina.concursoId === concurso.id);
+    const disciplinaIds = new Set(disciplinas.map(disciplina => disciplina.id));
+    return { concurso, disciplinas, assuntos: result.assuntos.filter(assunto => disciplinaIds.has(assunto.disciplinaId)) };
   }
 
   // --- PROVAS ANTERIORES CRUD ---
@@ -2619,21 +2451,20 @@ export class DatabaseService {
 
     try {
       const uid = await getCurrentUserId();
-      let query = supabase.from('assuntos').select('*').order('order', { ascending: true });
-      if (uid && uid !== 'user_demo_01') {
-        query = query.eq('user_id', uid);
+      const rows: Assunto[] = [];
+      const pageSize = 500;
+      for (let offset = 0; ; offset += pageSize) {
+        let query = supabase.from('assuntos').select('*').order('order', { ascending: true }).order('id');
+        if (uid && uid !== 'user_demo_01') query = query.eq('user_id', uid);
+        if (disciplinaId) query = query.eq('disciplina_id', disciplinaId);
+        const { data, error } = await query.range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        rows.push(...data.map(mapAssuntoFromDb));
+        if (data.length < pageSize) break;
       }
-      if (disciplinaId) {
-        query = query.eq('disciplina_id', disciplinaId);
-      }
-      const { data, error } = await query;
-      if (!error && Array.isArray(data) && data.length > 0) {
-        const list = data
-          .map(mapAssuntoFromDb)
-          .filter(a => Boolean(a.disciplinaId && (validDiscIds.size === 0 || validDiscIds.has(a.disciplinaId))));
-        if (!disciplinaId) {
-          saveStored(STORAGE_KEYS.ASSUNTOS, list);
-        }
+      if (rows.length > 0) {
+        const list = rows.filter(a => Boolean(a.disciplinaId && (validDiscIds.size === 0 || validDiscIds.has(a.disciplinaId))));
+        if (!disciplinaId) saveStored(STORAGE_KEYS.ASSUNTOS, list);
         return list;
       }
     } catch (e) {
@@ -2958,67 +2789,108 @@ export class DatabaseService {
     concursoId?: string,
     mode: 'merge' | 'replace' = 'merge'
   ): Promise<{ disciplinas: Disciplina[]; assuntos: Assunto[] }> {
-    const activeConcurso = await this.getActiveConcurso();
-    const targetConcursoId = concursoId || activeConcurso?.id || '';
-    let currentDisciplinas = await this.getDisciplinas();
-    let currentAssuntos = await this.getAssuntos();
+    const targetConcursoId = concursoId || (await this.getActiveConcurso())?.id;
+    if (!targetConcursoId) throw new Error('Selecione o concurso de destino.');
 
-    if (mode === 'replace') {
-      if (targetConcursoId) {
-        const discIdsToRemove = currentDisciplinas.filter(d => d.concursoId === targetConcursoId).map(d => d.id);
-        currentDisciplinas = currentDisciplinas.filter(d => d.concursoId !== targetConcursoId);
-        currentAssuntos = currentAssuntos.filter(a => !discIdsToRemove.includes(a.disciplinaId));
-      } else {
-        currentDisciplinas = [];
-        currentAssuntos = [];
+    const uid = await getCurrentUserId();
+    if (!uid) throw new Error('Entre novamente na sua conta para importar o edital.');
+    const persistMerge = mode === 'merge' && uid !== 'user_demo_01';
+    let disciplinas = await this.getDisciplinas();
+    let assuntos = await this.getAssuntos();
+
+    if (persistMerge) {
+      const { data: concurso, error: concursoError } = await supabase.from('concursos')
+        .select('id').eq('user_id', uid).eq('id', targetConcursoId).maybeSingle();
+      if (concursoError || !concurso) {
+        throw new Error('O concurso de destino ainda não está disponível no Supabase. Tente salvar novamente.');
       }
+
+      const { data: remoteDisciplinas, error: disciplinasError } = await supabase.from('disciplinas')
+        .select('*').eq('user_id', uid).eq('concurso_id', targetConcursoId).order('order').order('id');
+      if (disciplinasError) throw new Error('Não foi possível conferir as disciplinas do concurso no Supabase.');
+
+      const currentDisciplinas = remoteDisciplinas.map(mapDisciplinaFromDb);
+      const currentIds = currentDisciplinas.map(disciplina => disciplina.id);
+      const targetIds = new Set([...currentIds, ...disciplinas.filter(d => d.concursoId === targetConcursoId).map(d => d.id)]);
+      disciplinas = [...disciplinas.filter(d => d.concursoId !== targetConcursoId), ...currentDisciplinas];
+      assuntos = assuntos.filter(assunto => !targetIds.has(assunto.disciplinaId));
+
+      if (currentIds.length > 0) {
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const { data, error } = await supabase.from('assuntos').select('*').eq('user_id', uid)
+            .in('disciplina_id', currentIds).order('id').range(offset, offset + pageSize - 1);
+          if (error) throw new Error('Não foi possível conferir os tópicos do concurso no Supabase.');
+          assuntos.push(...data.map(mapAssuntoFromDb));
+          if (data.length < pageSize) break;
+        }
+      }
+    } else if (mode === 'replace') {
+      const removedIds = new Set(disciplinas.filter(d => d.concursoId === targetConcursoId).map(d => d.id));
+      disciplinas = disciplinas.filter(d => !removedIds.has(d.id));
+      assuntos = assuntos.filter(a => !removedIds.has(a.disciplinaId));
     }
 
     const newDisciplinas: Disciplina[] = [];
     const newAssuntos: Assunto[] = [];
     const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+    const normalize = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
+    // Um reenvio com o mesmo concurso e nome reutiliza o ID, inclusive após falha parcial.
+    const importId = async (kind: string, parent: string, name: string) => {
+      if (!persistMerge) return globalThis.crypto?.randomUUID?.() ?? `${kind}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const bytes = new TextEncoder().encode(JSON.stringify([kind, uid, parent, name]));
+      const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)))
+        .map(byte => byte.toString(16).padStart(2, '0')).join('');
+      return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-8${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+    };
 
-    payload.disciplinas.forEach((discData, dIdx) => {
-      let targetDisc = mode === 'merge' 
-        ? currentDisciplinas.find(d => d.name.trim().toLowerCase() === discData.name.trim().toLowerCase() && d.concursoId === targetConcursoId)
-        : null;
-      let discId = targetDisc ? targetDisc.id : `disc_ai_${Date.now()}_${dIdx}`;
-      if (!targetDisc) {
-        const newDisc: Disciplina = {
-          id: discId,
+    const targetDisciplinas = disciplinas.filter(disciplina => disciplina.concursoId === targetConcursoId);
+    let disciplinaOrder = targetDisciplinas.reduce((max, disciplina) => Math.max(max, disciplina.order), 0);
+
+    for (const discData of payload.disciplinas) {
+      const name = discData.name.trim();
+      if (!name) continue;
+      const nameKey = normalize(name);
+      let disciplina = targetDisciplinas.find(d => normalize(d.name) === nameKey);
+      if (!disciplina) {
+        disciplina = {
+          id: await importId('disciplina', targetConcursoId, nameKey),
           concursoId: targetConcursoId,
-          name: discData.name,
-          code: discData.name.substring(0, 4).toUpperCase(),
-          color: discData.color || colors[dIdx % colors.length],
+          name,
+          code: discData.code || name.slice(0, 4).toUpperCase(),
+          color: discData.color || colors[newDisciplinas.length % colors.length],
+          icon: 'BookOpen',
           weight: discData.weight || 2.0,
-          order: currentDisciplinas.length + newDisciplinas.length + 1,
-          topicsCount: discData.topicos.length,
+          order: ++disciplinaOrder,
+          topicsCount: 0,
           completedTopicsCount: 0,
           totalStudyMinutes: 0,
           createdAt: new Date().toISOString(),
         };
-        newDisciplinas.push(newDisc);
+        targetDisciplinas.push(disciplina);
+        newDisciplinas.push(disciplina);
       }
 
-      discData.topicos.forEach((topData, tIdx) => {
-        const assId = `ass_ai_${Date.now()}_${dIdx}_${tIdx}`;
-        const subs: Subtopico[] = (topData.subtopicos || []).map((subName, sIdx) => ({
-          id: `sub_ai_${Date.now()}_${dIdx}_${tIdx}_${sIdx}`,
-          assuntoId: assId,
-          name: subName,
-          order: sIdx + 1,
-          status: 'nao_iniciado',
-          difficulty: topData.difficulty || 'media',
-          completed: false,
-          createdAt: new Date().toISOString(),
-        }));
-        const newAss: Assunto = {
-          id: assId,
+      const discId = disciplina.id;
+      const discAssuntos = [...assuntos, ...newAssuntos].filter(assunto => assunto.disciplinaId === discId);
+      const topicNames = new Set(discAssuntos.map(assunto => normalize(assunto.name)));
+      let topicOrder = discAssuntos.reduce((max, assunto) => Math.max(max, assunto.order), 0);
+
+      for (const topData of discData.topicos) {
+        const topicName = topData.name.trim();
+        const topicKey = normalize(topicName);
+        if (!topicKey || topicNames.has(topicKey)) continue;
+        topicNames.add(topicKey);
+        const id = await importId('assunto', discId, topicKey);
+        const now = new Date().toISOString();
+        const difficulty = topData.difficulty || 'media';
+        newAssuntos.push({
+          id,
           disciplinaId: discId,
-          name: topData.name,
-          order: (targetDisc ? currentAssuntos.filter(a => a.disciplinaId === discId).length : 0) + tIdx + 1,
+          name: topicName,
+          order: ++topicOrder,
           importance: topData.importance || 'alta',
-          difficulty: topData.difficulty || 'media',
+          difficulty,
           status: 'nao_iniciado',
           masteryLevel: 0,
           totalQuestionsSolved: 0,
@@ -3026,15 +2898,52 @@ export class DatabaseService {
           accuracyRate: 0,
           completed: false,
           notes: topData.notes || '',
-          subtopicos: subs,
-          createdAt: new Date().toISOString(),
-        };
-        newAssuntos.push(newAss);
-      });
-    });
+          subtopicos: (topData.subtopicos || []).map((subName, index) => ({
+            id: `sub_${id}_${index}`,
+            assuntoId: id,
+            name: subName,
+            order: index + 1,
+            status: 'nao_iniciado',
+            difficulty,
+            completed: false,
+            createdAt: now,
+          })),
+          createdAt: now,
+        });
+      }
+    }
 
-    const allDisciplinas = [...currentDisciplinas, ...newDisciplinas];
-    const allAssuntos = [...currentAssuntos, ...newAssuntos];
+    const allDisciplinas = [...disciplinas, ...newDisciplinas];
+    const allAssuntos = [...assuntos, ...newAssuntos];
+    const topicCounts = new Map<string, number>();
+    for (const assunto of allAssuntos) {
+      topicCounts.set(assunto.disciplinaId, (topicCounts.get(assunto.disciplinaId) ?? 0) + 1);
+    }
+    for (const disciplina of targetDisciplinas) {
+      disciplina.topicsCount = topicCounts.get(disciplina.id) ?? 0;
+    }
+
+    if (persistMerge) {
+      if (newDisciplinas.length > 0) {
+        const { error } = await supabase.from('disciplinas').upsert(newDisciplinas.map(d => ({
+          id: d.id, user_id: uid, concurso_id: targetConcursoId, name: d.name, code: d.code,
+          color: d.color, icon: d.icon, weight: d.weight, order: d.order, topics_count: d.topicsCount,
+          completed_topics_count: 0, total_study_minutes: 0, created_at: d.createdAt,
+        })), { onConflict: 'id', ignoreDuplicates: true });
+        if (error) throw new Error('Não foi possível gravar as disciplinas no Supabase: ' + error.message);
+      }
+
+      if (newAssuntos.length > 0) {
+        const { error } = await supabase.from('assuntos').upsert(newAssuntos.map(a => ({
+          id: a.id, user_id: uid, disciplina_id: a.disciplinaId, name: a.name, order: a.order,
+          importance: a.importance, difficulty: a.difficulty, status: a.status, mastery_level: 0,
+          total_questions_solved: 0, correct_questions_solved: 0, accuracy_rate: 0, completed: false,
+          notes: a.notes, subtopicos: a.subtopicos, created_at: a.createdAt,
+        })), { onConflict: 'id', ignoreDuplicates: true });
+        if (error) throw new Error('Não foi possível gravar os tópicos no Supabase: ' + error.message);
+      }
+    }
+
     saveStored(STORAGE_KEYS.DISCIPLINAS, allDisciplinas);
     saveStored(STORAGE_KEYS.ASSUNTOS, allAssuntos);
     return { disciplinas: allDisciplinas, assuntos: allAssuntos };

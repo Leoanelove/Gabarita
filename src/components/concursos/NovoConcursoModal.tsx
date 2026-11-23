@@ -40,7 +40,7 @@ import { Modal } from '../../design-system/Modal';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { sanitizeSyllabusData, parseSyllabusLocally, type ParsedSyllabusItem, generateSigla, sanitizeTopicString, preSanitizeEditalText } from '../../services/editalParser';
-import { SupabaseEditaisService, type SupabaseEdital, processarGradeEdital } from '../../services/supabaseEditais';
+import { SupabaseEditaisService, type SupabaseEdital } from '../../services/supabaseEditais';
 import { SubjectIcon } from '../common/SubjectIcon';
 import { EditalSelectorGlassBanner } from './EditalSelectorGlassBanner';
 
@@ -182,7 +182,8 @@ interface NovoConcursoModalProps {
   onClose: () => void;
   onSaveConcursoWithDisciplinas: (
     concurso: Omit<Concurso, 'id' | 'createdAt' | 'updatedAt'>,
-    disciplinas: ExtractedDiscipline[]
+    disciplinas: EditalAiImportPayload['disciplinas'],
+    draftId: string
   ) => Promise<void>;
 }
 
@@ -213,6 +214,9 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
   const [searchEditalQuery, setSearchEditalQuery] = useState('');
   const [isEditalDropdownOpen, setIsEditalDropdownOpen] = useState(false);
   const editalDropdownContainerRef = useRef<HTMLDivElement>(null);
+  const catalogRequest = useRef(0);
+  const draftId = useRef<string | null>(null);
+  const [isLoadingGrade, setIsLoadingGrade] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -278,27 +282,19 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
   }, [supabaseEditais, selectedEditalId]);
 
   const handleSelectSupabaseEdital = async (edital: SupabaseEdital) => {
+    const request = ++catalogRequest.current;
     setSelectedEditalId(String(edital.id));
     setErrorMessage(null);
-    
-    // Regra: usar o id (int8) para puxar os dados atualizados e preencher o formulário e as disciplinas
-    let targetEdital: SupabaseEdital = edital;
-    const editalIdInt8 = typeof edital.id === 'number' ? edital.id : parseInt(String(edital.id), 10);
-    if (!isNaN(editalIdInt8)) {
-      try {
-        const fetched = await SupabaseEditaisService.getEditalById(editalIdInt8);
-        if (fetched) {
-          targetEdital = fetched;
-        }
-      } catch (err) {
-        console.warn('Gabarita: Falha ao buscar edital por id (int8), mantendo dados em memória:', err);
-      }
-    }
+    setIsLoadingGrade(true);
+    setDisciplinas([]);
+    setPastedText('');
 
-    // Diagnóstico transparente no Console conforme solicitado
-    console.log('Edital selecionado por id (int8):', editalIdInt8, targetEdital);
-    console.log('Tipo de edital.materias:', typeof targetEdital.materias);
-    console.log('Conteúdo bruto de materias:', targetEdital.materias);
+    const { edital: targetEdital, disciplinas: grade } = await SupabaseEditaisService.getCatalogSyllabus(edital).catch(() => ({
+      edital,
+      disciplinas: [],
+    }));
+    if (catalogRequest.current !== request) return;
+    setIsLoadingGrade(false);
 
     const organName = String(targetEdital.orgao || targetEdital.organ || targetEdital.instituicao || '').trim();
     const roleName = String(targetEdital.cargo || targetEdital.role || '').trim();
@@ -328,10 +324,6 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
     setEditalUrl(targetEdital.edital_url || targetEdital.editalUrl || targetEdital.link_edital || targetEdital.url || '');
     setNotes(targetEdital.notes || targetEdital.observacoes || '');
 
-    // Processamento com o Agrupador Dinâmico Universal
-    const grade = processarGradeEdital(targetEdital.materias || targetEdital.disciplinas);
-    console.log('Grade processada para o modal:', grade);
-
     setDisciplinas(grade);
     setExtractionSource(`Base Supabase: ${editalTitle}`);
 
@@ -350,10 +342,16 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
     setPastedText(contentText);
 
     setIsEditalDropdownOpen(false);
-    setErrorMessage(null);
+    if (grade.length === 0) {
+      setErrorMessage('O conteúdo programático deste edital não pôde ser carregado. Selecione novamente ou use a importação manual.');
+    }
   };
 
   const handleClearSelectedEdital = () => {
+    catalogRequest.current++;
+    setIsLoadingGrade(false);
+    setDisciplinas([]);
+    setPastedText('');
     setSelectedEditalId(null);
     setSearchEditalQuery('');
     setIsEditalDropdownOpen(true);
@@ -388,6 +386,9 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
 
   // Função dedicada para reset completo do estado do Wizard
   const resetWizard = () => {
+    draftId.current = null;
+    catalogRequest.current++;
+    setIsLoadingGrade(false);
     // 1. Força o retorno imediato para a etapa 1
     setStep(1);
 
@@ -437,6 +438,7 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
   };
 
   const handleClose = () => {
+    if (isSaving) return;
     resetWizard();
     onClose();
   };
@@ -855,6 +857,7 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
       const cleanOrgan = organ.trim();
       const cleanRole = role.trim();
       const finalTitle = title.trim() || (cleanRole ? `${cleanOrgan} - ${cleanRole}` : cleanOrgan);
+      draftId.current ??= globalThis.crypto?.randomUUID?.() ?? `conc_${Date.now()}`;
       await onSaveConcursoWithDisciplinas(
         {
           title: finalTitle,
@@ -875,7 +878,15 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
           isAtivo: true,
           is_ativo: true,
         },
-        disciplinas
+        disciplinas.map(disciplina => ({
+          ...disciplina,
+          topicos: disciplina.topicos.map(topico => ({
+            ...topico,
+            importance: topico.importance || 'alta',
+            difficulty: topico.difficulty || 'media',
+          })),
+        })),
+        draftId.current
       );
       resetWizard();
       onClose();
@@ -1300,7 +1311,9 @@ export const NovoConcursoModal: React.FC<NovoConcursoModalProps> = ({
               <Button
                 type="button"
                 variant="primary"
+                isLoading={isLoadingGrade}
                 onClick={() => {
+                  if (isLoadingGrade) return;
                   if (!organ.trim() || !role.trim()) {
                     setErrorMessage('Informe o Órgão e o Cargo para continuar.');
                     return;
