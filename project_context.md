@@ -24,7 +24,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
    - Importação inteligente de editais (PDF ou texto) via `/api/edital/parse` (Gemini AI no servidor com fallback heurístico local em `editalParser.ts`) ou catálogo do Supabase (`editais` via `supabaseEditais.ts`).
 4. **Disciplinas e Edital Verticalizado (`DisciplinasView.tsx`, `EditalImportModal.tsx`, `NovaMateriaModal.tsx`)**:
    - Estrutura hierárquica **Concurso $\rightarrow$ Disciplina (com peso e sigla) $\rightarrow$ Assunto (importância, dificuldade, status, % de domínio, questões) $\rightarrow$ Subtópico**.
-   - Reordenação, duplicação e importação em árvore (`importEditalTree`).
+   - Reordenação, duplicação e importação em árvore (`importEditalTree`). A seleção de um edital cadastrado usa seu ID. A mesclagem no concurso de destino grava disciplinas e tópicos no Supabase para usuários autenticados e preserva os registros existentes.
 5. **Planejamento de Estudos: Ciclo vs. Cronograma (`PlanoView.tsx`, `CicloView.tsx`, `CalendarView.tsx`, `MetodoEstudoModal.tsx`)**:
    - Alternância explícita de método de estudo (`studyMethod`: `'ciclo'` ou `'cronograma'`).
    - **Ciclo de Estudos (`cycleService.ts`)**: Algoritmo de intercalação estrita (`strictInterleaveBlocks`) com distribuição uniforme (Bresenham/Weighted Stride) que impede blocos consecutivos da mesma disciplina, controle de volta (`resetCycleCurrentLap`), avanço/retrocesso e recálculo.
@@ -51,7 +51,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
 
 ### 3.1. Concurso Ativo Único (`activeConcursoId`) e Isolamento de Dados
 - Apenas um concurso fica marcado como ativo (`active: true`) por vez. Ao criar ou ativar um concurso, os demais do usuário são desativados (`server.ts` e `db.ts`).
-- `DatabaseService.purgeDuplicateGhostSessions()` e `DatabaseService.sanitizeOrphanData()` são executados no carregamento inicial (`loadData` em `src/App.tsx`) para limpar sessões fantasma duplicadas e registros órfãos antes de popular a UI.
+- `DatabaseService.purgeDuplicateGhostSessions()` e `DatabaseService.sanitizeOrphanData()` são executados no carregamento inicial (`loadData` em `src/App.tsx`) para limpar sessões fantasma duplicadas e higienizar órfãos no armazenamento local. As disciplinas e os tópicos são carregados depois de seus respectivos registros pai.
 
 ### 3.2. Regra de Atraso no Cronograma (`PlannerService.isSessionOverdue`)
 - Definida em `src/services/plannerService.ts`: **blocos do dia atual (`session.date === todayStr`) ou futuros NUNCA são considerados atrasados**.
@@ -76,7 +76,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
 1. **Sanitização de URLs do Supabase (`vite.config.ts`, `server.ts`, `src/services/supabaseClient.ts`)**:
    - A função `sanitizeSupabaseUrl` / `sanitizeServerUrl` remove sufixos `/rest/v1` ou `/auth/v1` e corrige erros comuns de digitação na URL antes de instanciar o cliente Supabase.
 2. **Limpeza de Inicialização (`loadData` em `src/App.tsx`)**:
-   - As chamadas `purgeDuplicateGhostSessions()` e `sanitizeOrphanData()` garantem integridade da base local e remota antes de montar o estado do app.
+   - A higienização de órfãos ocorre no cache local. A purga de sessões fantasmas usa IDs identificados e limita a operação ao usuário da sessão.
 3. **Motor de Timer Persistente (`src/services/timerService.ts` e `src/contexts/StudyTimerContext.tsx`)**:
    - O cálculo de delta por `lastStartTimestamp` (com trava de segurança `< 24h`) evita perda de tempo estudado ao recarregar a página ou trocar de aba.
 4. **Parser de Anki `.apkg` (`src/utils/apkgParser.ts`)**:
