@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Sparkles, 
   UploadCloud, 
@@ -19,6 +19,8 @@ import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { sanitizeSyllabusData, parseSyllabusLocally, type ParsedSyllabusItem } from '../../services/editalParser';
 
+import { SupabaseEditaisService, type SupabaseEdital } from '../../services/supabaseEditais';
+
 interface EditalImportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -28,7 +30,7 @@ interface EditalImportModalProps {
   onConfirmImport: (payload: EditalAiImportPayload, concursoId?: string, mode?: 'merge' | 'replace') => Promise<void>;
 }
 
-type ImportMethod = 'paste_text' | 'file_upload' | 'manual_tree';
+type ImportMethod = 'paste_text' | 'file_upload' | 'manual_tree' | 'catalog';
 
 export const EditalImportModal: React.FC<EditalImportModalProps> = ({
   isOpen,
@@ -57,6 +59,51 @@ export const EditalImportModal: React.FC<EditalImportModalProps> = ({
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [confirmReplaceChecked, setConfirmReplaceChecked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [catalog, setCatalog] = useState<SupabaseEdital[]>([]);
+  const [catalogId, setCatalogId] = useState('');
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
+
+  useEffect(() => {
+    if (method !== 'catalog') return;
+    let cancelled = false;
+    setIsLoadingCatalog(true);
+    setErrorMsg(null);
+    SupabaseEditaisService.getEditais().then(editais => {
+      if (!cancelled) setCatalog(editais);
+    }).catch(() => {
+      if (!cancelled) setErrorMsg('Não foi possível carregar os editais do Supabase.');
+    }).finally(() => {
+      if (!cancelled) setIsLoadingCatalog(false);
+    });
+    return () => { cancelled = true; };
+  }, [method]);
+
+  const handleReviewCatalog = async () => {
+    const selection = catalog.find(edital => edital.id === catalogId);
+    const destination = concursos.find(concurso => concurso.id === targetConcursoId);
+    if (!selection || !destination) return;
+    setIsParsing(true);
+    setErrorMsg(null);
+    try {
+      const { edital, disciplinas } = await SupabaseEditaisService.getCatalogSyllabus(selection);
+      if (disciplinas.length === 0) {
+        throw new Error('O conteúdo programático deste edital não pôde ser carregado.');
+      }
+      setParsedPayload({
+        concursoTitle: destination.title,
+        cargo: destination.role,
+        disciplinas,
+      });
+      setImportMode('merge');
+      setExtractionSource(`Supabase — ${edital.title} — ${edital.role}`);
+      setStep('review');
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Falha ao carregar o conteúdo do edital.');
+    } finally {
+      setIsParsing(false);
+    }
+  };
 
   const formatPayloadFromSyllabus = (
     syllabus: ParsedSyllabusItem[],
@@ -206,14 +253,14 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
   };
 
   const handleFinalSave = async () => {
-    if (!parsedPayload) return;
-    if (importMode === 'replace' && hasExistingDisciplinas && !confirmReplaceChecked) {
+    if (!parsedPayload || isSaving) return;
+    if (method !== 'catalog' && importMode === 'replace' && hasExistingDisciplinas && !confirmReplaceChecked) {
       setErrorMsg('Para substituir o edital existente, você deve marcar a caixa de confirmação de segurança.');
       return;
     }
     setIsSaving(true);
     try {
-      await onConfirmImport(parsedPayload, targetConcursoId, importMode);
+      await onConfirmImport(parsedPayload, targetConcursoId, method === 'catalog' ? 'merge' : importMode);
       onClose();
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Falha ao gravar edital no banco.');
@@ -227,7 +274,7 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
       isOpen={isOpen}
       onClose={onClose}
       title={step === 'input' ? "Importador Inteligente de Edital" : "Revisão e Confirmação da Árvore"}
-      description={step === 'input' ? "Carregue o conteúdo programático por texto, arquivo ou estrutura manual." : "Examine as disciplinas antes de confirmar."}
+      description={step === 'input' ? "Selecione um edital cadastrado ou envie o conteúdo por texto ou arquivo." : "Examine as disciplinas antes de confirmar."}
       maxWidth={step === 'review' ? 'xl' : 'lg'}
     >
       <div className="space-y-5">
@@ -245,15 +292,17 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Concurso de Destino</label>
                 <select
                   value={targetConcursoId}
+                  disabled={isParsing}
                   onChange={(e) => {
                     setTargetConcursoId(e.target.value);
+                    setCatalogId('');
                     const match = concursos.find(c => c.id === e.target.value);
                     if (match) setCargoName(match.role);
                   }}
                   className="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-2"
                 >
                   {concursos.map(c => (
-                    <option key={c.id} value={c.id}>{c.title} ({c.banca})</option>
+                    <option key={c.id} value={c.id}>{c.title} — {c.role}</option>
                   ))}
                 </select>
               </div>
@@ -271,6 +320,7 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
               <button
                 type="button"
+                disabled={isParsing}
                 onClick={() => setMethod('paste_text')}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   method === 'paste_text' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500'
@@ -281,6 +331,7 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
               </button>
               <button
                 type="button"
+                disabled={isParsing}
                 onClick={() => setMethod('file_upload')}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   method === 'file_upload' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500'
@@ -289,7 +340,32 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
                 <UploadCloud className="w-3.5 h-3.5 text-sky-500" />
                 <span>Arquivo</span>
               </button>
+              <button
+                type="button"
+                disabled={isParsing}
+                onClick={() => setMethod('catalog')}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${method === 'catalog' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500'}`}
+              >
+                Editais cadastrados
+              </button>
             </div>
+
+            {method === 'catalog' && (
+              <label className="block space-y-1 text-xs font-bold text-slate-700 dark:text-slate-300">
+                Edital e cargo de origem
+                <select
+                  value={catalogId}
+                  disabled={isLoadingCatalog || isParsing}
+                  onChange={event => setCatalogId(event.target.value)}
+                  className="block w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2"
+                >
+                  <option value="">{isLoadingCatalog ? 'Carregando editais…' : catalog.length ? 'Selecione o edital e o cargo' : 'Nenhum edital disponível'}</option>
+                  {catalog.map(edital => (
+                    <option key={edital.id} value={edital.id}>{edital.title} — {edital.role} (#{edital.id})</option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             {method === 'paste_text' && (
               <div className="space-y-2">
@@ -322,8 +398,8 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
               <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-              <Button type="button" variant="primary" onClick={handleParseWithGemini} isLoading={isParsing} leftIcon={<Sparkles className="w-4 h-4" />}>
-                Processar Edital
+              <Button type="button" variant="primary" onClick={method === 'catalog' ? handleReviewCatalog : handleParseWithGemini} disabled={method === 'catalog' && (!catalogId || !targetConcursoId)} isLoading={isParsing} leftIcon={<Sparkles className="w-4 h-4" />}>
+                {method === 'catalog' ? 'Revisar matérias' : 'Processar Edital'}
               </Button>
             </div>
           </div>
@@ -336,6 +412,11 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
               <span className="font-semibold">{parsedPayload.disciplinas.length} disciplinas</span>
             </div>
 
+            {method === 'catalog' && (
+              <p className="text-xs text-slate-700 dark:text-slate-300">
+                Destino <strong>{parsedPayload.concursoTitle} — {parsedPayload.cargo}</strong>
+              </p>
+            )}
             <div className="max-h-80 overflow-y-auto space-y-3 pr-1">
               {parsedPayload.disciplinas.map((disc, dIdx) => {
                 const cleanName = (disc.name || '').trim();
@@ -344,7 +425,6 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
                   const tName = (top.name || '').trim();
                   return tName.length > 0 && /[a-zA-ZáéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ]/.test(tName);
                 });
-                if (disc.topicos.length === 0 || validTopics.length === 0) return null;
 
                 return (
                   <div key={dIdx} className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
@@ -359,7 +439,7 @@ DIREITO ADMINISTRATIVO: 1. Estado, governo e administração pública: conceitos
               })}
             </div>
 
-            {hasExistingDisciplinas && (
+            {hasExistingDisciplinas && method !== 'catalog' && (
               <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-300 rounded-xl text-xs space-y-2">
                 <label className="flex items-center gap-2 font-bold cursor-pointer">
                   <input

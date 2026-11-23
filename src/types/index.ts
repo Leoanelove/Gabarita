@@ -207,6 +207,7 @@ export interface EditalAiImportPayload {
   disciplinas: {
     name: string;
     weight: number;
+    code?: string;
     color?: string;
     topicos: {
       name: string;

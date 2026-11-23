@@ -10,8 +10,8 @@ export interface ExtractedDiscipline {
   sigla?: string;
   topicos: Array<{
     name: string;
-    importance?: AssuntoImportance;
-    difficulty?: TopicDifficulty;
+    importance: AssuntoImportance;
+    difficulty: TopicDifficulty;
     subtopicos?: string[];
     notes?: string;
   }>;
@@ -79,12 +79,12 @@ export function processarGradeEdital(raw: any): ExtractedDiscipline[] {
   const defaultColors = ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6'];
 
   // Se já estiver agrupado por matérias com array de topicos
-  if (itens.length > 0 && itens[0].topicos && Array.isArray(itens[0].topicos)) {
+  if (itens.length > 0 && itens.every(item => item && Array.isArray(item.topicos))) {
     return itens.map((m: any, idx: number) => {
       const nomeMateria = String(m.nome || m.disciplina || m.materia || m.name || `Matéria ${idx + 1}`).trim();
       const pesoVal = typeof m.peso === 'number' ? m.peso : (typeof m.weight === 'number' ? m.weight : (parseFloat(m.peso || m.weight) || 2.0));
       const sigla = generateSigla(nomeMateria);
-      const topicosArray = (m.topicos || []).map((t: any) => {
+      const topicosArray = m.topicos.filter(Boolean).map((t: any) => {
         if (typeof t === 'string') {
           return { name: t.trim(), importance: 'alta' as const, difficulty: 'media' as const, subtopicos: [] };
         }
@@ -102,7 +102,7 @@ export function processarGradeEdital(raw: any): ExtractedDiscipline[] {
         color: m.color || m.cor || defaultColors[idx % defaultColors.length],
         code: sigla,
         sigla,
-        topicos: topicosArray.length > 0 ? topicosArray : [{ name: 'Introdução e Teoria Geral', importance: 'alta' as const, difficulty: 'media' as const, subtopicos: [] }]
+        topicos: topicosArray
       };
     });
   }
@@ -164,7 +164,7 @@ export function processarGradeEdital(raw: any): ExtractedDiscipline[] {
     color: group.color,
     code: group.sigla,
     sigla: group.sigla,
-    topicos: group.topicos.length > 0 ? group.topicos : [{ name: 'Introdução e Teoria Geral', importance: 'alta' as const, difficulty: 'media' as const, subtopicos: [] }]
+    topicos: group.topicos
   }));
 }
 
@@ -265,8 +265,7 @@ export class SupabaseEditaisService {
    * Busca um edital específico utilizando seu id (int8) da tabela editais
    */
   static async getEditalById(id: number | string): Promise<SupabaseEdital | null> {
-    const numericId = typeof id === 'number' ? id : parseInt(String(id), 10);
-    const queryId = isNaN(numericId) ? id : numericId;
+    const queryId = String(id);
     console.log(`[SupabaseEditaisService] Buscando edital por id (int8):`, queryId);
 
     // 1. Consulta direta no Supabase pelo id (int8)
@@ -290,7 +289,7 @@ export class SupabaseEditaisService {
 
     // 2. Consulta de contingência via backend /api/editais/:id
     try {
-      const res = await fetch(`/api/editais/${queryId}`);
+      const res = await fetch(`/api/editais/${encodeURIComponent(queryId)}`);
       if (res.ok) {
         const json = await res.json();
         if (json && !json.error) {
@@ -303,6 +302,18 @@ export class SupabaseEditaisService {
     }
 
     return null;
+  }
+
+  static async getCatalogSyllabus(edital: SupabaseEdital): Promise<{
+    edital: SupabaseEdital;
+    disciplinas: ExtractedDiscipline[];
+  }> {
+    const current = await this.getEditalById(edital.id);
+    if (current?.id === edital.id) {
+      const disciplinas = this.mapToExtractedDisciplines(current);
+      if (disciplinas.length > 0) return { edital: current, disciplinas };
+    }
+    return { edital, disciplinas: this.mapToExtractedDisciplines(edital) };
   }
 
   static mapToExtractedDisciplines(edital: any): ExtractedDiscipline[] {
