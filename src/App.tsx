@@ -1126,6 +1126,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               initialTab={concursosSubTab}
               initialTabTrigger={concursosSubTabTrigger}
               onAddConcursoWithDisciplinas={handleAddConcursoWithDisciplinas}
+              onImportEditalTree={handleImportEditalTree}
               onUpdateConcurso={handleUpdateConcurso}
               onDeleteConcurso={handleDeleteConcurso}
               onSetActiveConcurso={handleSetActiveConcurso}

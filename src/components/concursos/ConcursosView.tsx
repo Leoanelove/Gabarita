@@ -50,6 +50,7 @@ import { Badge } from '../../design-system/Badge';
 import { Modal } from '../../design-system/Modal';
 import { NovoConcursoModal } from './NovoConcursoModal';
 import { SubjectIcon } from '../common/SubjectIcon';
+import { EditalImportModal } from '../disciplinas/EditalImportModal';
 import { NovaMateriaModal } from '../disciplinas/NovaMateriaModal';
 import { ProvasTab } from './ProvasTab';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -90,6 +91,7 @@ interface ConcursosViewProps {
     disciplinas: EditalAiImportPayload['disciplinas'],
     draftId: string
   ) => Promise<void>;
+  onImportEditalTree: (payload: EditalAiImportPayload, concursoId: string, mode: 'merge') => Promise<void>;
   onUpdateConcurso: (id: string, partial: Partial<Concurso>) => Promise<void>;
   onDeleteConcurso: (id: string) => Promise<void>;
   onSetActiveConcurso: (id: string) => Promise<void>;
@@ -123,6 +125,7 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   disciplinas = [],
   assuntos = [],
   onAddConcursoWithDisciplinas,
+  onImportEditalTree,
   onUpdateConcurso,
   onDeleteConcurso,
   onSetActiveConcurso,
@@ -212,10 +215,12 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
 
   // Navigation: Hub vs Drill-Down (Painel do Concurso)
   const [selectedConcursoId, setSelectedConcursoId] = useState<string | null>(null);
+  const [importConcursoId, setImportConcursoId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'concursos' | 'provas'>(initialTab);
 
   useEffect(() => {
     setSelectedConcursoId(null);
+    setImportConcursoId(null);
     setActiveTab(initialTab);
   }, [initialTab, initialTabTrigger]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -927,23 +932,32 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {isArchived
                     ? 'Este concurso está arquivado e não possui disciplinas cadastradas.'
-                    : 'Cadastre as matérias do edital ou importe tópicos para começar a estudar.'}
+                    : 'Importe as matérias e os tópicos do edital ou cadastre a primeira matéria manualmente.'}
                 </p>
               </div>
               {!isArchived && (
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    setEditingDisciplina(null);
-                    setNewDiscName('');
-                    setNewDiscWeight('2.0');
-                    setNewDiscColor('#10b981');
-                    setIsAddDisciplinaModalOpen(true);
-                  }}
-                  leftIcon={<Plus className="w-4 h-4" />}
-                >
-                  Cadastrar Primeira Matéria
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="primary"
+                    onClick={() => setImportConcursoId(selectedConcurso.id)}
+                    leftIcon={<Sparkles className="w-4 h-4" />}
+                  >
+                    Importar por IA
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingDisciplina(null);
+                      setNewDiscName('');
+                      setNewDiscWeight('2.0');
+                      setNewDiscColor('#10b981');
+                      setIsAddDisciplinaModalOpen(true);
+                    }}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                  >
+                    Cadastrar Primeira Matéria
+                  </Button>
+                </div>
               )}
             </div>
           ) : (
@@ -1185,6 +1199,20 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
             </div>
           )}
         </div>
+
+        {!isArchived && importConcursoId === selectedConcurso.id && (
+          <EditalImportModal
+            isOpen
+            onClose={() => setImportConcursoId(null)}
+            concursos={[selectedConcurso]}
+            selectedConcursoId={selectedConcurso.id}
+            hasExistingDisciplinas={false}
+            onConfirmImport={async (payload) => {
+              await onImportEditalTree(payload, selectedConcurso.id, 'merge');
+              showFeedback('success', 'Matérias do edital importadas com sucesso!');
+            }}
+          />
+        )}
 
         {/* Modal: Adicionar / Editar Matéria (Com fluxo de Assuntos Automático / Manual + Conferência) */}
         <NovaMateriaModal
