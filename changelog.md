@@ -2,6 +2,10 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-23] — Importação de edital no painel do concurso
+
+- O painel de um concurso sem disciplinas oferece **Importar por IA** ao lado do cadastro manual. O importador permite usar o catálogo do Supabase, inserir texto ou enviar um arquivo e grava as matérias no concurso aberto.
+
 ## [2026-11-23] — Sincronização das matérias de editais
 
 - A seleção no catálogo carrega o conteúdo pelo ID do edital e informa quando a grade está indisponível.
