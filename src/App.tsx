@@ -1039,11 +1039,9 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
   };
 
   const handleSwitchStudyMethod = async (newMethod: StudyMethod) => {
-    await DatabaseService.setStudyMethod(newMethod);
     setStudyMethod(newMethod);
-    if (currentTab === 'ciclo' || currentTab === 'cronograma' || currentTab === 'plano') {
-      setCurrentTab(newMethod === 'ciclo' ? 'ciclo' : 'cronograma');
-    }
+    setCurrentTab(tab => tab === 'ciclo' || tab === 'cronograma' || tab === 'plano' ? newMethod : tab);
+    await DatabaseService.setStudyMethod(newMethod);
   };
 
   return (
@@ -1095,6 +1093,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
                 metas={metas}
                 plan={plan}
                 cycle={cycle}
+                studyMethod={studyMethod}
                 provas={provas}
                 activeConcursoId={effectiveActiveConcursoId}
                 isLoading={isDataLoading}
@@ -1503,7 +1502,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         initialMode={timerInitialMode}
         contabilizarPlanejamento={timerContabilizarPlanejamento}
         onSaveSession={handleSaveStudySession}
-        onAdvanceCycle={timerContabilizarPlanejamento === false ? undefined : handleAdvanceCycle}
+        onAdvanceCycle={timerContabilizarPlanejamento !== false && studyMethod === 'ciclo' ? handleAdvanceCycle : undefined}
       />
     </div>
   );
