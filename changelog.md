@@ -2,6 +2,10 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-23] — Próximos estudos conforme o método selecionado
+
+- O Painel Geral mostra o próximo bloco e até três seguintes do método ativo. Para o Cronograma, a fila usa os blocos pendentes da data local atual na ordem do calendário.
+
 ## [2026-11-23] — Aviso de término na tela do cronômetro
 
 - Ao terminar a contagem, o cronômetro volta à frente do app e exibe um único aviso. As ações para parar o toque e concluir o estudo ficam na tela do cronômetro.
