@@ -30,6 +30,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
 5. **Planejamento de Estudos: Ciclo vs. Cronograma (`PlanoView.tsx`, `CicloView.tsx`, `CalendarView.tsx`, `MetodoEstudoModal.tsx`)**:
    - Alternância explícita de método de estudo (`studyMethod`: `'ciclo'` ou `'cronograma'`).
    - **Ciclo de Estudos (`cycleService.ts`)**: Algoritmo de intercalação estrita (`strictInterleaveBlocks`) com distribuição uniforme (Bresenham/Weighted Stride) que impede blocos consecutivos da mesma disciplina, controle de volta (`resetCycleCurrentLap`), avanço/retrocesso e recálculo.
+   - A criação do ciclo preserva os blocos gerados com a carga horária e os limites de duração definidos pelo aluno.
    - **Cronograma Semanal (`plannerService.ts`)**: Alocação baseada em disponibilidade semanal (`WeeklyAvailability`), detecção de conflitos, reagendamento em lote de sessões atrasadas (`batchRescheduleOverdue`) e marcação de sessões estudadas.
 6. **Sessão de Estudo e Cronômetro (`SessaoEstudoView.tsx`, `StudyTimerModal.tsx`, `StudyRegisterModal.tsx`, `StudyTimerContext.tsx`)**:
    - Cronômetro persistente (`TimerService` em `localStorage`) nos modos `livre`, `pomodoro` e `regressivo`, com alarmes sonoros customizáveis (`RingtoneSelectorModal.tsx`, `soundEffects.ts`).

@@ -6017,37 +6017,40 @@ export class DatabaseService {
   }
 
   static async saveStudyCycle(cycle: StudyCycle): Promise<StudyCycle> {
-    saveStored(STORAGE_KEYS.STUDY_CYCLE, cycle);
-    if (cycle.concursoId) {
+    const uid = await getCurrentUserId();
+    const savedCycle = uid ? { ...cycle, userId: uid } : cycle;
+    saveStored(STORAGE_KEYS.STUDY_CYCLE, savedCycle);
+
+    if (savedCycle.concursoId) {
       try {
-        localStorage.setItem(`gabarita_ciclo_estudos_${cycle.concursoId}`, JSON.stringify(cycle));
-        localStorage.setItem(`gabarita_study_cycle_${cycle.concursoId}`, JSON.stringify(cycle));
+        localStorage.setItem(`gabarita_ciclo_estudos_${savedCycle.concursoId}`, JSON.stringify(savedCycle));
+        localStorage.setItem(`gabarita_study_cycle_${savedCycle.concursoId}`, JSON.stringify(savedCycle));
       } catch (err) {
         console.warn('Erro ao salvar ciclo no localStorage:', err);
       }
-      saveStored(`gabarita_study_cycle_${cycle.concursoId}`, cycle);
+      saveStored(`gabarita_study_cycle_${savedCycle.concursoId}`, savedCycle);
 
-      getCurrentUserId().then(uid => {
-        const targetUid = cycle.userId || uid;
-        if (targetUid) {
-          supabase.from('study_cycles').upsert([{
-            id: cycle.id,
-            user_id: targetUid,
-            concurso_id: cycle.concursoId,
-            concurso_title: cycle.concursoTitle,
-            current_block_index: cycle.currentBlockIndex,
-            completed_cycles_count: cycle.completedCyclesCount,
-            total_cycle_minutes: cycle.totalCycleMinutes,
-            blocks: cycle.blocks,
-            created_at: cycle.createdAt || new Date().toISOString(),
+      if (uid && uid !== 'user_demo_01') {
+        try {
+          const { error } = await supabase.from('study_cycles').upsert([{
+            id: savedCycle.id,
+            user_id: savedCycle.userId,
+            concurso_id: savedCycle.concursoId,
+            concurso_title: savedCycle.concursoTitle,
+            current_block_index: savedCycle.currentBlockIndex,
+            completed_cycles_count: savedCycle.completedCyclesCount,
+            total_cycle_minutes: savedCycle.totalCycleMinutes,
+            blocks: savedCycle.blocks,
+            created_at: savedCycle.createdAt || new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          }]).then(({ error }) => {
-            if (error) console.warn('Gabarita: Erro ao sincronizar ciclo no Supabase:', error.message);
-          });
+          }]);
+          if (error) throw error;
+        } catch (err) {
+          console.warn('Gabarita: Erro ao sincronizar ciclo no Supabase:', err);
         }
-      });
+      }
     }
-    return cycle;
+    return savedCycle;
   }
 
   static async advanceStudyCycle(minutesStudied?: number): Promise<StudyCycle> {
