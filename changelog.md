@@ -2,6 +2,10 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-23] — Banner temático no painel do concurso
+
+- O painel do concurso usa o banner do Painel Geral, com os mesmos assets dos cinco temas. O banner exibe a cobertura e a data da prova do concurso aberto. Disciplinas, tópicos e tempo de estudo aparecem nos indicadores abaixo.
+
 ## [2026-11-23] — Importação de edital no painel do concurso
 
 - O painel de um concurso sem disciplinas oferece **Importar por IA** ao lado do cadastro manual. O importador permite usar o catálogo do Supabase, inserir texto ou enviar um arquivo e grava as matérias no concurso aberto.
