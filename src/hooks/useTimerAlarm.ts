@@ -4,10 +4,10 @@ import {
   soundManager,
   ALARM_RINGTONES,
   AlarmRingtone,
-  TriggerAlarmOptions,
 } from '../utils/soundEffects';
 
 export function useTimerAlarm() {
+  const [alarmOwner] = useState(() => Symbol('timer-alarm'));
   const [isSoundOn, setIsSoundOn] = useState<boolean>(() => soundManager.isEnabled());
   const [isMuted, setIsMutedState] = useState<boolean>(() => soundManager.isMuted());
   const [volume, setVolumeState] = useState<number>(() => soundManager.getVolume());
@@ -18,7 +18,7 @@ export function useTimerAlarm() {
     soundManager.getPreviewingId()
   );
   const [isAlarmRinging, setIsAlarmRinging] = useState<boolean>(() =>
-    soundManager.isAlarmRinging()
+    soundManager.isAlarmRinging(alarmOwner)
   );
 
   useEffect(() => {
@@ -51,9 +51,8 @@ export function useTimerAlarm() {
       setPreviewingId(customEvent.detail);
     };
 
-    const handleAlarmStateChange = (e: Event) => {
-      const customEvent = e as CustomEvent<boolean>;
-      setIsAlarmRinging(customEvent.detail);
+    const handleAlarmStateChange = () => {
+      setIsAlarmRinging(soundManager.isAlarmRinging(alarmOwner));
     };
 
     window.addEventListener('gabarita_sound_toggled', handleSoundToggle);
@@ -70,8 +69,9 @@ export function useTimerAlarm() {
       window.removeEventListener('gabarita_ringtone_changed', handleRingtoneChange);
       window.removeEventListener('gabarita_preview_changed', handlePreviewChange);
       window.removeEventListener('gabarita_alarm_state_changed', handleAlarmStateChange);
+      soundManager.stopAlarm(alarmOwner);
     };
-  }, []);
+  }, [alarmOwner]);
 
   const toggleSound = useCallback(() => {
     const next = soundManager.toggleSound();
@@ -107,29 +107,16 @@ export function useTimerAlarm() {
   }, []);
 
   const unlockAudio = useCallback(() => {
-    soundManager.unlockAudioAndPermissions();
+    soundManager.unlockAudio();
   }, []);
 
-  const triggerAlarm = useCallback(
-    (modeOrOptions?: 'session' | 'break' | TriggerAlarmOptions) => {
-      if (typeof modeOrOptions === 'string') {
-        const isBreak = modeOrOptions === 'break';
-        soundManager.startContinuousAlarm({
-          title: isBreak ? 'Pausa Concluída!' : 'Tempo Finalizado!',
-          subtitle: isBreak
-            ? 'Sua pausa terminou. Hora de retomar os estudos!'
-            : 'Parabéns! Seu tempo de foco foi concluído.',
-        });
-      } else {
-        soundManager.startContinuousAlarm(modeOrOptions);
-      }
-    },
-    []
-  );
+  const triggerAlarm = useCallback(() => {
+    soundManager.startContinuousAlarm(alarmOwner);
+  }, [alarmOwner]);
 
   const stopAlarm = useCallback(() => {
-    soundManager.stopAlarm();
-  }, []);
+    soundManager.stopAlarm(alarmOwner);
+  }, [alarmOwner]);
 
   const selectedRingtone: AlarmRingtone =
     ALARM_RINGTONES.find((r) => r.id === selectedRingtoneId) || ALARM_RINGTONES[0];
