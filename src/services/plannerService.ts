@@ -717,6 +717,54 @@ export class PlannerService {
     return times[(slotOrder - 1) % times.length];
   }
 
+  static movePlannedSession(
+    sessions: PlannedSession[],
+    sessionId: string,
+    destinationDate: string,
+    beforeSessionId: string | undefined,
+    studySessions: SessaoEstudo[] = [],
+  ): PlannedSession[] {
+    const session = sessions.find(item => item.id === sessionId);
+    if (!session) throw new Error('Bloco indisponível no cronograma.');
+    if (beforeSessionId === sessionId) return sessions;
+
+    const dateChanged = destinationDate !== session.date;
+    if (dateChanged && this.isSessionStudied(session, studySessions)) {
+      throw new Error('Um bloco concluído só pode ser reordenado no próprio dia.');
+    }
+
+    const getDay = (date: string) => sessions
+      .filter(item => item.date === date)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const origin = getDay(session.date);
+    const destination = (dateChanged ? getDay(destinationDate) : origin).filter(item => item.id !== sessionId);
+    const position = beforeSessionId ? destination.findIndex(item => item.id === beforeSessionId) : destination.length;
+    if (position < 0) throw new Error('A posição mudou. Tente mover o bloco novamente.');
+    if (!dateChanged && origin[position]?.id === sessionId) return sessions;
+
+    const moved: PlannedSession = dateChanged ? {
+      ...session,
+      date: destinationDate,
+      dayOfWeek: this.getDayOfWeekFromDate(this.parseLocalDate(destinationDate)),
+      originalDate: session.originalDate || session.date,
+      status: 'reagendada',
+      rescheduledReason: 'Movido no cronograma semanal.',
+    } : session;
+
+    destination.splice(position, 0, moved);
+    const reordered = new Map<string, PlannedSession>();
+    if (dateChanged) {
+      origin.filter(item => item.id !== sessionId).forEach((item, index) => {
+        reordered.set(item.id, { ...item, order: index + 1 });
+      });
+    }
+    destination.forEach((item, index) => {
+      reordered.set(item.id, { ...item, order: index + 1 });
+    });
+    return sessions.map(item => reordered.get(item.id) ?? item);
+  }
+
   static detectConflicts(
     sessions: PlannedSession[],
     availability: WeeklyAvailability,

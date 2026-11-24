@@ -5664,18 +5664,14 @@ export class DatabaseService {
     };
   }
 
-  static async saveStudyPlan(plan: StudyPlan): Promise<StudyPlan> {
-    saveStored(STORAGE_KEYS.STUDY_PLAN, plan);
-    if (plan.concursoId) {
-      try {
-        localStorage.setItem(`gabarita_study_plan_${plan.concursoId}`, JSON.stringify(plan));
-      } catch {}
-    }
+  private static readonly studyPlanWrites = new Map<string, Promise<void>>();
 
-    getCurrentUserId().then(uid => {
+  static async saveStudyPlan(plan: StudyPlan, confirmSync = false): Promise<StudyPlan> {
+    const sync = async () => {
+      const uid = await getCurrentUserId();
       const targetUid = plan.userId || uid;
-      if (targetUid) {
-        supabase.from('study_plans').upsert([{
+      if (targetUid && targetUid !== 'user_demo_01') {
+        const { error } = await supabase.from('study_plans').upsert([{
           id: plan.id,
           user_id: targetUid,
           concurso_id: plan.concursoId,
@@ -5686,14 +5682,53 @@ export class DatabaseService {
           conflicts: plan.conflicts || [],
           history_logs: plan.historyLogs || [],
           created_at: plan.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }]).then(({ error }) => {
-          if (error) console.warn('Gabarita: Erro ao persistir study plan no Supabase:', error.message);
-        });
+          updated_at: plan.updatedAt || new Date().toISOString(),
+        }]);
+        if (error) throw error;
+      }
+    };
+
+    const previous = this.studyPlanWrites.get(plan.concursoId);
+    const write = (previous?.catch(() => {}) ?? Promise.resolve()).then(sync);
+    this.studyPlanWrites.set(plan.concursoId, write);
+    const settled = write.finally(() => {
+      if (this.studyPlanWrites.get(plan.concursoId) === write) {
+        this.studyPlanWrites.delete(plan.concursoId);
       }
     });
+    if (confirmSync) {
+      await settled;
+    } else {
+      void settled.catch(error => console.warn('Gabarita: Erro ao persistir study plan no Supabase:', error));
+    }
+
+    saveStored(STORAGE_KEYS.STUDY_PLAN, plan);
+    if (plan.concursoId) {
+      try {
+        localStorage.setItem(`gabarita_study_plan_${plan.concursoId}`, JSON.stringify(plan));
+      } catch {}
+    }
 
     return plan;
+  }
+
+  static async movePlannedSession(
+    concursoId: string,
+    sessionId: string,
+    destinationDate: string,
+    beforeSessionId?: string,
+  ): Promise<StudyPlan> {
+    await this.studyPlanWrites.get(concursoId);
+    const plan = await this.getStudyPlan(concursoId);
+    if (plan.startDate && destinationDate < plan.startDate) {
+      throw new Error('Escolha um dia a partir do início do cronograma.');
+    }
+    const [studySessions, assuntos] = await Promise.all([this.getSessoes(), this.getAssuntos()]);
+    const sessions = PlannerService.movePlannedSession(plan.sessions, sessionId, destinationDate, beforeSessionId, studySessions);
+    if (sessions === plan.sessions) return plan;
+
+    const conflicts = PlannerService.detectConflicts(sessions, plan.weeklyAvailability, plan.targetExamDate, assuntos, studySessions);
+    return this.saveStudyPlan({ ...plan, sessions, conflicts, updatedAt: new Date().toISOString() }, true);
   }
 
   static async removeStudyPlan(concursoId?: string): Promise<StudyPlan> {
