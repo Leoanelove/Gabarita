@@ -2,6 +2,10 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-23] — Duração dos blocos na criação do ciclo
+
+- A criação do ciclo exibe e persiste os blocos gerados com os limites de duração escolhidos. O fluxo do Plano de Estudos usa o ciclo salvo pela janela de criação, e a sincronização associa o primeiro ciclo à conta autenticada.
+
 ## [2026-11-23] — Editor de estudos compartilhado com o Histórico
 
 - O botão Editar no Histórico usa o formulário de registro do Painel Geral, com os dados do estudo e os prazos de revisão preenchidos. Ao confirmar, o formulário atualiza a sessão original.

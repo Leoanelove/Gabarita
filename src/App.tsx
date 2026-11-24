@@ -617,11 +617,6 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     setCycle(updated);
   };
 
-  const handleRecalculateCycle = async (baseSlotDuration?: number) => {
-    const updated = await DatabaseService.recalculateStudyCycle(plan?.concursoId, baseSlotDuration);
-    setCycle(updated);
-  };
-
   const handleUpdateCycleBlock = async (blockId: string, partial: Partial<CycleBlock>) => {
     const updated = await DatabaseService.updateCycleBlock(blockId, partial);
     setCycle(updated);
@@ -1172,7 +1167,6 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               onRewindCycle={handleRewindCycle}
               onRecordCycleProgress={handleRecordCycleProgress}
               onResetCycleLap={handleResetCycleLap}
-              onRecalculateCycle={handleRecalculateCycle}
               onUpdateCycleBlock={handleUpdateCycleBlock}
               onRemoveCycle={async () => {
                 const cleared = await DatabaseService.removeStudyCycle();
