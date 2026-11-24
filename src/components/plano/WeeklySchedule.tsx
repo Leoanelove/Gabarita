@@ -32,7 +32,7 @@ interface WeeklyScheduleProps {
   onMoveSession: (sessionId: string, date: string, beforeSessionId?: string) => Promise<void>;
 }
 
-export const getNoteColor = (session: PlannedSession) => ({
+export const getNoteColor = (session: Pick<PlannedSession, 'disciplinaColor'>) => ({
   '--note-color': /^#[0-9a-f]{6}$/i.test(session.disciplinaColor) ? session.disciplinaColor : 'var(--primary-color)',
 } as CSSProperties);
 

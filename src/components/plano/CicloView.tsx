@@ -19,7 +19,8 @@ import {
   Scale,
   BookOpen,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  GripVertical
 } from 'lucide-react';
 import { StudyCycle, CycleBlock, Disciplina, Assunto, StudyMethod, Concurso } from '../../types';
 import { Button } from '../../design-system/Button';
@@ -28,6 +29,8 @@ import { DatabaseService } from '../../services/db';
 import { CriarCicloModal } from './CriarCicloModal';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SubjectIcon } from '../common/SubjectIcon';
+import { getNoteColor } from './WeeklySchedule';
+import './cycleCards.css';
 
 const PLAY_THEME_CONFIG: Record<string, { bg: string; hover: string; text: string; border: string; glow: string }> = {
   verde: {
@@ -237,6 +240,14 @@ export const CicloView: React.FC<CicloViewProps> = ({
   const [editTopicName, setEditTopicName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  const [reorderError, setReorderError] = useState('');
+  const reorderLock = useRef(false);
+  const pendingList = useRef<HTMLDivElement>(null);
+  const dragGesture = useRef<{ pointerId: number; from: number; startY: number; moved: boolean } | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ from: number; to: number } | null>(null);
+  const activeContest = useRef(activeConcursoId);
+  activeContest.current = activeConcursoId;
 
   // Fechar menu de ações contextuais ao clicar fora
   useEffect(() => {
@@ -340,9 +351,9 @@ export const CicloView: React.FC<CicloViewProps> = ({
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
+    if (hours > 0 && mins > 0) return `${hours}h ${mins} min`;
     if (hours > 0) return `${hours}h`;
-    return `${mins}min`;
+    return `${mins} min`;
   };
 
   // Horário sugerido formatado para o próximo bloco
@@ -404,25 +415,98 @@ export const CicloView: React.FC<CicloViewProps> = ({
     }
   };
 
-  // Ação: Mover bloco no modal de reordenação
-  const handleMoveBlock = async (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= activeCycle.blocks.length) return;
-    const newBlocks = [...activeCycle.blocks];
-    const [moved] = newBlocks.splice(fromIndex, 1);
-    newBlocks.splice(toIndex, 0, moved);
+  const pendingPositions = new Set(pendingBlocks.map(({ originalIndex }) => originalIndex));
+  const canSwapBlocks = (from: number, to: number) =>
+    to >= 0 && to < activeCycle.blocks.length &&
+    (from < currentBlockIndex) === (to < currentBlockIndex) &&
+    pendingPositions.has(from) === pendingPositions.has(to);
+
+  const handleMoveBlock = async (fromIndex: number, toIndex?: number) => {
+    if (reorderLock.current || toIndex === undefined || fromIndex === toIndex) return;
+    const blocks = [...activeCycle.blocks];
+    const from = blocks[fromIndex];
+    const to = blocks[toIndex];
+    if (!from || !to) return;
+
+    if (!canSwapBlocks(fromIndex, toIndex)) return;
+    const positions = blocks.flatMap((_, index) => canSwapBlocks(fromIndex, index) ? [index] : []);
+    const reordered = positions.map(index => blocks[index]);
+    const [moved] = reordered.splice(positions.indexOf(fromIndex), 1);
+    reordered.splice(positions.indexOf(toIndex), 0, moved);
+    positions.forEach((index, position) => {
+      blocks[index] = reordered[position];
+    });
+
+    // O ponteiro continua na mesma posição. Os minutos estudados acompanham o bloco.
+    if (pendingPositions.has(currentBlockIndex) && blocks[currentBlockIndex] !== activeCycle.blocks[currentBlockIndex]) {
+      const previousCurrent = activeCycle.blocks[currentBlockIndex];
+      const previousCurrentIndex = blocks.indexOf(previousCurrent);
+      blocks[previousCurrentIndex] = { ...previousCurrent, status: 'aguardando' };
+      blocks[currentBlockIndex] = { ...blocks[currentBlockIndex], status: 'em_andamento' };
+    }
 
     const updatedCycle: StudyCycle = {
       ...activeCycle,
-      blocks: newBlocks,
+      blocks: blocks.map((block, index) => ({ ...block, order: index + 1 })),
       updatedAt: new Date().toISOString(),
     };
 
-    setActiveCycle(updatedCycle);
-    await DatabaseService.saveStudyCycle(updatedCycle);
-    if (onSaveNewCycle) {
-      await onSaveNewCycle(updatedCycle);
+    reorderLock.current = true;
+    setIsReordering(true);
+    setReorderError('');
+    const contestAtStart = activeContest.current;
+    try {
+      const saved = await DatabaseService.saveStudyCycle(updatedCycle, true);
+      if (activeContest.current !== contestAtStart) return;
+      setActiveCycle(saved);
+      await onSaveNewCycle?.(saved);
+      showFeedback('Sequência do ciclo reordenada!');
+    } catch {
+      if (activeContest.current === contestAtStart) {
+        setReorderError('Não foi possível salvar a ordem do ciclo. Tente novamente.');
+      }
+    } finally {
+      reorderLock.current = false;
+      setIsReordering(false);
     }
-    showFeedback('Sequência do ciclo reordenada!');
+  };
+
+  const getDragDestination = (x: number, y: number, from: number) => {
+    const list = pendingList.current;
+    if (!list) return;
+    const { left, right, top, bottom } = list.getBoundingClientRect();
+    if (x < left || x > right || y < top || y > bottom) return;
+
+    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-cycle-position]'));
+    const others = cards.filter(card => Number(card.dataset.cyclePosition) !== from);
+    const position = others.findIndex(card => {
+      const { top, height } = card.getBoundingClientRect();
+      return y < top + height / 2;
+    });
+    return Number(cards[position < 0 ? cards.length - 1 : position]?.dataset.cyclePosition ?? from);
+  };
+
+  const updateBlockDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const active = dragGesture.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    if (!active.moved && Math.abs(event.clientY - active.startY) < 5) return;
+    active.moved = true;
+    if (event.clientY < 50) window.scrollBy(0, -18);
+    if (event.clientY > window.innerHeight - 50) window.scrollBy(0, 18);
+    setDragPosition({ from: active.from, to: getDragDestination(event.clientX, event.clientY, active.from) ?? active.from });
+  };
+
+  const cancelBlockDrag = () => {
+    dragGesture.current = null;
+    setDragPosition(null);
+  };
+
+  const finishBlockDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const active = dragGesture.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    const destination = active.moved ? getDragDestination(event.clientX, event.clientY, active.from) : undefined;
+    cancelBlockDrag();
+    if (destination !== undefined) void handleMoveBlock(active.from, destination);
   };
 
   // Ação: Recomeçar Ciclo
@@ -568,7 +652,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Toast Feedback */}
       {feedback && (
-        <div className="p-3.5 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 animate-in fade-in flex items-center gap-2">
+        <div role="status" className="p-3.5 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 animate-in fade-in flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{feedback}</span>
         </div>
@@ -781,7 +865,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
           3. CARD BANNER "PRÓXIMA SESSÃO" (DESTAQUE CENTRAL)
           ========================================================================= */}
       {currentBlock && pendingBlocks.length > 0 && (
-        <div className="flashcards-daily-review-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-sm p-5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="weekly-schedule flashcards-daily-review-card relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-sm p-5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
 
           {/* Lado Esquerdo */}
           <div className="flex items-start gap-4 relative z-10">
@@ -806,7 +890,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
               <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 {currentBlock.disciplinaName}
               </div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1 leading-snug line-clamp-2">
+              <h2 className="text-base sm:text-xl font-black mt-1 leading-snug line-clamp-3">
                 {currentBlock.assuntoSugeridoName || 'Princípios Fundamentais'}
               </h2>
               <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-2 flex-wrap">
@@ -826,6 +910,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
           {/* Lado Direito: Ações */}
           <div className="flex flex-col sm:items-end w-full md:w-auto relative z-10 shrink-0">
             <button
+              disabled={isReordering}
               onClick={() => onOpenStudyTimer(currentBlock.disciplinaId, currentBlock.assuntoSugeridoId, currentBlock.durationMinutes)}
               style={{
                 background: `linear-gradient(135deg, ${palette.primaryHover || palette.primary}, ${palette.primary})`,
@@ -853,18 +938,18 @@ export const CicloView: React.FC<CicloViewProps> = ({
       {/* =========================================================================
           4. SEÇÃO PRINCIPAL: BLOCOS A CONCLUIR (PENDENTES) & BLOCOS CONCLUÍDOS
           ========================================================================= */}
-      <div className="space-y-6">
+      <div className="weekly-schedule space-y-6">
         {/* SEÇÃO 4.1: BLOCOS PENDENTES / A CONCLUIR */}
         <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3.5">
           {/* Cabeçalho da Seção */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <h3 className="text-lg font-black flex items-center gap-2">
               <span>Disciplinas do ciclo</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80 font-mono">
                 {pendingBlocks.length}
               </span>
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsReorderModalOpen(true)}
@@ -892,6 +977,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
             </div>
           </div>
 
+          {reorderError && <p role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">{reorderError}</p>}
           {/* Lista de Blocos Pendentes ou Estado de Volta Concluída */}
           {pendingBlocks.length === 0 ? (
             <div className="p-8 text-center rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/20">
@@ -917,29 +1003,51 @@ export const CicloView: React.FC<CicloViewProps> = ({
               </Button>
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div ref={pendingList} className="space-y-2.5" aria-busy={isReordering}>
+              <span id="cycle-drag-instructions" className="sr-only">Arraste o bloco ou use as setas para cima e para baixo no teclado.</span>
               {displayPendingBlocks.map(({ block, originalIndex, percent }, listIdx) => {
                 const isCurrent = originalIndex === currentBlockIndex || (listIdx === 0 && !pendingBlocks.some(p => p.originalIndex === currentBlockIndex));
 
                 return (
                   <div
                     key={block.id || `pending_${originalIndex}`}
-                    style={
-                      isCurrent
-                        ? {
-                            borderColor: `${palette.primary}66`,
-                            boxShadow: `0 2px 12px ${palette.primary}14`,
-                          }
-                        : undefined
-                    }
-                    className={`flashcards-daily-review-card relative overflow-hidden bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 transition-all shadow-xs ${
-                      isCurrent
-                        ? 'ring-1 ring-primary/20'
-                        : 'hover:brightness-[0.99] dark:hover:brightness-105'
-                    }`}
+                    data-current={isCurrent}
+                    data-cycle-position={originalIndex}
+                    data-dragging={dragPosition?.from === originalIndex}
+                    data-cycle-drop={dragPosition?.to === originalIndex && dragPosition.from !== originalIndex
+                      ? (dragPosition.from < originalIndex ? 'after' : 'before')
+                      : undefined}
+                    style={getNoteColor(block)}
+                    className="weekly-schedule-note cycle-study-card p-3 sm:px-4"
                   >
                     {/* Coluna 1 & Coluna 2 */}
                     <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                      <button
+                        type="button"
+                        className="cycle-study-grip"
+                        disabled={isReordering || pendingBlocks.length < 2}
+                        aria-label={`Mover bloco ${originalIndex + 1}: ${block.disciplinaName}`}
+                        aria-describedby="cycle-drag-instructions"
+                        title="Arrastar para reordenar"
+                        onPointerDown={event => {
+                          if (!event.isPrimary || event.button !== 0 || reorderLock.current) return;
+                          dragGesture.current = { pointerId: event.pointerId, from: originalIndex, startY: event.clientY, moved: false };
+                          event.currentTarget.setPointerCapture(event.pointerId);
+                        }}
+                        onPointerMove={updateBlockDrag}
+                        onPointerUp={finishBlockDrag}
+                        onPointerCancel={cancelBlockDrag}
+                        onLostPointerCapture={cancelBlockDrag}
+                        onKeyDown={event => {
+                          if (event.key === 'Escape') cancelBlockDrag();
+                          if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+                          event.preventDefault();
+                          const offset = event.key === 'ArrowUp' ? -1 : 1;
+                          void handleMoveBlock(originalIndex, pendingBlocks[listIdx + offset]?.originalIndex);
+                        }}
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </button>
                       {/* Coluna 1: Marcador circular da ordem original */}
                       {isCurrent ? (
                         <div 
@@ -962,7 +1070,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <SubjectIcon subjectName={block.disciplinaName} />
                         <div className="min-w-0">
-                          <div className="text-sm font-bold text-slate-900 dark:text-white truncate flex items-center gap-2">
+                          <div className="text-sm font-black leading-tight flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span>{block.disciplinaName}</span>
                             {isCurrent && (
                               <span 
@@ -976,7 +1084,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          <div className="mt-0.5 text-xs font-semibold text-(--week-muted) line-clamp-2" title={block.assuntoSugeridoName}>
                             {block.assuntoSugeridoName || 'Princípios Fundamentais'}
                           </div>
                         </div>
@@ -984,13 +1092,14 @@ export const CicloView: React.FC<CicloViewProps> = ({
                     </div>
 
                     {/* Coluna 3: Duração do bloco em texto médio centralizado */}
-                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 min-w-[75px] text-left lg:text-center shrink-0">
+                    <div className="cycle-study-duration">
+                      <Clock className="w-3.5 h-3.5" />
                       {formatDuration(block.durationMinutes)}
                     </div>
 
                     {/* Coluna 4: Barra de progresso com a porcentagem ao lado */}
-                    <div className="flex items-center gap-2.5 min-w-[130px] max-w-xs flex-1 shrink-0">
-                      <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div className="cycle-study-progress flex items-center gap-2">
+                      <div className="w-full h-1.5 rounded-full bg-slate-300/50 dark:bg-slate-700 overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-300"
                           style={{
@@ -1005,10 +1114,11 @@ export const CicloView: React.FC<CicloViewProps> = ({
                     </div>
 
                     {/* Coluna 5: Ações alinhadas à direita */}
-                    <div className="flex items-center justify-end gap-2 shrink-0 self-end lg:self-center lg:ml-auto">
+                    <div className="cycle-study-actions flex items-center justify-end gap-2">
                       {/* Botão Editar */}
                       <button
                         type="button"
+                        disabled={isReordering}
                         onClick={() => handleOpenEditBlock(block)}
                         className="text-xs font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-400 dark:hover:border-slate-600"
                       >
@@ -1019,6 +1129,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                       {/* Botão Play (Estudar Bloco) com Cor do Tema Ativo */}
                       <button
                         type="button"
+                        disabled={isReordering}
                         onClick={() => {
                           const assuntoId = block.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === block.disciplinaId)?.id;
                           onOpenStudyTimer(block.disciplinaId, assuntoId, block.durationMinutes);
@@ -1081,7 +1192,8 @@ export const CicloView: React.FC<CicloViewProps> = ({
                 {completedBlocks.map(({ block, originalIndex }) => (
                   <div
                     key={block.id || `completed_${originalIndex}`}
-                    className="border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-900/60 rounded-xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 transition-all opacity-90"
+                    className="weekly-schedule-note cycle-study-card p-3 sm:px-4"
+                    data-done="true"
                   >
                     {/* Coluna 1 & Coluna 2 */}
                     <div className="flex items-center gap-3.5 flex-1 min-w-0">
@@ -1111,12 +1223,13 @@ export const CicloView: React.FC<CicloViewProps> = ({
                     </div>
 
                     {/* Coluna 3: Duração do bloco */}
-                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 min-w-[75px] text-left lg:text-center shrink-0">
+                    <div className="cycle-study-duration">
+                      <Clock className="w-3.5 h-3.5" />
                       {formatDuration(block.durationMinutes)}
                     </div>
 
                     {/* Coluna 4: Barra de progresso em verde preenchida em 100% */}
-                    <div className="flex items-center gap-2.5 min-w-[130px] max-w-xs flex-1 shrink-0">
+                    <div className="cycle-study-progress flex items-center gap-2">
                       <div className="w-full h-1.5 rounded-full bg-slate-200/70 dark:bg-slate-800 overflow-hidden">
                         <div className="h-full w-full rounded-full bg-emerald-500 transition-all duration-300" />
                       </div>
@@ -1126,7 +1239,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                     </div>
 
                     {/* Coluna 5: Ações alinhadas à direita (Editar e Revisar/Estudar novamente) */}
-                    <div className="flex items-center justify-end gap-2 shrink-0 self-end lg:self-center lg:ml-auto">
+                    <div className="cycle-study-actions flex items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => handleOpenEditBlock(block)}
@@ -1170,9 +1283,10 @@ export const CicloView: React.FC<CicloViewProps> = ({
       >
         <div className="space-y-4 text-xs">
           <p className="text-slate-600 dark:text-slate-300">
-            Ajuste a ordem de execução dos blocos no ciclo usando as setas para subir ou descer.
+            Use as setas para reordenar os blocos. Os blocos concluídos têm uma sequência separada dos pendentes.
           </p>
 
+          {reorderError && <p role="alert" className="font-semibold text-rose-700 dark:text-rose-300">{reorderError}</p>}
           <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
             {activeCycle.blocks.map((block, idx) => (
               <div
@@ -1200,7 +1314,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                 <div className="flex items-center gap-1 shrink-0 ml-2">
                   <button
                     type="button"
-                    disabled={idx === 0}
+                    disabled={isReordering || !canSwapBlocks(idx, idx - 1)}
                     onClick={() => handleMoveBlock(idx, idx - 1)}
                     className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                     title="Mover para cima"
@@ -1209,7 +1323,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    disabled={idx === activeCycle.blocks.length - 1}
+                    disabled={isReordering || !canSwapBlocks(idx, idx + 1)}
                     onClick={() => handleMoveBlock(idx, idx + 1)}
                     className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                     title="Mover para baixo"
