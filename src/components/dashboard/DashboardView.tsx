@@ -43,6 +43,7 @@ import {
   SessaoEstudo, 
   StudyPlan,
   StudyCycle,
+  StudyMethod,
   Prova,
   RevisionRating 
 } from '../../types';
@@ -70,6 +71,7 @@ interface DashboardViewProps {
   metas: Meta[];
   plan?: StudyPlan | null;
   cycle?: StudyCycle | null;
+  studyMethod: StudyMethod;
   provas?: Prova[];
   activeConcursoId?: string;
   isLoading?: boolean;
@@ -165,6 +167,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   metas,
   plan,
   cycle,
+  studyMethod,
   provas = [],
   activeConcursoId: propActiveConcursoId,
   isLoading = false,
@@ -573,13 +576,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return weeks;
   }, [activeSessoes, weeklyGoals.hours, weeklyGoals.questions]);
 
-  // Filtragem estrita: apenas revisões de HOJE (ou atrasadas de dias anteriores) pertencentes ao concurso ativo
-  const todayStr = useMemo(() => {
-    const d = new Date();
-    const ano = d.getFullYear();
-    const mes = String(d.getMonth() + 1).padStart(2, "0");
-    const dia = String(d.getDate()).padStart(2, "0");
-    return `${ano}-${mes}-${dia}`;
+  const [todayStr, setTodayStr] = useState(() => PlannerService.formatLocalDate(new Date()));
+  useEffect(() => {
+    const updateToday = () => setTodayStr(PlannerService.formatLocalDate(new Date()));
+    const timer = window.setInterval(updateToday, 30_000);
+    window.addEventListener('focus', updateToday);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', updateToday);
+    };
   }, []);
 
   const pendingRevisoes = useMemo(() => {
@@ -851,8 +856,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     ? Math.round((completedTopicsCount / totalTopicsCount) * 100) 
     : 0;
 
+  const isCycleMethod = studyMethod === 'ciclo';
   const effectiveCycle: StudyCycle | null = (() => {
-    if (!activeConcurso) return null;
+    if (!isCycleMethod || !activeConcurso) return null;
     if (cycle && cycle.concursoId === activeConcurso.id) {
       return cycle;
     }
@@ -871,7 +877,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   })();
 
   const effectivePlan: StudyPlan | null = (() => {
-    if (!activeConcurso) return null;
+    if (isCycleMethod || !activeConcurso) return null;
     if (plan && plan.concursoId === activeConcurso.id) {
       return plan;
     }
@@ -889,105 +895,71 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return null;
   })();
 
-  const hasActiveCycle = Boolean(
-    activeConcurso &&
-    effectiveCycle &&
-    effectiveCycle.concursoId === activeConcurso.id &&
-    Array.isArray(effectiveCycle.blocks) &&
-    effectiveCycle.blocks.length > 0
+  const cycleBlocks = Array.isArray(effectiveCycle?.blocks) ? effectiveCycle.blocks : [];
+  const plannedSessions = Array.isArray(effectivePlan?.sessions) ? effectivePlan.sessions : [];
+  const hasActivePlanning = cycleBlocks.length > 0 || plannedSessions.length > 0;
+  const todaysSessions = plannedSessions.filter(session =>
+    session.date === todayStr && (!effectivePlan?.startDate || session.date >= effectivePlan.startDate)
   );
+  const pendingToday = todaysSessions
+    .filter(session => !PlannerService.isSessionStudied(session, activeSessoes))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  const hasActivePlan = Boolean(
-    activeConcurso &&
-    effectivePlan &&
-    effectivePlan.concursoId === activeConcurso.id &&
-    Array.isArray(effectivePlan.sessions) &&
-    effectivePlan.sessions.length > 0
-  );
+  const pendingCycleBlocks = cycleBlocks
+    .slice(Math.max(0, effectiveCycle?.currentBlockIndex ?? 0))
+    .filter(block => {
+      const progress = block.progressPercent ?? (block.durationMinutes > 0
+        ? ((block.elapsedMinutes || 0) / block.durationMinutes) * 100
+        : 0);
+      return !block.completed && block.status !== 'concluido' && Math.round(progress) < 100;
+    });
 
-  const hasActivePlanning = hasActiveCycle || hasActivePlan;
-
-  const studyQueue = (() => {
-    if (hasActiveCycle && effectiveCycle) {
-      const blocks = effectiveCycle.blocks;
-      const startIndex = blocks.findIndex(b => b.status !== 'concluido');
-      const effectiveStart = startIndex >= 0 ? startIndex : (effectiveCycle.currentBlockIndex || 0);
-      const orderedBlocks = [
-        ...blocks.slice(effectiveStart),
-        ...blocks.slice(0, effectiveStart),
-      ];
-      return orderedBlocks.slice(0, 4).map(b => {
-        const customAssuntoId = customSelectedTopics[b.disciplinaId];
-        const customAssunto = customAssuntoId
-          ? relevantAssuntos.find(a => a.id === customAssuntoId && a.disciplinaId === b.disciplinaId)
-          : undefined;
-        const defaultAssunto = relevantAssuntos.find(a => a.disciplinaId === b.disciplinaId && !a.completed) ||
-          relevantAssuntos.find(a => a.disciplinaId === b.disciplinaId);
-        const resolvedAssuntoId = customAssunto?.id || b.assuntoSugeridoId || defaultAssunto?.id;
-        const resolvedAssuntoName = customAssunto?.name || b.assuntoSugeridoName || defaultAssunto?.name || 'Estudo dirigido do edital';
+  const studyQueue = isCycleMethod
+    ? pendingCycleBlocks.slice(0, 4).map(block => {
+        const customAssunto = relevantAssuntos.find(assunto =>
+          assunto.id === customSelectedTopics[block.disciplinaId] && assunto.disciplinaId === block.disciplinaId
+        );
+        const defaultAssunto = relevantAssuntos.find(a => a.disciplinaId === block.disciplinaId && !a.completed) ||
+          relevantAssuntos.find(a => a.disciplinaId === block.disciplinaId);
         return {
-          id: b.id,
-          disciplinaId: b.disciplinaId,
-          disciplinaName: b.disciplinaName,
-          assuntoId: resolvedAssuntoId,
-          assuntoName: resolvedAssuntoName,
-          durationMinutes: b.durationMinutes || 45,
+          id: block.id,
+          disciplinaId: block.disciplinaId,
+          disciplinaName: block.disciplinaName,
+          assuntoId: customAssunto?.id || block.assuntoSugeridoId || defaultAssunto?.id,
+          assuntoName: customAssunto?.name || block.assuntoSugeridoName || defaultAssunto?.name || 'Estudo dirigido do edital',
+          durationMinutes: block.durationMinutes || 45,
         };
-      });
+      })
+    : pendingToday.slice(0, 4).map(session => ({
+        id: session.id,
+        disciplinaId: session.disciplinaId,
+        disciplinaName: session.disciplinaName,
+        assuntoId: session.assuntoId,
+        assuntoName: session.assuntoName || relevantAssuntos.find(a => a.id === session.assuntoId)?.name || 'Estudo dirigido do edital',
+        durationMinutes: session.durationMinutes || 45,
+      }));
+
+  const [primaryStudyItem, ...upcomingStudyItems] = studyQueue;
+
+  const planningProgressPercent = (() => {
+    if (!isCycleMethod) {
+      return todaysSessions.length > 0
+        ? Math.round(100 * (todaysSessions.length - pendingToday.length) / todaysSessions.length)
+        : 0;
     }
 
-    if (hasActivePlan && effectivePlan) {
-      const sessions = effectivePlan.sessions;
-      const pending = sessions.filter(s => s.status !== 'concluida');
-      const orderedSessions = pending.length > 0
-        ? [...pending, ...sessions.filter(s => s.status === 'concluida')]
-        : sessions;
-      return orderedSessions.slice(0, 4).map(s => {
-        const customAssuntoId = customSelectedTopics[s.disciplinaId];
-        const customAssunto = customAssuntoId
-          ? relevantAssuntos.find(a => a.id === customAssuntoId && a.disciplinaId === s.disciplinaId)
-          : undefined;
-        const defaultAssunto = relevantAssuntos.find(a => a.disciplinaId === s.disciplinaId && !a.completed) ||
-          relevantAssuntos.find(a => a.disciplinaId === s.disciplinaId);
-        const resolvedAssuntoId = customAssunto?.id || s.assuntoId || defaultAssunto?.id;
-        const resolvedAssuntoName = customAssunto?.name || s.assuntoName || defaultAssunto?.name || 'Estudo dirigido do edital';
-        return {
-          id: s.id,
-          disciplinaId: s.disciplinaId,
-          disciplinaName: s.disciplinaName,
-          assuntoId: resolvedAssuntoId,
-          assuntoName: resolvedAssuntoName,
-          durationMinutes: s.durationMinutes || 45,
-        };
-      });
-    }
-
-    return [];
-  })();
-
-  const primaryStudyItem = hasActivePlanning ? (studyQueue[0] || null) : null;
-
-  const upcomingStudyItems = hasActivePlanning ? studyQueue.slice(1, 4) : [];
-
-  const cycleProgressPercent = (() => {
-    if (hasActiveCycle && effectiveCycle && effectiveCycle.blocks.length > 0) {
-      const totalMins = effectiveCycle.blocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
-      const doneMins = effectiveCycle.blocks.reduce((acc, b) => {
-        if (b.status === 'concluido') return acc + (b.durationMinutes || 0);
-        return acc + Math.min(b.durationMinutes || 0, b.elapsedMinutes || 0);
-      }, 0);
-      return totalMins > 0 ? Math.min(100, Math.round((doneMins / totalMins) * 100)) : 0;
-    }
-    if (hasActivePlan && effectivePlan && effectivePlan.sessions.length > 0) {
-      const doneCount = effectivePlan.sessions.filter(s => s.status === 'concluida').length;
-      return Math.min(100, Math.round((doneCount / effectivePlan.sessions.length) * 100));
-    }
-    return 0;
+    const totalMinutes = cycleBlocks.reduce((sum, block) => sum + (block.durationMinutes || 0), 0);
+    const pendingIds = new Set(pendingCycleBlocks.map(block => block.id));
+    const studiedMinutes = cycleBlocks.reduce((sum, block) => {
+      const duration = block.durationMinutes || 0;
+      return sum + (pendingIds.has(block.id) ? Math.min(duration, block.elapsedMinutes || 0) : duration);
+    }, 0);
+    return totalMinutes > 0 ? Math.min(100, Math.round((studiedMinutes / totalMinutes) * 100)) : 0;
   })();
 
   const formattedTodayLabel = (() => {
     try {
-      const now = new Date();
+      const now = PlannerService.parseLocalDate(todayStr);
       const weekday = now.toLocaleDateString('pt-BR', { weekday: 'long' });
       const day = now.getDate();
       const month = now.toLocaleDateString('pt-BR', { month: 'long' });
@@ -1274,11 +1246,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Quadro 1 (Superior Esquerdo): Tópico Atual & Próximos Estudos (ou Empty State quando não houver plano) */}
-        {hasActivePlanning && primaryStudyItem ? (() => {
+        {primaryStudyItem ? (() => {
           const { icon: PrimaryIcon, color: primaryIconColor } = resolveSubjectIcon(primaryStudyItem.disciplinaName);
           const ringRadius = 15;
           const ringCircumference = 2 * Math.PI * ringRadius;
-          const ringStrokeDashoffset = ringCircumference - (cycleProgressPercent / 100) * ringCircumference;
+          const ringStrokeDashoffset = ringCircumference - (planningProgressPercent / 100) * ringCircumference;
 
           return (
             <Card className="h-full min-h-[440px] sm:min-h-[480px] rounded-2xl flex flex-col overflow-visible border border-slate-200/90 dark:border-slate-800 shadow-sm">
@@ -1289,7 +1261,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4" style={{ color: palette.primary }} />
                       <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Tópico Atual
+                        {isCycleMethod ? 'Tópico Atual' : 'Cronograma de hoje'}
                       </span>
                     </div>
                     <span className="text-slate-300 dark:text-slate-700 hidden xs:inline">|</span>
@@ -1328,10 +1300,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                     <div className="leading-tight">
                       <div className="text-sm sm:text-base font-black font-mono text-slate-900 dark:text-white">
-                        {cycleProgressPercent}%
+                        {planningProgressPercent}%
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        do ciclo concluído
+                        {isCycleMethod ? 'do ciclo concluído' : 'do dia concluído'}
                       </div>
                     </div>
                   </div>
@@ -1371,21 +1343,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           {primaryStudyItem.disciplinaName}
                         </h4>
 
-                        <div
-                          onClick={() =>
-                            handleOpenTopicSelector(
-                              primaryStudyItem.disciplinaId,
-                              primaryStudyItem.disciplinaName
-                            )
-                          }
-                          className="group inline-flex items-start gap-1.5 max-w-full cursor-pointer text-white/95 hover:text-white"
-                          title="Alterar tópico da matéria a ser estudada"
-                        >
-                          <span className="text-xs sm:text-sm font-medium leading-snug whitespace-normal break-words underline decoration-dashed decoration-white/60 underline-offset-4">
+                        {isCycleMethod ? (
+                          <div
+                            onClick={() =>
+                              handleOpenTopicSelector(
+                                primaryStudyItem.disciplinaId,
+                                primaryStudyItem.disciplinaName
+                              )
+                            }
+                            className="group inline-flex items-start gap-1.5 max-w-full cursor-pointer text-white/95 hover:text-white"
+                            title="Alterar tópico da matéria a ser estudada"
+                          >
+                            <span className="text-xs sm:text-sm font-medium leading-snug whitespace-normal break-words underline decoration-dashed decoration-white/60 underline-offset-4">
+                              {primaryStudyItem.assuntoName}
+                            </span>
+                            <Pencil className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-80 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        ) : (
+                          <span className="text-xs sm:text-sm font-medium leading-snug break-words text-white/95">
                             {primaryStudyItem.assuntoName}
                           </span>
-                          <Pencil className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-80 group-hover:opacity-100 transition-opacity" />
-                        </div>
+                        )}
                       </div>
                     </div>
 
@@ -1467,46 +1445,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Seção: PRÓXIMOS ESTUDOS */}
-                {upcomingStudyItems.length > 0 && (
-                  <div className="space-y-3.5 pt-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        Próximos Tópicos
-                      </span>
+                <div className="space-y-3.5 pt-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      {upcomingStudyItems.length > 0 && (isCycleMethod ? 'Próximos Tópicos' : 'Próximos blocos de hoje')}
+                    </span>
 
-                      <button
-                        type="button"
-                        onClick={() => onNavigateTab('plano')}
-                        className="px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                      >
-                        <span>Ir para planejamento completo</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigateTab('plano')}
+                      className="px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <span>Ir para planejamento completo</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                      {upcomingStudyItems.map((item) => {
-                        const { icon: ItemIcon, color: itemColor } = resolveSubjectIcon(item.disciplinaName);
-                        return (
-                          <div
-                            key={item.id}
-                            className="py-4 first:pt-2.5 last:pb-1 flex items-center justify-between gap-3 sm:gap-4 group"
-                          >
-                            <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                              <div
-                                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                                style={{
-                                  backgroundColor: `${itemColor}18`,
-                                  color: itemColor,
-                                }}
-                              >
-                                <ItemIcon className="w-5 h-5 stroke-[2]" />
-                              </div>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {upcomingStudyItems.map((item) => {
+                      const { icon: ItemIcon, color: itemColor } = resolveSubjectIcon(item.disciplinaName);
+                      return (
+                        <div
+                          key={item.id}
+                          className="py-4 first:pt-2.5 last:pb-1 flex items-center justify-between gap-3 sm:gap-4 group"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div
+                              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                              style={{
+                                backgroundColor: `${itemColor}18`,
+                                color: itemColor,
+                              }}
+                            >
+                              <ItemIcon className="w-5 h-5 stroke-[2]" />
+                            </div>
 
-                              <div className="min-w-0 flex-1">
-                                <h5 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
-                                  {item.disciplinaName}
-                                </h5>
+                            <div className="min-w-0 flex-1">
+                              <h5 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+                                {item.disciplinaName}
+                              </h5>
+                              {isCycleMethod ? (
                                 <div
                                   onClick={() =>
                                     handleOpenTopicSelector(
@@ -1525,71 +1503,75 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                     style={{ color: palette.primary }}
                                   />
                                 </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-                              <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                <span>{item.durationMinutes}min</span>
-                              </span>
-
-                              <div className="relative study-options-menu-container">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const menuKey = `upcoming_${item.id}`;
-                                    setStudyOptionsMenuId(prev => (prev === menuKey ? null : menuKey));
-                                  }}
-                                  className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
-                                  title={`Opções para ${item.disciplinaName}`}
-                                  aria-label={`Opções para ${item.disciplinaName}`}
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-
-                                {studyOptionsMenuId === `upcoming_${item.id}` && (
-                                  <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-40 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        triggerManualStudyRegister({
-                                          disciplinaId: item.disciplinaId,
-                                          assuntoId: item.assuntoId,
-                                          durationMinutes: item.durationMinutes,
-                                        })
-                                      }
-                                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
-                                    >
-                                      <PlusCircle className="w-4 h-4 text-slate-400 shrink-0" />
-                                      <span>Registrar manualmente</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setStudyOptionsMenuId(null);
-                                        setHistoryModalDisciplina({
-                                          id: item.disciplinaId,
-                                          name: item.disciplinaName,
-                                          assuntoId: item.assuntoId,
-                                          durationMinutes: item.durationMinutes,
-                                        });
-                                      }}
-                                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
-                                    >
-                                      <History className="w-4 h-4 text-slate-400 shrink-0" />
-                                      <span>Ver últimos estudos</span>
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                              ) : (
+                                <p className="mt-0.5 truncate text-xs sm:text-sm text-slate-500 dark:text-slate-400" title={item.assuntoName}>
+                                  {item.assuntoName}
+                                </p>
+                              )}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                            <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{item.durationMinutes}min</span>
+                            </span>
+
+                            <div className="relative study-options-menu-container">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const menuKey = `upcoming_${item.id}`;
+                                  setStudyOptionsMenuId(prev => (prev === menuKey ? null : menuKey));
+                                }}
+                                className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
+                                title={`Opções para ${item.disciplinaName}`}
+                                aria-label={`Opções para ${item.disciplinaName}`}
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+
+                              {studyOptionsMenuId === `upcoming_${item.id}` && (
+                                <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-40 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      triggerManualStudyRegister({
+                                        disciplinaId: item.disciplinaId,
+                                        assuntoId: item.assuntoId,
+                                        durationMinutes: item.durationMinutes,
+                                      })
+                                    }
+                                    className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                                  >
+                                    <PlusCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span>Registrar manualmente</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setStudyOptionsMenuId(null);
+                                      setHistoryModalDisciplina({
+                                        id: item.disciplinaId,
+                                        name: item.disciplinaName,
+                                        assuntoId: item.assuntoId,
+                                        durationMinutes: item.durationMinutes,
+                                      });
+                                    }}
+                                    className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
+                                  >
+                                    <History className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span>Ver últimos estudos</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
               </CardBody>
             </Card>
           );
@@ -1648,12 +1630,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   {/* 4. Título Principal Centralizado */}
                   <h4 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
-                    Nenhum Plano de Estudos Criado
+                    {hasActivePlanning
+                      ? isCycleMethod ? 'Volta do ciclo concluída' : 'Nenhum bloco pendente hoje'
+                      : isCycleMethod ? 'Nenhum ciclo de estudos criado' : 'Nenhum cronograma criado'}
                   </h4>
 
                   {/* 5. Subtítulo Centralizado */}
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mt-1.5 leading-relaxed">
-                    Crie seu ciclo ou quadro de horários para organizar a sua rotina de estudos.
+                    {hasActivePlanning
+                      ? isCycleMethod ? 'Abra o planejamento para acompanhar o ciclo.' : 'Confira os outros dias no cronograma completo.'
+                      : 'Configure seu plano para ver os próximos estudos aqui.'}
                   </p>
 
                   {/* 6. Botão de Ação (CTA) Centralizado Abaixo */}
@@ -1661,7 +1647,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     type="button"
                     onClick={() => {
                       try {
-                        sessionStorage.setItem('gabarita_open_method_modal', 'true');
+                        if (!hasActivePlanning) sessionStorage.setItem('gabarita_open_method_modal', 'true');
                       } catch {}
                       onNavigateTab('plano');
                     }}
@@ -1671,7 +1657,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       boxShadow: `0 6px 18px -4px ${palette.glowColor || `${palette.primary}55`}`,
                     }}
                   >
-                    <span>+ Criar Plano de Estudos</span>
+                    <span>{hasActivePlanning ? 'Ver planejamento completo' : '+ Criar Plano de Estudos'}</span>
                   </button>
                 </div>
               </div>
