@@ -54,6 +54,7 @@ import { EditalImportModal } from '../disciplinas/EditalImportModal';
 import { NovaMateriaModal } from '../disciplinas/NovaMateriaModal';
 import { ProvasTab } from './ProvasTab';
 import { useTheme } from '../../contexts/ThemeContext';
+import { ConcursoBanner } from '../common/ConcursoBanner';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { DatabaseService } from '../../services/db';
 
@@ -674,10 +675,6 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
   if (selectedConcurso) {
     const isArchived = selectedConcurso.status === 'arquivado' || Boolean(selectedConcurso.isArquivado);
     const isSelectedActive = !isArchived && String(selectedConcurso.id) === String(currentActiveConcursoId);
-    const diffDays = selectedConcurso.examDate 
-      ? Math.ceil((new Date(selectedConcurso.examDate).getTime() - new Date().getTime()) / 86400000)
-      : null;
-
     const fullTitle = selectedConcurso.orgao || selectedConcurso.nome || selectedConcurso.titulo || 
       (selectedConcurso.organ && selectedConcurso.title && selectedConcurso.title.length === 1 ? selectedConcurso.organ : selectedConcurso.title) || 
       selectedConcurso.organ;
@@ -734,66 +731,26 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
               >
                 Desarquivar
               </Button>
-            ) : (
-              <>
-                {!isSelectedActive ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleActivate(selectedConcurso.id, fullTitle)}
-                    leftIcon={<Star className="w-3.5 h-3.5 text-amber-400" />}
-                  >
-                    Ativar Foco
-                  </Button>
-                ) : (
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5" /> Foco Ativo
-                  </span>
-                )}
-              </>
-            )}
-
-            {onNavigateTab && (
+            ) : !isSelectedActive && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (!isArchived) handleActivate(selectedConcurso.id, fullTitle);
-                  onNavigateTab('estudos');
-                }}
-                leftIcon={<BookOpen className="w-3.5 h-3.5 text-emerald-400" />}
+                onClick={() => handleActivate(selectedConcurso.id, fullTitle)}
+                leftIcon={<Star className="w-3.5 h-3.5 text-amber-400" />}
               >
-                Edital Verticalizado
+                Ativar Foco
               </Button>
             )}
 
             {!isArchived && (
-              <>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    setEditingDisciplina(null);
-                    setNewDiscName('');
-                    setNewDiscWeight('2.0');
-                    setNewDiscColor('#10b981');
-                    setIsAddDisciplinaModalOpen(true);
-                  }}
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
-                  className="shadow-md shadow-emerald-500/20"
-                >
-                  Nova Matéria
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenEditConcurso(selectedConcurso)}
-                  leftIcon={<Edit2 className="w-3.5 h-3.5" />}
-                >
-                  Editar
-                </Button>
-              </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleOpenEditConcurso(selectedConcurso)}
+                leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+              >
+                Editar
+              </Button>
             )}
 
             <Button
@@ -808,84 +765,84 @@ export const ConcursosView: React.FC<ConcursosViewProps> = ({
           </div>
         </div>
 
-        {/* Contest Banner Card */}
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2 flex-wrap">
-                {getStatusBadge(selectedConcurso.status)}
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                  {selectedConcurso.sphere}
-                </span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  Banca: <strong className="text-slate-200">{selectedConcurso.banca}</strong>
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                {fullTitle}
-              </h1>
-              <p className="text-sm font-semibold text-emerald-500 dark:text-emerald-400">
-                Cargo: {selectedConcurso.role}
-              </p>
-            </div>
+        <ConcursoBanner
+          concurso={{
+            ...selectedConcurso,
+            title: selectedConcurso.title?.trim().length > 1 ? selectedConcurso.title : fullTitle,
+            organ: selectedConcurso.organ || selectedConcurso.orgao || fullTitle,
+          }}
+          heading="h1"
+          isActive={isSelectedActive}
+          showExamDate
+          progressPercent={contestMetrics.progressPercent}
+          completedTopics={contestMetrics.dominadosCount}
+          totalTopics={contestMetrics.totalTopicos}
+          badges={
+            <>
+              {getStatusBadge(selectedConcurso.status)}
+              <span className="text-xs font-semibold uppercase text-slate-200 bg-black/40 px-2.5 py-0.5 rounded-full border border-white/15">
+                {selectedConcurso.sphere}
+              </span>
+            </>
+          }
+          actions={
+            <>
+              {!isArchived && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setEditingDisciplina(null);
+                    setNewDiscName('');
+                    setNewDiscWeight('2.0');
+                    setNewDiscColor('#10b981');
+                    setIsAddDisciplinaModalOpen(true);
+                  }}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  className="shadow-md"
+                >
+                  Nova Matéria
+                </Button>
+              )}
+              {onNavigateTab && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!isArchived) handleActivate(selectedConcurso.id, fullTitle);
+                    onNavigateTab('estudos');
+                  }}
+                  leftIcon={<BookOpen className="w-4 h-4" />}
+                  className="btn-banner-secundario bg-black !bg-black text-white !text-white border border-white/30 !border-white/30 hover:bg-neutral-900 hover:!bg-neutral-900"
+                >
+                  Edital Verticalizado
+                </Button>
+              )}
+            </>
+          }
+        />
 
-            {/* Exam Countdown & Summary */}
-            <div className="flex items-center gap-4 bg-slate-100/70 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 w-full lg:w-auto justify-around lg:justify-start">
-              <div className="text-center px-2">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Data da Prova</span>
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  {selectedConcurso.examDate ? new Date(selectedConcurso.examDate).toLocaleDateString('pt-BR') : 'A definir'}
-                </span>
-              </div>
-              <div className="h-8 w-px bg-slate-300 dark:bg-slate-700" />
-              <div className="text-center px-2">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Tempo Restante</span>
-                <span className={`text-base font-black ${diffDays !== null && diffDays <= 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                  {diffDays !== null ? (diffDays >= 0 ? `${diffDays} dias` : 'Realizada') : '-'}
-                </span>
-              </div>
-            </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Disciplinas</span>
+            <span className="text-xl font-black text-slate-900 dark:text-slate-100 block mt-1">
+              {selectedConcursoDisciplinas.length}
+            </span>
+            <span className="text-[11px] text-slate-400">matérias cadastradas</span>
           </div>
 
-          {/* Quick Metrics (Estilo Estudei) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/80">
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Progresso Geral</span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-emerald-500">{contestMetrics.progressPercent}%</span>
-                <span className="text-xs text-slate-400 font-semibold">concluído</span>
-              </div>
-              <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-2 overflow-hidden">
-                <div 
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
-                  style={{ width: `${contestMetrics.progressPercent}%` }} 
-                />
-              </div>
-            </div>
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Tópicos do Edital</span>
+            <span className="text-xl font-black text-slate-900 dark:text-slate-100 block mt-1">
+              {contestMetrics.dominadosCount} <span className="text-xs font-normal text-slate-400">/ {contestMetrics.totalTopicos}</span>
+            </span>
+            <span className="text-[11px] text-slate-400">tópicos dominados</span>
+          </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Disciplinas</span>
-              <span className="text-xl font-black text-slate-900 dark:text-slate-100 block mt-1">
-                {selectedConcursoDisciplinas.length}
-              </span>
-              <span className="text-[11px] text-slate-400">matérias cadastradas</span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Tópicos do Edital</span>
-              <span className="text-xl font-black text-slate-900 dark:text-slate-100 block mt-1">
-                {contestMetrics.dominadosCount} <span className="text-xs font-normal text-slate-400">/ {contestMetrics.totalTopicos}</span>
-              </span>
-              <span className="text-[11px] text-slate-400">tópicos dominados</span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Tempo Dedicado</span>
-              <span className="text-xl font-black text-slate-900 dark:text-slate-100 block mt-1">
-                {Math.floor(contestMetrics.totalMinutes / 60)}h {contestMetrics.totalMinutes % 60}m
-              </span>
-              <span className="text-[11px] text-slate-400">estudo acumulado</span>
-            </div>
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Tempo Dedicado</span>
+            <span className="text-xl font-black text-slate-900 dark:text-slate-100 block mt-1">
+              {Math.floor(contestMetrics.totalMinutes / 60)}h {contestMetrics.totalMinutes % 60}m
+            </span>
+            <span className="text-[11px] text-slate-400">estudo acumulado</span>
           </div>
         </div>
 

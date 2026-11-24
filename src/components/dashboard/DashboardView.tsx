@@ -56,7 +56,7 @@ import { StudyCharts } from './StudyCharts';
 import { StreakCalendarModal } from './StreakCalendarModal';
 import { EmptyContestState } from '../common/EmptyContestState';
 import { resolveSubjectIcon } from '../common/SubjectIcon';
-import { MenuBannerFrame } from '../common/MenuBannerFrame';
+import { ConcursoBanner } from '../common/ConcursoBanner';
 import { StudyTimerModal } from '../estudos/StudyTimerModal';
 import { StudyRegisterModal } from '../estudos/StudyRegisterModal';
 
@@ -91,28 +91,6 @@ interface DashboardViewProps {
   onDeleteRevisao?: (id: string) => Promise<void>;
   onRetry?: () => void;
 }
-
-const BANNER_THEMES: Record<string, string> = {
-  verde: '/assets/bannerspainelgeral/Banner-painel-geral-verde.webp',
-  azul: '/assets/bannerspainelgeral/Banner-painel-geral-azul.webp',
-  rosa: '/assets/bannerspainelgeral/Banner-painel-geral-rosa.webp',
-  roxo: '/assets/bannerspainelgeral/Banner-painel-geral-roxo.webp',
-  laranja: '/assets/bannerspainelgeral/Banner-painel-geral-laranja.webp',
-};
-
-// Aliases tolerantes a variações em inglês/português e IDs compostos
-BANNER_THEMES.green = BANNER_THEMES.verde;
-BANNER_THEMES.emerald = BANNER_THEMES.verde;
-BANNER_THEMES.blue = BANNER_THEMES.azul;
-BANNER_THEMES.sky = BANNER_THEMES.azul;
-BANNER_THEMES.cyan = BANNER_THEMES.azul;
-BANNER_THEMES.purple = BANNER_THEMES.roxo;
-BANNER_THEMES.violet = BANNER_THEMES.roxo;
-BANNER_THEMES.pink = BANNER_THEMES.rosa;
-BANNER_THEMES.rose = BANNER_THEMES.rosa;
-BANNER_THEMES.orange = BANNER_THEMES.laranja;
-BANNER_THEMES.amber = BANNER_THEMES.laranja;
-BANNER_THEMES.dbz = BANNER_THEMES.laranja;
 
 export const normalizeThemeSkin = (themeContext: any): 'verde' | 'azul' | 'roxo' | 'rosa' | 'laranja' => {
   // Cascata prioritária conforme especificação
@@ -205,7 +183,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Normalização robusta tolerante a variações para identificação inequívoca do tema ativo
   const normalizedSkin = normalizeThemeSkin(themeContext);
-  const bannerUrl = BANNER_THEMES[normalizedSkin] || BANNER_THEMES.verde;
 
   const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -615,36 +592,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       return scheduledDate <= todayStr;
     });
   }, [revisoes, todayStr, activeDiscIds, activeAssuntoIds]);
-
-  const diasRestantes = useMemo(() => {
-    const rawDate = activeConcurso?.examDate || 
-      (activeConcurso as any)?.dataProva || 
-      (activeConcurso as any)?.data_prova || 
-      (activeConcurso as any)?.exam_date;
-    if (!rawDate) return null;
-    try {
-      const dateStr = String(rawDate).trim();
-      const cleanDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
-      const parts = cleanDate.split('-');
-      if (parts.length === 3) {
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const day = parseInt(parts[2], 10);
-        const examDateObj = new Date(year, month, day);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diffMs = examDateObj.getTime() - today.getTime();
-        return Math.round(diffMs / (1000 * 60 * 60 * 24));
-      }
-      const examTime = new Date(rawDate).getTime();
-      if (isNaN(examTime)) return null;
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      return Math.round((examTime - now.getTime()) / (1000 * 60 * 60 * 24));
-    } catch {
-      return null;
-    }
-  }, [activeConcurso]);
 
   const todaysExams = useMemo(() => {
     const list: Array<{ id: string; organ: string; role: string; banca?: string; notes?: string }> = [];
@@ -1093,137 +1040,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {activeConcurso ? (
-        <MenuBannerFrame
-          bannerThemes={BANNER_THEMES}
-          minHeight="min-h-[220px] md:min-h-[240px]"
-          className="card-banner banner-principal painel-geral-main-banner p-6 sm:p-8 text-white shadow-xl border border-slate-700/50 bg-slate-900 dark:bg-slate-950"
-          bgWrapperClassName="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0"
-          imgClassName="painel-geral-banner-bg-img absolute -left-[7%] -top-[24%] w-[114%] h-[148%] max-w-none object-cover object-[78%_center] md:object-[74%_center] pointer-events-none select-none transition-transform duration-300"
-          contentClassName="flex flex-col md:flex-row md:items-center justify-between gap-6"
-          alt="Banner Painel Geral"
-        >
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="badge-ativo px-2.5 py-0.5 rounded-full text-xs font-bold">
-                  Concurso Ativo
-                </span>
-                <span className="text-xs font-semibold text-slate-200 bg-black/40 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-white/15">
-                  Órgão: <strong className="text-white">{activeConcurso.organ}</strong>
-                </span>
-                <span className="text-xs font-semibold text-slate-200 bg-black/40 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-white/15">
-                  Banca: <strong className="text-white">{activeConcurso.banca}</strong>
-                </span>
-              </div>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
-                {activeConcurso.title}
-              </h2>
-              <p className="text-sm text-slate-200 leading-snug">
-                <span>Cargo: <span className="cargo-destaque font-bold">{activeConcurso.role}</span></span>
-                <span className="block mt-0.5">
-                  Remuneração: {
-                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeConcurso.remuneration || 0)
-                  }
-                </span>
-              </p>
-              <div className="pt-2 max-w-lg space-y-1">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-200 flex items-center gap-1">
-                    <Target className="progresso-icone w-3.5 h-3.5" />
-                    Cobertura do Edital Verticalizado
-                  </span>
-                  <span className="progresso-texto font-bold">{editalProgressPercent}% ({completedTopicsCount}/{totalTopicsCount})</span>
-                </div>
-                <div className="progresso-trilho w-full h-2 bg-black/40 rounded-full overflow-hidden border border-white/20">
-                  <div 
-                    className="progresso-barra barra-progresso h-full rounded-full transition-all duration-700"
-                    style={{ width: `${editalProgressPercent}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col items-end justify-between gap-4 self-stretch shrink-0">
-              <div 
-                ref={(el) => {
-                  if (el) {
-                    el.style.setProperty('background-color', '#000000', 'important');
+        <ConcursoBanner
+          concurso={activeConcurso}
+          progressPercent={editalProgressPercent}
+          completedTopics={completedTopicsCount}
+          totalTopics={totalTopicsCount}
+          actions={
+            <>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  if (onOpenStudyRegister) {
+                    onOpenStudyRegister({ modo: 'manual', contabilizarPlanejamento: false });
+                  } else {
+                    onOpenStudyTimer(undefined, undefined, undefined, 'manual', false);
                   }
                 }}
-                className="dias-restantes-card flex items-center gap-4 px-5 py-3 rounded-2xl bg-black backdrop-blur-md border shadow-md transition-all"
-                style={{
-                  backgroundColor: '#000000',
-                  borderColor: `${palette.primary}66`,
-                  boxShadow: `0 0 14px ${palette.glowColor || 'rgba(255,255,255,0.1)'}`,
-                }}
+                leftIcon={<Play className="w-4 h-4 fill-current" />}
+                className="shadow-md"
               >
-                <Calendar 
-                  className="w-10 h-10 shrink-0 text-primary text-destaque-tema" 
-                  style={{ color: palette.primary }} 
-                />
-                <div className="flex flex-col items-center justify-center text-center">
-                  <span className="text-[11px] font-bold tracking-wider text-slate-300 dark:text-slate-300 uppercase">
-                    FALTAM
-                  </span>
-                  {diasRestantes !== null && diasRestantes >= 0 ? (
-                    <div className="flex items-baseline gap-1.5 leading-none my-0.5">
-                      <span className="text-3xl font-extrabold text-white">{diasRestantes}</span>
-                      <span 
-                        className="text-base font-bold text-primary text-destaque-tema"
-                        style={{ color: palette.primary }}
-                      >
-                        {diasRestantes === 1 ? 'DIA' : 'DIAS'}
-                      </span>
-                    </div>
-                  ) : diasRestantes !== null && diasRestantes < 0 ? (
-                    <div className="flex items-baseline gap-1.5 leading-none my-0.5">
-                      <span className="text-xl font-extrabold text-white">CONCLUÍDO</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-1.5 leading-none my-0.5">
-                      <span className="text-3xl font-extrabold text-white">--</span>
-                      <span 
-                        className="text-base font-bold text-primary text-destaque-tema"
-                        style={{ color: palette.primary }}
-                      >
-                        DIAS
-                      </span>
-                    </div>
-                  )}
-                  <span 
-                    className="text-[9px] font-bold tracking-widest text-primary/90 text-destaque-tema mt-1 uppercase"
-                    style={{ color: palette.primary }}
-                  >
-                    {diasRestantes !== null && diasRestantes < 0 ? 'CONCURSO ENCERRADO' : 'PARA A PROVA'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={() => {
-                    if (onOpenStudyRegister) {
-                      onOpenStudyRegister({ modo: 'manual', contabilizarPlanejamento: false });
-                    } else {
-                      onOpenStudyTimer(undefined, undefined, undefined, 'manual', false);
-                    }
-                  }}
-                  leftIcon={<Play className="w-4 h-4 fill-current" />}
-                  className="shadow-md"
-                >
-                  Adicionar Estudo
-                </Button>
-                <Button
-                  variant="outline"
-                  size="md"
-                  onClick={() => onNavigateTab('concursos')}
-                  className="btn-banner-secundario bg-black !bg-black text-white !text-white border border-white/30 !border-white/30 hover:bg-neutral-900 hover:!bg-neutral-900"
-                >
-                  Mudar Concurso
-                </Button>
-              </div>
-            </div>
-        </MenuBannerFrame>
+                Adicionar Estudo
+              </Button>
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => onNavigateTab('concursos')}
+                className="btn-banner-secundario bg-black !bg-black text-white !text-white border border-white/30 !border-white/30 hover:bg-neutral-900 hover:!bg-neutral-900"
+              >
+                Mudar Concurso
+              </Button>
+            </>
+          }
+        />
       ) : (
         <div className="p-8 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center space-y-3 bg-white/50 dark:bg-slate-900/40">
           <Target className="w-12 h-12 text-slate-400 mx-auto" />
