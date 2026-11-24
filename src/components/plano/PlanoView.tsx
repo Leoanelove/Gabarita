@@ -554,11 +554,11 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
 
   // Handler para escolha de método no Modal de Setup
   const handleSelectMethod = async (newMethod: StudyMethod) => {
-    setIsMethodModalOpen(false);
     await DatabaseService.setStudyMethod(newMethod);
     if (onSwitchMethod) {
       await onSwitchMethod(newMethod);
     }
+    setIsMethodModalOpen(false);
     if (newMethod === 'ciclo') {
       setIsCreateCycleModalOpen(true);
     } else {
@@ -1032,15 +1032,15 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
         </form>
       </Modal>
 
-      {/* Modal: Setup do Plano (Escolha Obrigatória de Método com os dois cards grandes) */}
-      <MetodoEstudoModal
-        isOpen={isMethodModalOpen}
-        onClose={() => setIsMethodModalOpen(false)}
-        currentMethod={activeTab}
-        onSelectMethod={handleSelectMethod}
-        title="Escolha Seu Metodo de Estudo"
-        description="Selecione o método de estudo ideal para sua rotina antes de prosseguir com o planejamento."
-      />
+      {isMethodModalOpen && (
+        <MetodoEstudoModal
+          isOpen
+          onClose={() => setIsMethodModalOpen(false)}
+          currentMethod={activeTab}
+          onSelectMethod={handleSelectMethod}
+          bannerUrl={bannerPlanoUrl}
+        />
+      )}
 
       {/* Modal: Criar / Replanejar Ciclo (Passos 1, 2 e 3) */}
       <CriarCicloModal
