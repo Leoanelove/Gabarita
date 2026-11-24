@@ -53,7 +53,7 @@ import {
 import { useTheme } from '../../contexts/ThemeContext';
 import { MenuBannerFrame, normalizeBannerThemeSkin } from '../common/MenuBannerFrame';
 import { Button } from '../../design-system/Button';
-import { handleTimeMask, normalizeTimeOnBlur } from '../estudos/StudyRegisterModal';
+import { StudyRegisterModal, handleTimeMask, normalizeTimeOnBlur } from '../estudos/StudyRegisterModal';
 
 export const HISTORICO_BANNER_THEMES: Record<string, string> = {
   verde: '/assets/bannershistorico/Banner-Historico-verde.webp',
@@ -588,7 +588,6 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
     const discTopics = assuntos.filter(a => a.disciplinaId === defaultDiscId);
     const defaultTopicId = preselectedAssuntoId || discTopics[0]?.id || '';
 
-    setEditingSession(null);
     setDateMode('hoje');
     setModalCustomDate(getLocalYMD(new Date().toISOString()));
     setModalCategory('teoria');
@@ -614,26 +613,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
   // Abrir modal para Editar Registro Existente
   const handleOpenEditModal = (session: SessaoEstudo) => {
-    const todayYMD = getLocalYMD(new Date().toISOString());
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayYMD = getLocalYMD(yesterdayDate.toISOString());
     const sessionYMD = getLocalYMD(session.completedAt || session.createdAt);
-
-    let detectedMode: 'hoje' | 'ontem' | 'outro' = 'outro';
-    if (sessionYMD === todayYMD) detectedMode = 'hoje';
-    else if (sessionYMD === yesterdayYMD) detectedMode = 'ontem';
-
-    const totalSecs =
-      session.durationSeconds && session.durationSeconds > 0
-        ? session.durationSeconds
-        : Math.max(60, Math.round((session.durationMinutes || 0) * 60));
-
-    const attempted = session.questionsAttempted || 0;
-    const correct = session.questionsCorrect || 0;
-    const wrong = Math.max(0, attempted - correct);
-
-    const { normalizedIntervals } = normalizeSessionPages(session);
 
     const linkedRevs = (revisoes || []).filter(r => {
       if (!r) return false;
@@ -673,39 +653,18 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
         : [...DEFAULT_REVISAO_DAYS]
       : [...DEFAULT_REVISAO_DAYS];
 
-    setEditingSession(session);
-    setDateMode(detectedMode);
-    setModalCustomDate(sessionYMD);
-    setModalCategory(session.type || 'teoria');
-    setModalDisciplinaId(session.disciplinaId || uniqueDisciplinas[0]?.id || '');
-    setModalTimeStr(formatSecondsToHHMMSS(totalSecs));
-    setModalAssuntoId(session.assuntoId || '');
-    setModalMaterial(session.material || '');
-    setModalTopicFinished(Boolean(session.teoriaFinalizada));
-    setModalScheduleRevisions(hasScheduledRevisions);
-    setModalRevisaoDays(resolvedRevisaoDays);
-    setIsAddingModalRevisaoDay(false);
-    setNewModalRevisaoDayInput('');
-    setModalCountInPlan(
-      session.contabilizarPlanejamento !== undefined ? session.contabilizarPlanejamento : true
-    );
-    setModalCorrect(attempted > 0 ? String(correct) : '');
-    setModalWrong(attempted > 0 ? String(wrong) : '');
-    setModalPages(
-      normalizedIntervals.length > 0
-        ? normalizedIntervals
-        : [{ id: `p_${Date.now()}`, inicio: '', fim: '' }]
-    );
-    setModalVideos(
-      session.videoaulas && session.videoaulas.length > 0
-        ? session.videoaulas
-        : [{ id: `v_${Date.now()}`, titulo: '', inicio: '00:00:00', fim: '00:00:00' }]
-    );
-    setModalComments(extractCleanUserNotes(session.notes));
-    setModalError(null);
+    setEditingSession({
+      ...session,
+      programarRevisoes: hasScheduledRevisions,
+      revisaoDays: resolvedRevisaoDays,
+      pageIntervals: normalizeSessionPages(session).normalizedIntervals,
+      notes: extractCleanUserNotes(session.notes),
+    });
     setConfirmDeleteId(null);
-    setIsModalOpen(true);
   };
+
+  const editingConcursoId = editingSession?.concursoId ||
+    disciplinas.find(d => d.id === editingSession?.disciplinaId)?.concursoId;
 
   // Tópicos disponíveis para a disciplina selecionada no modal (estritamente dentro do concurso da disciplina)
   const modalAvailableTopics = useMemo(() => {
@@ -746,7 +705,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [modalDisciplinaId, relevantDisciplinas, disciplinas, relevantAssuntos, assuntos]);
 
-  // Salvar (Criar ou Atualizar) no Modal Visão 3
+  // Salvar novo registro no Histórico
   const handleSaveModal = async (e: React.FormEvent) => {
     e.preventDefault();
     setModalError(null);
@@ -815,70 +774,40 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
     setIsSavingModal(true);
     try {
-      if (editingSession) {
-        await onUpdateSession(editingSession.id, {
-          disciplinaId: modalDisciplinaId,
-          assuntoId: modalAssuntoId || undefined,
-          disciplinaName: discObj?.name || editingSession.disciplinaName || 'Geral',
-          assuntoName: assuntoObj?.name || editingSession.assuntoName || 'Estudo Geral',
-          durationMinutes,
-          durationSeconds: totalSeconds,
-          type: modalCategory,
-          material: modalMaterial.trim() || undefined,
-          questionsAttempted: numAttempted > 0 ? numAttempted : undefined,
-          questionsCorrect: numAttempted > 0 ? numCorrect : undefined,
-          accuracyRate: numAttempted > 0 ? Math.round((numCorrect / numAttempted) * 100) : undefined,
-          notes: modalComments.trim() || undefined,
-          teoriaFinalizada: modalTopicFinished,
-          programarRevisoes: modalScheduleRevisions,
-          revisaoDays: modalScheduleRevisions ? modalRevisaoDays : undefined,
-          contabilizarPlanejamento: modalCountInPlan,
-          pageIntervals: validPages,
-          videoaulas: validVideos,
-          completedAt: targetDate.toISOString(),
-        });
-        setToastMessage(
-          modalScheduleRevisions && modalRevisaoDays.length > 0
-            ? `Registro atualizado e ${modalRevisaoDays.length} revisões vinculadas no menu Revisões!`
-            : 'Registro de estudo atualizado com sucesso!'
-        );
-      } else {
-        await onSaveSession({
-          concursoId: activeConcurso?.id,
-          disciplinaId: modalDisciplinaId,
-          assuntoId: modalAssuntoId || undefined,
-          disciplinaName: discObj?.name || 'Geral',
-          assuntoName: assuntoObj?.name || 'Estudo Dirigido',
-          durationMinutes,
-          durationSeconds: totalSeconds,
-          plannedMinutes: durationMinutes,
-          type: modalCategory,
-          origem: 'manual',
-          material: modalMaterial.trim() || undefined,
-          questionsAttempted: numAttempted > 0 ? numAttempted : undefined,
-          questionsCorrect: numAttempted > 0 ? numCorrect : undefined,
-          notes: modalComments.trim() || undefined,
-          teoriaFinalizada: modalTopicFinished,
-          programarRevisoes: modalScheduleRevisions,
-          revisaoDays: modalScheduleRevisions ? modalRevisaoDays : undefined,
-          contabilizarPlanejamento: modalCountInPlan,
-          pageIntervals: validPages,
-          videoaulas: validVideos,
-          completedAt: targetDate.toISOString(),
-        });
-        setToastMessage(
-          modalScheduleRevisions && modalRevisaoDays.length > 0
-            ? `Novo estudo registrado e ${modalRevisaoDays.length} revisões programadas!`
-            : 'Novo estudo registrado com sucesso no histórico!'
-        );
-      }
+      await onSaveSession({
+        concursoId: activeConcurso?.id,
+        disciplinaId: modalDisciplinaId,
+        assuntoId: modalAssuntoId || undefined,
+        disciplinaName: discObj?.name || 'Geral',
+        assuntoName: assuntoObj?.name || 'Estudo Dirigido',
+        durationMinutes,
+        durationSeconds: totalSeconds,
+        plannedMinutes: durationMinutes,
+        type: modalCategory,
+        origem: 'manual',
+        material: modalMaterial.trim() || undefined,
+        questionsAttempted: numAttempted > 0 ? numAttempted : undefined,
+        questionsCorrect: numAttempted > 0 ? numCorrect : undefined,
+        notes: modalComments.trim() || undefined,
+        teoriaFinalizada: modalTopicFinished,
+        programarRevisoes: modalScheduleRevisions,
+        revisaoDays: modalScheduleRevisions ? modalRevisaoDays : undefined,
+        contabilizarPlanejamento: modalCountInPlan,
+        pageIntervals: validPages,
+        videoaulas: validVideos,
+        completedAt: targetDate.toISOString(),
+      });
+      setToastMessage(
+        modalScheduleRevisions && modalRevisaoDays.length > 0
+          ? `Novo estudo registrado e ${modalRevisaoDays.length} revisões programadas!`
+          : 'Novo estudo registrado com sucesso no histórico!'
+      );
 
       if (modalTopicFinished && modalAssuntoId && onUpdateAssuntoStatus) {
         await onUpdateAssuntoStatus(modalAssuntoId, 'dominado');
       }
 
       setIsModalOpen(false);
-      setEditingSession(null);
     } catch (err) {
       console.error('Erro ao salvar registro de estudo:', err);
       setModalError('Ocorreu um erro ao salvar o registro. Tente novamente.');
@@ -890,10 +819,7 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
   const handleConfirmDelete = async (sessionId: string) => {
     await onDeleteSession(sessionId);
     setConfirmDeleteId(null);
-    if (editingSession?.id === sessionId) {
-      setIsModalOpen(false);
-      setEditingSession(null);
-    }
+    if (editingSession?.id === sessionId) setEditingSession(null);
     setToastMessage('Registro excluído e métricas recalculadas.');
   };
 
@@ -2609,6 +2535,33 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
       {/* =====================================================================
           VISÃO 3: MODAL COMPLETO "REGISTRO DE ESTUDO" (CRIAR, EDITAR E EXCLUIR)
          ===================================================================== */}
+      {editingSession && (
+        <StudyRegisterModal
+          key={editingSession.id}
+          isOpen
+          modo="manual"
+          initialSession={editingSession}
+          initialDisciplinaName={editingSession.disciplinaName}
+          elapsedSeconds={editingSession.durationSeconds ?? Math.round(editingSession.durationMinutes * 60)}
+          disciplinas={disciplinas.filter(d => d.concursoId === editingConcursoId || d.id === editingSession.disciplinaId)}
+          assuntos={assuntos}
+          onClose={() => setEditingSession(null)}
+          onDelete={() => handleConfirmDelete(editingSession.id)}
+          onSaveSuccess={async (session) => {
+            await onUpdateSession(editingSession.id, {
+              ...session,
+              assuntoId: session.assuntoId ?? '',
+              questionsAttempted: session.questionsAttempted ?? 0,
+              questionsCorrect: session.questionsCorrect ?? 0,
+              accuracyRate: session.questionsAttempted
+                ? Math.round(((session.questionsCorrect ?? 0) / session.questionsAttempted) * 100)
+                : 0,
+            });
+            setToastMessage('Registro de estudo atualizado com sucesso!');
+          }}
+        />
+      )}
+
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div
@@ -3184,19 +3137,6 @@ export const HistoricoView: React.FC<HistoricoViewProps> = ({
 
               {/* Rodapé do Modal */}
               <div className="registro-estudo-modal-footer pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  {editingSession && (
-                    <button
-                      type="button"
-                      onClick={() => handleConfirmDelete(editingSession.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/35 transition-all cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Excluir registro</span>
-                    </button>
-                  )}
-                </div>
-
                 <div className="flex items-center gap-2.5 ml-auto">
                   <Button
                     type="button"

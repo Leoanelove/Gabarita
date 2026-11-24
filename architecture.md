@@ -70,7 +70,7 @@ Todas as bibliotecas abaixo constam em `package.json` e nos arquivos-fonte inspe
         ├── questoes/                    # QuestoesView, CadernoErrosView, CadernoErros
         ├── simulados/                   # SimuladosView, RegisterSimuladoModal, SimuladoDetailModal, SimuladoLineChart
         ├── resumos/                     # ResumosView
-        ├── historico/                   # HistoricoView
+        ├── historico/                   # HistoricoView reutiliza StudyRegisterModal para editar sessões
         ├── analytics/                   # AnalyticsView
         ├── metas/                       # MetasView (desativado por flag ENABLE_METAS_MODULE = false)
         ├── ai/                          # AIAssistantView (desativado por flag ENABLE_AI_ASSISTANT_MODULE = false)

@@ -23,7 +23,8 @@ import {
 import { 
   Disciplina, 
   Assunto, 
-  StudySessionType, 
+  StudySessionType,
+  SessaoEstudo,
   PageInterval, 
   VideoaulaRecord 
 } from '../../types';
@@ -76,6 +77,7 @@ export interface StudyRegisterModalProps {
   isRevisionContext?: boolean;
   disciplinas: Disciplina[];
   assuntos: Assunto[];
+  initialSession?: SessaoEstudo;
   initialDisciplinaId?: string;
   initialDisciplinaName?: string;
   initialAssuntoId?: string;
@@ -93,6 +95,7 @@ export interface StudyRegisterModalProps {
     questionsAttempted?: number;
     questionsCorrect?: number;
     notes?: string;
+    material?: string;
     teoriaFinalizada?: boolean;
     programarRevisoes?: boolean;
     revisaoDays?: number[];
@@ -101,6 +104,7 @@ export interface StudyRegisterModalProps {
     videoaulas?: VideoaulaRecord[];
     completedAt?: string;
   }) => Promise<void>;
+  onDelete?: () => Promise<void>;
   onAdvanceCycle?: (minutesStudied?: number) => Promise<void>;
   onBackToTimer?: () => void;
 }
@@ -180,6 +184,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   isRevisionContext = false,
   disciplinas,
   assuntos,
+  initialSession,
   initialDisciplinaId,
   initialDisciplinaName,
   initialAssuntoId,
@@ -188,6 +193,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   plannedMinutes = 25,
   contabilizarPlanejamento = true,
   onSaveSuccess,
+  onDelete,
   onAdvanceCycle,
   onBackToTimer,
 }) => {
@@ -196,6 +202,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   const glassThemeKey = getStudyGlassThemeKey(themeContext);
   const glassPalette = STUDY_GLASS_PALETTES[glassThemeKey];
   const isDark = themeContext?.effectiveTheme === 'dark';
+  const initialStudyType = initialSession?.type;
 
   // Validação de tempo e Assunto / Tópico
   const [erroTempo, setErroTempo] = useState<boolean>(false);
@@ -213,8 +220,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   const [manualSeconds, setManualSeconds] = useState<string>('00');
 
   // Data de Registro do Estudo ('hoje' por padrão)
-  const getTodayYMD = () => {
-    const now = new Date();
+  const getTodayYMD = (now = new Date()) => {
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
@@ -470,13 +476,42 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   ]);
 
   // Anotações & Estado de Salvamento (sempre inicia estritamente vazio "")
+  const [material, setMaterial] = useState('');
   const [notes, setNotes] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen || !initialSession) return;
+    const seconds = Math.max(0, Math.round(initialSession.durationSeconds || initialSession.durationMinutes * 60));
+    setManualHours(String(Math.floor(seconds / 3600)).padStart(2, '0'));
+    setManualMinutes(String(Math.floor((seconds % 3600) / 60)).padStart(2, '0'));
+    setManualSeconds(String(seconds % 60).padStart(2, '0'));
+    const originalDate = new Date(initialSession.completedAt || initialSession.createdAt);
+    const originalDay = getTodayYMD(originalDate);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    setDateMode(originalDay === getTodayYMD() ? 'hoje' : originalDay === getTodayYMD(yesterday) ? 'ontem' : 'outro');
+    setCustomDate(originalDay);
+    setSelectedDisciplinaId(initialSession.disciplinaId);
+    setSelectedAssuntoId(initialSession.assuntoId || '');
+    setStudyType(initialSession.type || 'teoria');
+    setMaterial(initialSession.material || '');
+    setNotes(initialSession.notes || '');
+    setTeoriaFinalizada(Boolean(initialSession.teoriaFinalizada));
+    setProgramarRevisoes(Boolean(initialSession.programarRevisoes));
+    setRevisaoDays(initialSession.revisaoDays ?? DEFAULT_REVISAO_DAYS);
+    const attempted = initialSession.questionsAttempted ?? 0;
+    const correct = initialSession.questionsCorrect ?? 0;
+    setQuestoesCertas(attempted > 0 ? correct : '');
+    setQuestoesErradas(attempted > 0 ? Math.max(0, attempted - correct) : '');
+    if (initialSession.pageIntervals?.length) setPageIntervals(initialSession.pageIntervals);
+    if (initialSession.videoaulas?.length) setVideoaulas(initialSession.videoaulas);
+  }, [isOpen, initialSession]);
+
   // Inicialização ao abrir o modal
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !initialSession) {
       setErroTempo(false);
       setErroTopico(false);
 
@@ -519,7 +554,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
       setDateMode('hoje');
       setCustomDate(getTodayYMD());
     }
-  }, [isOpen, elapsedSeconds, initialDisciplinaId, initialAssuntoId, disciplinas, modo, isRevisionContext]);
+  }, [isOpen, initialSession, elapsedSeconds, initialDisciplinaId, initialAssuntoId, disciplinas, modo, isRevisionContext]);
 
   // Disciplinas deduplicadas por nome normalizado (evita matérias repetidas na lista de seleção)
   const uniqueDisciplinas = useMemo(() => {
@@ -564,7 +599,10 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         .map(d => d.id)
     );
     const seenTopics = new Set<string>();
-    return assuntos.filter(a => {
+    const orderedTopics = initialSession?.assuntoId
+      ? [...assuntos.filter(a => a.id === initialSession.assuntoId), ...assuntos.filter(a => a.id !== initialSession.assuntoId)]
+      : assuntos;
+    return orderedTopics.filter(a => {
       if (!matchingDiscIds.has(a.disciplinaId)) return false;
       const topicKey = a.name
         .trim()
@@ -575,7 +613,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
       seenTopics.add(topicKey);
       return true;
     });
-  }, [assuntos, disciplinas, selectedDisciplinaId]);
+  }, [assuntos, disciplinas, selectedDisciplinaId, initialSession?.assuntoId]);
 
   // Cálculo Automático em Tempo Real de Questões (Certas + Erradas)
   const numCorrect = Number(questoesCertas) || 0;
@@ -718,7 +756,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
     }
 
     // Validação Bloqueante: Assunto / Tópico é estritamente obrigatório
-    const isTopicoInvalido = (!selectedAssuntoId || 
+    const isTopicoInvalido = !initialSession && (!selectedAssuntoId ||
       selectedAssuntoId.trim() === '' || 
       selectedAssuntoId === 'Selecione o Tópico' || 
       selectedAssuntoId === 'Selecione o Assunto') && !initialAssuntoName;
@@ -770,7 +808,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
 
       // 2. Filtragem e normalização de videoaulas preenchidas
       const validVideoaulas = videoaulas
-        .filter(v => v.titulo.trim().length > 0)
+        .filter(v => v.titulo.trim().length > 0 || Boolean(initialSession && v.fim && v.fim !== '00:00:00'))
         .map(v => ({
           ...v,
           inicio: normalizeTimeOnBlur(v.inicio),
@@ -813,28 +851,37 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
         }
       }
 
+      const originalDate = initialSession?.completedAt || initialSession?.createdAt;
+      if (initialSession && dateMode === 'outro' && !customDate) {
+        setFormError('Informe a data do estudo.');
+        return;
+      }
+
       // 4. Salvar sessão principal via callback (inclui programação de revisões nos dias selecionados)
       await onSaveSuccess({
         disciplinaId: selectedDisciplinaId,
         assuntoId: selectedAssuntoId || undefined,
         durationMinutes: activeDurationMinutes,
         durationSeconds: manualTotalSeconds,
-        plannedMinutes: modo === 'manual' ? activeDurationMinutes : plannedMinutes,
+        plannedMinutes: initialSession ? initialSession.plannedMinutes : modo === 'manual' ? activeDurationMinutes : plannedMinutes,
         type: isRevisionContext ? 'revisao' : studyType,
         questionsAttempted: totalQuestoes > 0 ? totalQuestoes : undefined,
         questionsCorrect: totalQuestoes > 0 ? numCorrect : undefined,
         notes: enrichedNotes,
+        ...(initialSession && { material: material.trim() }),
         teoriaFinalizada,
         programarRevisoes,
         revisaoDays: programarRevisoes ? revisaoDays : undefined,
-        contabilizarPlanejamento: contabilizarPlanejamento !== false,
+        contabilizarPlanejamento: initialSession ? initialSession.contabilizarPlanejamento : contabilizarPlanejamento !== false,
         pageIntervals: validPageIntervals,
         videoaulas: validVideoaulas,
-        completedAt: selectedSessionDate.toISOString(),
+        completedAt: originalDate && getTodayYMD(new Date(originalDate)) === getTodayYMD(selectedSessionDate)
+          ? originalDate
+          : selectedSessionDate.toISOString(),
       });
 
       // 5. Integração Rápida: TEORIA FINALIZADA -> Atualizar no Edital Verticalizado
-      if (teoriaFinalizada && selectedAssuntoId) {
+      if (!initialSession && teoriaFinalizada && selectedAssuntoId) {
         try {
           await DatabaseService.updateAssuntoStatus(selectedAssuntoId, 'dominado');
         } catch (e) {
@@ -867,7 +914,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        onClick={isSaving ? undefined : onClose}
       />
 
       {/* Caixa do Modal de Registro */}
@@ -891,16 +938,16 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white tracking-tight leading-tight">
-                    Registro de Estudo
+                    {initialSession ? 'Editar Registro de Estudo' : 'Registro de Estudo'}
                   </h2>
-                  {modo === 'manual' && (
+                  {modo === 'manual' && !initialSession && (
                     <span className="study-modal-theme-badge px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/60">
                       Manual
                     </span>
                   )}
                 </div>
                 <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 font-normal">
-                  {modo === 'manual' ? 'Preencha os dados e a duração estudada da sessão' : 'Mantenha o ritmo e registre seu progresso'}
+                  {initialSession ? 'Atualize os dados desta sessão no Histórico' : modo === 'manual' ? 'Preencha os dados e a duração estudada da sessão' : 'Mantenha o ritmo e registre seu progresso'}
                 </p>
               </div>
             </div>
@@ -967,6 +1014,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
+                disabled={isSaving}
                 className="h-9 w-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                 title="Fechar janela"
                 aria-label="Fechar janela"
@@ -1089,7 +1137,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5" style={{ color: palette.primary }} />
-                    <span>Assunto / Tópico *</span>
+                    <span>Assunto / Tópico{initialSession ? '' : ' *'}</span>
                   </span>
                   {isRevisionContext && <Lock className="w-3.5 h-3.5 text-slate-400" />}
                 </label>
@@ -1115,7 +1163,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
                   >
                     <span className="truncate text-slate-900 dark:text-white font-medium">
                       {selectedAssuntoId
-                        ? activeAssuntos.find(a => a.id === selectedAssuntoId)?.name || initialAssuntoName || 'Selecione o Tópico'
+                        ? activeAssuntos.find(a => a.id === selectedAssuntoId)?.name || (selectedAssuntoId === initialSession?.assuntoId ? initialSession.assuntoName : initialAssuntoName) || 'Selecione o Tópico'
                         : initialAssuntoName
                         ? initialAssuntoName
                         : !selectedDisciplinaId
@@ -1149,6 +1197,18 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
 
                       {/* Lista rolável que quebra linha sem cortar */}
                       <div className="max-h-64 overflow-y-auto custom-scrollbar p-1 space-y-0.5">
+                        {initialSession && selectedAssuntoId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAssuntoId('');
+                              setIsTopicoDropdownOpen(false);
+                            }}
+                            className="w-full rounded-xl p-2.5 text-left text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          >
+                            Sem tópico
+                          </button>
+                        )}
                         {activeAssuntos.filter(a =>
                           !topicoSearchTerm.trim() ||
                           a.name.toLowerCase().includes(topicoSearchTerm.toLowerCase())
@@ -1320,7 +1380,13 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
 
               <div className="flex flex-wrap items-center gap-2">
                 {/* Pílulas Padrão */}
-                {DEFAULT_STUDY_TYPES.map(item => {
+                {[
+                  ...DEFAULT_STUDY_TYPES,
+                  ...(initialStudyType && !DEFAULT_STUDY_TYPES.some(item => item.id === initialStudyType)
+                    && !customTypes.includes(initialStudyType)
+                    ? [{ id: initialStudyType, label: initialStudyType.replace(/_/g, ' ') }]
+                    : []),
+                ].map(item => {
                   const isSelected = (isRevisionContext ? 'revisao' : studyType) === item.id;
                   return (
                     <button
@@ -1428,6 +1494,17 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
             </div>
             </div>
           </div>
+
+          {initialSession && (
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              Material (opcional)
+              <input
+                value={material}
+                onChange={event => setMaterial(event.target.value)}
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal dark:border-slate-700 dark:bg-slate-900"
+              />
+            </label>
+          )}
 
           {/* SEÇÃO 2: CARDS DE AUTOMAÇÃO LADO A LADO (Grid 2 Colunas) */}
           <div className="space-y-3">
@@ -1819,6 +1896,27 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
             <div className="bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg text-xs font-medium">
               Duração: <strong className="font-mono text-slate-900 dark:text-white">{formattedDurationFooter}</strong>
             </div>
+            {onDelete && (
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={async () => {
+                  if (!window.confirm('Excluir este registro de estudo?')) return;
+                  setIsSaving(true);
+                  try {
+                    await onDelete();
+                  } catch {
+                    setFormError('Não foi possível excluir o registro. Tente novamente.');
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Excluir registro
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
@@ -1842,7 +1940,7 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
               }}
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isSaving ? 'Gravando...' : 'Finalizar e Salvar Estudo'}</span>
+              <span>{isSaving ? 'Gravando...' : initialSession ? 'Salvar alterações' : 'Finalizar e Salvar Estudo'}</span>
             </button>
           </div>
         </div>
