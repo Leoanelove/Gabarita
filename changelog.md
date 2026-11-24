@@ -2,6 +2,10 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-23] — Aviso de término na tela do cronômetro
+
+- Ao terminar a contagem, o cronômetro volta à frente do app e exibe um único aviso. As ações para parar o toque e concluir o estudo ficam na tela do cronômetro.
+
 ## [2026-11-23] — Duração dos blocos na criação do ciclo
 
 - A criação do ciclo exibe e persiste os blocos gerados com os limites de duração escolhidos. O fluxo do Plano de Estudos usa o ciclo salvo pela janela de criação, e a sincronização associa o primeiro ciclo à conta autenticada.
