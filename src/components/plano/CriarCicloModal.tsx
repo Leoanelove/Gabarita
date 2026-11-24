@@ -279,21 +279,9 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
         updatedAt: new Date().toISOString(),
       };
 
-      // Salva imediatamente no localStorage com persistência garantida
-      if (targetConcursoId) {
-        try {
-          localStorage.setItem(`gabarita_ciclo_estudos_${targetConcursoId}`, JSON.stringify(newCycle));
-          localStorage.setItem(`gabarita_study_cycle_${targetConcursoId}`, JSON.stringify(newCycle));
-          localStorage.setItem(`gabarita_ciclo_${targetConcursoId}`, JSON.stringify(newCycle));
-        } catch (e) {
-          console.warn('Erro ao gravar ciclo no localStorage:', e);
-        }
-      }
-
-      // Salva no banco de dados e notifica pai imediatamente para sincronização garantida
-      await DatabaseService.saveStudyCycle(newCycle);
-      window.dispatchEvent(new CustomEvent('gabarita_cycle_updated', { detail: newCycle }));
-      await onCycleCreated(newCycle);
+      const savedCycle = await DatabaseService.saveStudyCycle(newCycle);
+      window.dispatchEvent(new CustomEvent('gabarita_cycle_updated', { detail: savedCycle }));
+      await onCycleCreated(savedCycle);
 
       // Etapa 1 - Carregando (aprox. 1.25 segundos)
       await new Promise(resolve => setTimeout(resolve, 1250));

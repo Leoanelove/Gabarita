@@ -82,7 +82,6 @@ interface PlanoViewProps {
   onRewindCycle?: () => Promise<void>;
   onRecordCycleProgress?: (additionalMinutes: number) => Promise<void>;
   onResetCycleLap?: () => Promise<void>;
-  onRecalculateCycle?: (baseSlotDuration?: number) => Promise<void>;
   onUpdateCycleBlock?: (blockId: string, partial: Partial<CycleBlock>) => Promise<void>;
   onRemoveCycle?: () => Promise<void>;
   onSaveCycle?: (cycle: StudyCycle) => void;
@@ -112,7 +111,6 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
   onRewindCycle = async () => {},
   onRecordCycleProgress = async () => {},
   onResetCycleLap = async () => {},
-  onRecalculateCycle = async () => {},
   onUpdateCycleBlock = async () => {},
   onRemoveCycle,
   onNavigateTab,
@@ -571,9 +569,6 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
     if (onSaveCycle) {
       onSaveCycle(newCycle);
     }
-    if (onRecalculateCycle) {
-      await onRecalculateCycle();
-    }
     setActiveTab('ciclo');
     if (onSwitchMethod) {
       await onSwitchMethod('ciclo');
@@ -845,7 +840,6 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
           onRewindCycle={onRewindCycle}
           onRecordCycleProgress={onRecordCycleProgress}
           onResetCycleLap={onResetCycleLap}
-          onRecalculateCycle={onRecalculateCycle}
           onUpdateCycleBlock={onUpdateCycleBlock}
           onOpenStudyTimer={onOpenStudyTimer}
           onSaveNewCycle={async (newC) => {

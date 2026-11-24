@@ -77,7 +77,6 @@ interface CicloViewProps {
   onRewindCycle: () => Promise<void>;
   onRecordCycleProgress: (additionalMinutes: number) => Promise<void>;
   onResetCycleLap: () => Promise<void>;
-  onRecalculateCycle: (baseSlotDuration?: number) => Promise<void>;
   onUpdateCycleBlock: (blockId: string, partial: Partial<CycleBlock>) => Promise<void>;
   onOpenStudyTimer: (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string) => void;
   onSaveNewCycle?: (newCycle: StudyCycle) => Promise<void>;
@@ -96,7 +95,6 @@ export const CicloView: React.FC<CicloViewProps> = ({
   onRewindCycle,
   onRecordCycleProgress,
   onResetCycleLap,
-  onRecalculateCycle,
   onUpdateCycleBlock,
   onOpenStudyTimer,
   onSaveNewCycle,
@@ -490,29 +488,9 @@ export const CicloView: React.FC<CicloViewProps> = ({
   };
 
   const handleCycleCreated = async (newCycle: StudyCycle) => {
-    const targetConcursoId = activeConcursoId || newCycle.concursoId;
-    const finalizedCycle: StudyCycle = {
-      ...newCycle,
-      concursoId: targetConcursoId,
-      updatedAt: new Date().toISOString(),
-    };
-
-    setActiveCycle(finalizedCycle);
-
-    if (targetConcursoId) {
-      try {
-        localStorage.setItem(`gabarita_ciclo_estudos_${targetConcursoId}`, JSON.stringify(finalizedCycle));
-        localStorage.setItem(`gabarita_study_cycle_${targetConcursoId}`, JSON.stringify(finalizedCycle));
-        localStorage.setItem(`gabarita_ciclo_${targetConcursoId}`, JSON.stringify(finalizedCycle));
-      } catch (err) {
-        console.warn('Erro ao salvar ciclo gerado no localStorage:', err);
-      }
-    }
-
-    await DatabaseService.saveStudyCycle(finalizedCycle);
-    window.dispatchEvent(new CustomEvent('gabarita_cycle_updated', { detail: finalizedCycle }));
+    setActiveCycle(newCycle);
     if (onSaveNewCycle) {
-      await onSaveNewCycle(finalizedCycle);
+      await onSaveNewCycle(newCycle);
     }
     showFeedback('Novo Ciclo de Estudos gerado e ativo com sucesso!');
   };
