@@ -547,25 +547,18 @@ export class CycleService {
     };
 
     const nextIdx = (currIdx + 1) % cycle.blocks.length;
-    let completedCycles = cycle.completedCyclesCount;
-
     if (nextIdx === 0) {
-      completedCycles += 1;
-      updatedBlocks.forEach((b, idx) => {
-        b.status = idx === 0 ? 'em_andamento' : 'aguardando';
-        b.elapsedMinutes = 0;
+      return this.resetCurrentLap({
+        ...cycle,
+        blocks: updatedBlocks,
+        completedCyclesCount: (cycle.completedCyclesCount || 0) + 1,
       });
-    } else {
-      updatedBlocks[nextIdx] = {
-        ...updatedBlocks[nextIdx],
-        status: 'em_andamento',
-      };
     }
 
+    updatedBlocks[nextIdx] = { ...updatedBlocks[nextIdx], status: 'em_andamento' };
     return {
       ...cycle,
       currentBlockIndex: nextIdx,
-      completedCyclesCount: completedCycles,
       blocks: updatedBlocks,
       updatedAt: new Date().toISOString(),
     };
@@ -593,28 +586,43 @@ export class CycleService {
     };
   }
 
-  static recordBlockProgress(cycle: StudyCycle, additionalMinutes: number): StudyCycle {
-    if (cycle.blocks.length === 0) return cycle;
-    const currIdx = cycle.currentBlockIndex;
-    const currentBlock = cycle.blocks[currIdx];
-    const newElapsed = (currentBlock.elapsedMinutes || 0) + additionalMinutes;
+  static isBlockComplete(block: CycleBlock): boolean {
+    return block.completed === true || block.status === 'concluido' ||
+      (block.progressPercent ?? 0) >= 100 ||
+      (block.durationMinutes > 0 && (block.elapsedMinutes || 0) >= block.durationMinutes);
+  }
 
-    if (newElapsed >= currentBlock.durationMinutes) {
-      return this.advanceBlock(cycle, newElapsed);
+  static recordBlockProgress(cycle: StudyCycle, additionalMinutes: number, blockId?: string): StudyCycle {
+    const addedSeconds = Math.round(additionalMinutes * 60);
+    if (!Number.isFinite(addedSeconds) || addedSeconds <= 0) return cycle;
+
+    const cursor = Math.max(0, cycle.currentBlockIndex || 0);
+    const index = blockId === undefined ? cursor : cycle.blocks.findIndex(block => block.id === blockId);
+    const block = cycle.blocks[index];
+    if (!block || index < cursor || this.isBlockComplete(block) || !(block.durationMinutes > 0)) return cycle;
+
+    const elapsedSeconds = Math.round((block.elapsedMinutes || 0) * 60) + addedSeconds;
+    const plannedSeconds = Math.round(block.durationMinutes * 60);
+    const complete = elapsedSeconds >= plannedSeconds;
+    const updatedAt = new Date().toISOString();
+    const blocks = [...cycle.blocks];
+    blocks[index] = {
+      ...block,
+      elapsedMinutes: elapsedSeconds / 60,
+      progressPercent: Math.min(100, Math.floor(100 * elapsedSeconds / plannedSeconds)),
+      status: complete ? 'concluido' : index === cursor ? 'em_andamento' : 'aguardando',
+      completedAt: complete ? updatedAt : undefined,
+    };
+
+    if (!complete || index !== cursor) return { ...cycle, blocks, updatedAt };
+
+    const next = blocks.findIndex((candidate, position) => position > cursor && !this.isBlockComplete(candidate));
+    if (next < 0) {
+      return this.resetCurrentLap({ ...cycle, blocks, completedCyclesCount: (cycle.completedCyclesCount || 0) + 1 });
     }
 
-    const updatedBlocks = [...cycle.blocks];
-    updatedBlocks[currIdx] = {
-      ...currentBlock,
-      elapsedMinutes: newElapsed,
-      status: 'em_andamento',
-    };
-
-    return {
-      ...cycle,
-      blocks: updatedBlocks,
-      updatedAt: new Date().toISOString(),
-    };
+    blocks[next] = { ...blocks[next], status: 'em_andamento' };
+    return { ...cycle, blocks, currentBlockIndex: next, updatedAt };
   }
 
   static resetCurrentLap(cycle: StudyCycle): StudyCycle {
@@ -622,6 +630,8 @@ export class CycleService {
       ...b,
       status: idx === 0 ? ('em_andamento' as const) : ('aguardando' as const),
       elapsedMinutes: 0,
+      completed: false,
+      progressPercent: 0,
       completedAt: undefined,
     }));
     return {

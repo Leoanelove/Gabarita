@@ -694,6 +694,12 @@ export interface CycleBlock {
   completedAt?: string;
 }
 
+export interface CycleStudyTarget {
+  concursoId: string;
+  cycleId: string;
+  blockId: string;
+}
+
 export interface StudyCycle {
   id: string;
   userId: string;

@@ -34,7 +34,6 @@ export interface StudySessionModalProps {
     videoaulas?: VideoaulaRecord[];
     completedAt?: string;
   }) => Promise<void>;
-  onAdvanceCycle?: (minutesStudied?: number) => Promise<void>;
 }
 
 /**
@@ -54,7 +53,6 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
   initialMode = 'cronometro',
   contabilizarPlanejamento = true,
   onSaveSession,
-  onAdvanceCycle,
 }) => {
   const [activeStep, setActiveStep] = useState<'timer' | 'register'>('timer');
   const [currentModo, setCurrentModo] = useState<'cronometro' | 'manual'>('cronometro');
@@ -117,7 +115,6 @@ export const StudySessionModal: React.FC<StudySessionModalProps> = ({
         plannedMinutes={savedMetaMinutes}
         contabilizarPlanejamento={contabilizarPlanejamento}
         onSaveSuccess={onSaveSession}
-        onAdvanceCycle={contabilizarPlanejamento === false ? undefined : onAdvanceCycle}
         onBackToTimer={currentModo === 'manual' ? undefined : handleBackToTimer}
       />
     </>

@@ -1,3 +1,5 @@
+import type { OpenStudyTimer, StudyRegisterOptions } from '../../contexts/StudyTimerContext';
+import { CycleService } from '../../services/cycleService';
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Flame, 
@@ -43,6 +45,7 @@ import {
   SessaoEstudo, 
   StudyPlan,
   StudyCycle,
+  CycleStudyTarget,
   StudyMethod,
   Prova,
   RevisionRating 
@@ -78,8 +81,8 @@ interface DashboardViewProps {
   errorMessage?: string | null;
   onNavigateTab: (tab: NavigationTab) => void;
   onNavigateToProvas?: () => void;
-  onOpenStudyTimer: (preSelectedDisciplinaId?: string, preSelectedAssuntoId?: string, durationMinutes?: number | string, mode?: 'cronometro' | 'manual', contabilizarPlanejamento?: boolean) => void;
-  onOpenStudyRegister?: (options?: { modo?: 'cronometro' | 'manual'; disciplinaId?: string; assuntoId?: string; durationMinutes?: number | string; contabilizarPlanejamento?: boolean }) => void;
+  onOpenStudyTimer: OpenStudyTimer;
+  onOpenStudyRegister?: (options?: StudyRegisterOptions) => void;
   onCompleteRevisao: (
     id: string, 
     rating: RevisionRating,
@@ -224,6 +227,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     disciplinaId: string;
     assuntoId?: string;
     durationMinutes?: number;
+    cycleStudyTarget?: CycleStudyTarget;
   }) => {
     setStudyOptionsMenuId(null);
     if (onOpenStudyRegister) {
@@ -232,13 +236,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         disciplinaId: item.disciplinaId,
         assuntoId: item.assuntoId,
         durationMinutes: item.durationMinutes,
+        cycleStudyTarget: item.cycleStudyTarget,
       });
     } else {
       onOpenStudyTimer(
         item.disciplinaId,
         item.assuntoId,
         item.durationMinutes,
-        'manual'
+        'manual',
+        true,
+        item.cycleStudyTarget,
       );
     }
   };
@@ -907,12 +914,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const pendingCycleBlocks = cycleBlocks
     .slice(Math.max(0, effectiveCycle?.currentBlockIndex ?? 0))
-    .filter(block => {
-      const progress = block.progressPercent ?? (block.durationMinutes > 0
-        ? ((block.elapsedMinutes || 0) / block.durationMinutes) * 100
-        : 0);
-      return !block.completed && block.status !== 'concluido' && Math.round(progress) < 100;
-    });
+    .filter(block => !CycleService.isBlockComplete(block));
+
+  const getCycleStudyTarget = (blockId: string) => isCycleMethod && effectiveCycle ? {
+    concursoId: effectiveCycle.concursoId,
+    cycleId: effectiveCycle.id,
+    blockId,
+  } : undefined;
 
   const studyQueue = isCycleMethod
     ? pendingCycleBlocks.slice(0, 4).map(block => {
@@ -927,7 +935,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           disciplinaName: block.disciplinaName,
           assuntoId: customAssunto?.id || block.assuntoSugeridoId || defaultAssunto?.id,
           assuntoName: customAssunto?.name || block.assuntoSugeridoName || defaultAssunto?.name || 'Estudo dirigido do edital',
-          durationMinutes: block.durationMinutes || 45,
+          durationMinutes: block.durationMinutes > 0 ? Math.max(1, Math.ceil(block.durationMinutes - (block.elapsedMinutes || 0))) : 45,
         };
       })
     : pendingToday.slice(0, 4).map(session => ({
@@ -1381,7 +1389,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             onOpenStudyTimer(
                               primaryStudyItem.disciplinaId,
                               primaryStudyItem.assuntoId,
-                              primaryStudyItem.durationMinutes
+                              primaryStudyItem.durationMinutes,
+                              'cronometro',
+                              true,
+                              getCycleStudyTarget(primaryStudyItem.id),
                             )
                           }
                           className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95 whitespace-nowrap"
@@ -1413,6 +1424,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                     disciplinaId: primaryStudyItem.disciplinaId,
                                     assuntoId: primaryStudyItem.assuntoId,
                                     durationMinutes: primaryStudyItem.durationMinutes,
+                                    cycleStudyTarget: getCycleStudyTarget(primaryStudyItem.id),
                                   })
                                 }
                                 className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
@@ -1540,6 +1552,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                         disciplinaId: item.disciplinaId,
                                         assuntoId: item.assuntoId,
                                         durationMinutes: item.durationMinutes,
+                                        cycleStudyTarget: getCycleStudyTarget(item.id),
                                       })
                                     }
                                     className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
