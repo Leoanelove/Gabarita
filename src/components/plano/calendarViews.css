@@ -1,0 +1,146 @@
+.daily-calendar-note::before {
+  left: 1rem;
+  width: 2.25rem;
+}
+
+.daily-calendar-note:hover {
+  border-color: color-mix(in srgb, var(--note-color) 50%, var(--week-surface));
+}
+
+.daily-calendar-action {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid var(--week-line);
+  border-radius: .625rem;
+  background: var(--week-surface);
+  color: var(--week-muted);
+  cursor: pointer;
+}
+
+.daily-calendar-action:hover {
+  color: var(--primary-800);
+}
+
+.dark .daily-calendar-action:hover {
+  color: var(--primary-text-dark);
+}
+
+.daily-calendar-action-delete:hover {
+  color: var(--color-rose-600);
+}
+
+.dark .daily-calendar-action-delete:hover {
+  color: var(--color-rose-400);
+}
+
+.monthly-calendar-day {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-width: 0;
+  min-height: 5.75rem;
+  flex-direction: column;
+  gap: .25rem;
+  padding: clamp(.1875rem, 1vw, .5rem);
+  border: 1px solid var(--week-line);
+  border-radius: .75rem;
+  background: color-mix(in srgb, var(--week-surface) 80%, transparent);
+}
+
+.monthly-calendar-day[data-outside-month="true"] {
+  opacity: .55;
+}
+
+.monthly-calendar-day:hover,
+.monthly-calendar-day[data-highlighted="true"] {
+  background: color-mix(in srgb, var(--primary-color) 8%, var(--week-surface));
+}
+
+.monthly-calendar-day[data-highlighted="true"] {
+  border-color: var(--primary-color);
+}
+
+.monthly-calendar-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .125rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.monthly-calendar-date::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  content: '';
+}
+
+.monthly-calendar-date time {
+  min-width: 1.125rem;
+  padding: .125rem;
+  border-radius: .375rem;
+  font-size: .75rem;
+  font-weight: 900;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.monthly-calendar-day[data-highlighted="true"] time {
+  background: var(--primary-color);
+  color: white;
+}
+
+.monthly-calendar-count {
+  overflow: hidden;
+  color: var(--week-muted);
+  font-size: .625rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.monthly-calendar-note {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  padding: .1875rem .25rem .1875rem .5rem;
+  border-radius: .375rem;
+  font-size: .625rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.monthly-calendar-note::before {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: .1875rem;
+  height: auto;
+  border-radius: 0;
+}
+
+.monthly-calendar-note:hover {
+  background: color-mix(in srgb, var(--note-color) 32%, var(--week-surface));
+}
+
+.monthly-calendar-more {
+  color: var(--primary-800);
+  font-size: .6875rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dark .monthly-calendar-more {
+  color: var(--primary-text-dark);
+}
+
+.monthly-calendar-more:hover {
+  text-decoration: underline;
+}
