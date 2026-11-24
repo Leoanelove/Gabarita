@@ -1,46 +1,53 @@
-import React, { useState } from 'react';
-import { 
-  Repeat, 
-  CalendarClock, 
-  Check, 
-  Sparkles, 
-  ArrowRight, 
-  ShieldCheck, 
-  HelpCircle,
-  Clock,
-  Layers,
-  CalendarDays
-} from 'lucide-react';
-import { StudyMethod } from '../../types';
+import { useId, useState } from 'react';
+import { CalendarDays, Repeat } from 'lucide-react';
+import type { StudyMethod } from '../../types';
 import { Modal } from '../../design-system/Modal';
 import { Button } from '../../design-system/Button';
-import { Badge } from '../../design-system/Badge';
 
 interface MetodoEstudoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentMethod?: StudyMethod;
+  currentMethod: StudyMethod;
   onSelectMethod: (method: StudyMethod) => Promise<void> | void;
-  title?: string;
-  description?: string;
+  bannerUrl: string;
 }
 
-export const MetodoEstudoModal: React.FC<MetodoEstudoModalProps> = ({
+const METHOD_OPTIONS = [
+  {
+    id: 'ciclo',
+    title: 'Ciclo de Estudos',
+    description: 'Estude em sequência e retome de onde parou.',
+    icon: Repeat,
+  },
+  {
+    id: 'cronograma',
+    title: 'Cronograma Fixo',
+    description: 'Distribua as matérias em dias e horários da semana.',
+    icon: CalendarDays,
+  },
+] as const;
+
+export function MetodoEstudoModal({
   isOpen,
   onClose,
-  currentMethod = 'ciclo',
+  currentMethod,
   onSelectMethod,
-  title = 'Escolha Seu Metodo de Estudo',
-  description = 'Selecione a metodologia que melhor atende à sua rotina e estratégia de aprovação.',
-}) => {
-  const [selectedMethod, setSelectedMethod] = useState<StudyMethod>(currentMethod);
+  bannerUrl,
+}: MetodoEstudoModalProps) {
+  const groupId = useId();
+  const [selectedMethod, setSelectedMethod] = useState(currentMethod);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(false);
 
   const handleConfirm = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    setError(false);
     try {
       await onSelectMethod(selectedMethod);
       onClose();
+    } catch {
+      setError(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,164 +56,84 @@ export const MetodoEstudoModal: React.FC<MetodoEstudoModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      description={description}
-      maxWidth="lg"
-    >
-      <div className="space-y-5 text-xs">
-        <div className="p-3.5 rounded-xl bg-[var(--primary-light)] border border-[var(--primary-light-border)] flex items-start gap-2.5 text-[var(--primary-text)] dark:text-[var(--primary-text-dark)]">
-          <Sparkles className="w-4 h-4 text-[var(--primary-color)] shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <strong>Etapa Obrigatória de Setup:</strong> Cada estudante possui uma dinâmica própria. 
-            Você pode alternar ou replanejar o seu método a qualquer momento através do painel.
+      onClose={() => { if (!isSubmitting) onClose(); }}
+      title="Escolha seu método de estudo"
+      description="Selecione como você quer organizar a sua rotina."
+      maxWidth="3xl"
+      panelClassName="rounded-3xl"
+      sidePanel={(
+        <div
+          className="relative isolate flex min-h-28 flex-col justify-center overflow-hidden px-5 py-4 text-white sm:px-7 md:min-h-full md:justify-start md:py-7"
+          style={{ background: 'linear-gradient(155deg, color-mix(in srgb, var(--primary-color) 37%, #071522), #071522)' }}
+        >
+          <img
+            src={bannerUrl}
+            alt=""
+            className="pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-1/2 object-cover object-right [mask-image:linear-gradient(to_right,transparent,black_30%)] md:inset-x-0 md:bottom-0 md:top-auto md:h-[58%] md:w-full md:[mask-image:linear-gradient(to_bottom,transparent,black_27%)]"
+          />
+          <span className="text-sm font-bold sm:text-base">Gabarita</span>
+          <p className="mt-1 max-w-[65%] text-xl font-extrabold leading-tight tracking-tight sm:text-2xl md:mt-7 md:max-w-none md:text-4xl">
+            Planeje seus estudos
           </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Opção 1: Ciclo de Estudos */}
-          <div
-            onClick={() => setSelectedMethod('ciclo')}
-            className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
-              selectedMethod === 'ciclo'
-                ? 'border-[var(--primary-color)] bg-[var(--primary-light)] shadow-md ring-2 ring-[var(--primary-light-border)]'
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
-            }`}
-          >
-            {selectedMethod === 'ciclo' && (
-              <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center shadow-sm">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-[var(--primary-light)] text-[var(--primary-text)] dark:text-[var(--primary-text-dark)] flex items-center justify-center">
-                  <Repeat className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100 block">
-                    Ciclo de Estudos
-                  </span>
-                  <span className="text-[11px] text-[var(--primary-text)] dark:text-[var(--primary-text-dark)] font-semibold">
-                    Esteira Contínua Flexível
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-                Estudo dinâmico em rotação contínua. Você estuda o tempo que tiver disponível e retoma exatamente de onde parou.
-              </p>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>Sem culpa por dias ou imprevistos</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>Gráfico de Rosca com horas por disciplina</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>Ideal para rotinas variáveis e foco em peso</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Método de Alto Rendimento
-              </span>
-              {selectedMethod === 'ciclo' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 bg-[var(--primary-light)] border-[var(--primary-light-border)] text-[11px] text-[var(--primary-text)] dark:text-[var(--primary-text-dark)] font-semibold">
-                  Selecionado
+      )}
+    >
+      <form
+        className="space-y-5"
+        onSubmit={event => {
+          event.preventDefault();
+          void handleConfirm();
+        }}
+      >
+        <fieldset className="space-y-3" disabled={isSubmitting}>
+          <legend className="sr-only">Método de estudo</legend>
+          {METHOD_OPTIONS.map(({ id, title, description, icon: Icon }) => {
+            const selected = selectedMethod === id;
+            return (
+              <label
+                key={id}
+                className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--primary-color)] sm:gap-4 sm:p-4 ${
+                  selected
+                    ? 'border-[var(--primary-color)] bg-[var(--primary-light)]'
+                    : 'border-slate-300 hover:border-[var(--primary-color)] dark:border-slate-700'
+                }`}
+              >
+                <span aria-hidden="true" className={`flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-12 ${
+                  selected
+                    ? 'bg-[var(--primary-light)] text-[var(--primary-text)] dark:text-[var(--primary-text-dark)]'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                }`}>
+                  <Icon className="size-5 sm:size-6" />
                 </span>
-              ) : (
-                <Badge variant="slate" size="sm">
-                  Escolher
-                </Badge>
-              )}
-            </div>
-          </div>
+                <span className="min-w-0 grow">
+                  <span id={`${groupId}-${id}-title`} className="block text-sm font-extrabold text-slate-900 dark:text-slate-100 sm:text-base">{title}</span>
+                  <span id={`${groupId}-${id}-description`} className="mt-1 block text-xs leading-relaxed text-slate-600 dark:text-slate-300 sm:text-sm">{description}</span>
+                </span>
+                <input
+                  type="radio"
+                  name={groupId}
+                  value={id}
+                  checked={selected}
+                  onChange={() => setSelectedMethod(id)}
+                  aria-labelledby={`${groupId}-${id}-title`}
+                  aria-describedby={`${groupId}-${id}-description`}
+                  className="size-5 shrink-0 accent-[var(--primary-color)]"
+                />
+              </label>
+            );
+          })}
+        </fieldset>
 
-          {/* Opção 2: Cronograma Fixo */}
-          <div
-            onClick={() => setSelectedMethod('cronograma')}
-            className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
-              selectedMethod === 'cronograma'
-                ? 'border-[var(--primary-color)] bg-[var(--primary-light)] shadow-md ring-2 ring-[var(--primary-light-border)]'
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
-            }`}
-          >
-            {selectedMethod === 'cronograma' && (
-              <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center shadow-sm">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-            )}
+        <p className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">
+          Você pode replanejar seu método a qualquer momento.
+        </p>
+        {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">Não foi possível aplicar o método. Tente novamente.</p>}
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                  <CalendarClock className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100 block">
-                    Cronograma Fixo
-                  </span>
-                  <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold">
-                    Grade Semanal & Calendário
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-                Grade de horários distribuída nos dias da semana e horários fixos com visualização completa no calendário.
-              </p>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>Calendário diário, semanal e mensal</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>Dias e horários programados previamente</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>Ideal para quem possui rotina diária regular</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Planejamento Semanal
-              </span>
-              <Badge variant={selectedMethod === 'cronograma' ? 'primary' : 'slate'} size="sm">
-                {selectedMethod === 'cronograma' ? 'Selecionado' : 'Escolher'}
-              </Badge>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+          <Button type="submit" isLoading={isSubmitting} className="font-bold">Confirmar método</Button>
         </div>
-
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleConfirm}
-            isLoading={isSubmitting}
-            leftIcon={<Check className="w-4 h-4" />}
-            className="theme-btn-primary font-bold shadow-md cursor-pointer"
-          >
-            Confirmar e Aplicar Método
-          </Button>
-        </div>
-      </div>
+      </form>
     </Modal>
   );
-};
+}

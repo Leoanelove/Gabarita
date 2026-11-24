@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -9,6 +9,7 @@ interface ModalProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
   panelClassName?: string;
+  sidePanel?: React.ReactNode;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,7 +20,10 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'md',
   panelClassName = '',
+  sidePanel,
 }) => {
+  const titleId = useId();
+  const descriptionId = useId();
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -52,23 +56,34 @@ export const Modal: React.FC<ModalProps> = ({
         className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
-      <div className={`relative w-full ${maxWidthStyles[maxWidth]} max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl px-6 py-4 z-10 animate-in fade-in zoom-in-95 duration-150 ${panelClassName}`}>
-        <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{title}</h3>
-            {description && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
-            )}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        className={`relative w-full ${maxWidthStyles[maxWidth]} max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150 ${sidePanel ? 'grid md:grid-cols-[minmax(0,1fr)_minmax(0,2.15fr)]' : 'px-6 py-4'} ${panelClassName}`}
+      >
+        {sidePanel}
+        <div className={sidePanel ? 'min-w-0 p-5 sm:p-7' : 'contents'}>
+          <div className={sidePanel ? 'flex items-start justify-between gap-3' : 'flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800'}>
+            <div>
+              <h3 id={titleId} className={sidePanel ? 'text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight' : 'text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight'}>{title}</h3>
+              {description && (
+                <p id={descriptionId} className={sidePanel ? 'mt-2 text-sm text-slate-600 dark:text-slate-300' : 'text-xs text-slate-500 dark:text-slate-400 mt-0.5'}>{description}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Fechar"
+              onClick={onClose}
+              className="shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="mt-3">
-          {children}
+          <div className={sidePanel ? 'mt-5' : 'mt-3'}>
+            {children}
+          </div>
         </div>
       </div>
     </div>
