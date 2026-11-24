@@ -2,6 +2,10 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-23] — Abertura de blocos do cronograma
+
+- Corrige a tela em branco ao abrir os detalhes de um bloco nas visões diária e semanal. O modal mantém a mesma ordem de hooks ao abrir e fechar.
+
 ## [2026-11-23] — Próximos estudos conforme o método selecionado
 
 - O Painel Geral mostra o próximo bloco e até três seguintes do método ativo. Para o Cronograma, a fila usa os blocos pendentes da data local atual na ordem do calendário.

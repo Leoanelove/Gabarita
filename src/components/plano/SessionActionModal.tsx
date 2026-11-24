@@ -112,6 +112,17 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
     }
   }, [isOpen, session, sessoes]);
 
+  // Tópicos filtrados e ordenados rigorosamente pela ordem do edital verticalizado para a disciplina desta sessão
+  const availableTopics = useMemo(() => {
+    if (!isOpen || !session) return [];
+    return PlannerService.getOrderedTopicsForDisciplina(
+      session.disciplinaId,
+      session.disciplinaName,
+      assuntos,
+      disciplinas
+    );
+  }, [isOpen, session, assuntos, disciplinas]);
+
   if (!isOpen || !session) return null;
 
   // Formatação de data completa por extenso
@@ -129,17 +140,6 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
       return dateStr;
     }
   };
-
-  // Tópicos filtrados e ordenados rigorosamente pela ordem do edital verticalizado para a disciplina desta sessão
-  const availableTopics = useMemo(() => {
-    if (!session) return [];
-    return PlannerService.getOrderedTopicsForDisciplina(
-      session.disciplinaId,
-      session.disciplinaName,
-      assuntos,
-      disciplinas
-    );
-  }, [session, assuntos, disciplinas]);
 
   // Busca do histórico mais recente desta disciplina
   const lastStudySession = localHistorySessoes
