@@ -6051,11 +6051,31 @@ export class DatabaseService {
     };
   }
 
-  static async saveStudyCycle(cycle: StudyCycle): Promise<StudyCycle> {
+  static async saveStudyCycle(cycle: StudyCycle, confirmSync = false): Promise<StudyCycle> {
     const uid = await getCurrentUserId();
     const savedCycle = uid ? { ...cycle, userId: uid } : cycle;
-    saveStored(STORAGE_KEYS.STUDY_CYCLE, savedCycle);
 
+    const sync = async () => {
+      if (savedCycle.concursoId && uid && uid !== 'user_demo_01') {
+        const { error } = await supabase.from('study_cycles').upsert([{
+          id: savedCycle.id,
+          user_id: savedCycle.userId,
+          concurso_id: savedCycle.concursoId,
+          concurso_title: savedCycle.concursoTitle,
+          current_block_index: savedCycle.currentBlockIndex,
+          completed_cycles_count: savedCycle.completedCyclesCount,
+          total_cycle_minutes: savedCycle.totalCycleMinutes,
+          blocks: savedCycle.blocks,
+          created_at: savedCycle.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }]);
+        if (error) throw error;
+      }
+    };
+
+    if (confirmSync) await sync();
+
+    saveStored(STORAGE_KEYS.STUDY_CYCLE, savedCycle);
     if (savedCycle.concursoId) {
       try {
         localStorage.setItem(`gabarita_ciclo_estudos_${savedCycle.concursoId}`, JSON.stringify(savedCycle));
@@ -6064,25 +6084,13 @@ export class DatabaseService {
         console.warn('Erro ao salvar ciclo no localStorage:', err);
       }
       saveStored(`gabarita_study_cycle_${savedCycle.concursoId}`, savedCycle);
+    }
 
-      if (uid && uid !== 'user_demo_01') {
-        try {
-          const { error } = await supabase.from('study_cycles').upsert([{
-            id: savedCycle.id,
-            user_id: savedCycle.userId,
-            concurso_id: savedCycle.concursoId,
-            concurso_title: savedCycle.concursoTitle,
-            current_block_index: savedCycle.currentBlockIndex,
-            completed_cycles_count: savedCycle.completedCyclesCount,
-            total_cycle_minutes: savedCycle.totalCycleMinutes,
-            blocks: savedCycle.blocks,
-            created_at: savedCycle.createdAt || new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }]);
-          if (error) throw error;
-        } catch (err) {
-          console.warn('Gabarita: Erro ao sincronizar ciclo no Supabase:', err);
-        }
+    if (!confirmSync) {
+      try {
+        await sync();
+      } catch (err) {
+        console.warn('Gabarita: Erro ao sincronizar ciclo no Supabase:', err);
       }
     }
     return savedCycle;
