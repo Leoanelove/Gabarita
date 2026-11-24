@@ -32,6 +32,32 @@ import { SubjectIcon } from '../common/SubjectIcon';
 import { getNoteColor } from './WeeklySchedule';
 import './cycleCards.css';
 
+const DROP_DURATION_MS = 180;
+
+interface DragRow {
+  index: number;
+  top: number;
+  height: number;
+}
+
+interface CycleDrag {
+  pointerId: number;
+  startY: number;
+  startTop: number;
+  from: number;
+  rows: DragRow[];
+  moved: boolean;
+}
+
+interface CycleDragPosition {
+  from: number;
+  to: number;
+  offset: number;
+  gap: number;
+  destinationOffset: number;
+  settling?: boolean;
+}
+
 const PLAY_THEME_CONFIG: Record<string, { bg: string; hover: string; text: string; border: string; glow: string }> = {
   verde: {
     bg: 'bg-emerald-600',
@@ -244,8 +270,8 @@ export const CicloView: React.FC<CicloViewProps> = ({
   const [reorderError, setReorderError] = useState('');
   const reorderLock = useRef(false);
   const pendingList = useRef<HTMLDivElement>(null);
-  const dragGesture = useRef<{ pointerId: number; from: number; startY: number; moved: boolean } | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ from: number; to: number } | null>(null);
+  const dragGesture = useRef<CycleDrag | null>(null);
+  const [dragPosition, setDragPosition] = useState<CycleDragPosition | null>(null);
   const activeContest = useRef(activeConcursoId);
   activeContest.current = activeConcursoId;
 
@@ -421,7 +447,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
     (from < currentBlockIndex) === (to < currentBlockIndex) &&
     pendingPositions.has(from) === pendingPositions.has(to);
 
-  const handleMoveBlock = async (fromIndex: number, toIndex?: number) => {
+  const handleMoveBlock = async (fromIndex: number, toIndex?: number, settle?: Promise<void>) => {
     if (reorderLock.current || toIndex === undefined || fromIndex === toIndex) return;
     const blocks = [...activeCycle.blocks];
     const from = blocks[fromIndex];
@@ -457,33 +483,64 @@ export const CicloView: React.FC<CicloViewProps> = ({
     const contestAtStart = activeContest.current;
     try {
       const saved = await DatabaseService.saveStudyCycle(updatedCycle, true);
+      await settle;
       if (activeContest.current !== contestAtStart) return;
+      if (settle) setDragPosition(null);
       setActiveCycle(saved);
       await onSaveNewCycle?.(saved);
       showFeedback('Sequência do ciclo reordenada!');
     } catch {
       if (activeContest.current === contestAtStart) {
+        if (settle) {
+          await settle;
+          await restoreDraggedBlock();
+        }
         setReorderError('Não foi possível salvar a ordem do ciclo. Tente novamente.');
       }
     } finally {
+      if (settle) setDragPosition(null);
       reorderLock.current = false;
       setIsReordering(false);
     }
   };
 
-  const getDragDestination = (x: number, y: number, from: number) => {
+  const startBlockDrag = (event: React.PointerEvent<HTMLButtonElement>, from: number) => {
+    const list = pendingList.current;
+    if (!list || !event.isPrimary || event.button !== 0 || reorderLock.current || dragPosition?.settling) return;
+
+    const { top: startTop } = list.getBoundingClientRect();
+    const rows = Array.from(list.querySelectorAll<HTMLElement>('[data-cycle-position]'), card => {
+      const { top, height } = card.getBoundingClientRect();
+      return { index: Number(card.dataset.cyclePosition), top: top - startTop, height };
+    });
+    dragGesture.current = { pointerId: event.pointerId, from, rows, startTop, startY: event.clientY, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const projectBlockDrag = (gesture: CycleDrag, x: number, y: number): CycleDragPosition | undefined => {
     const list = pendingList.current;
     if (!list) return;
-    const { left, right, top, bottom } = list.getBoundingClientRect();
-    if (x < left || x > right || y < top || y > bottom) return;
+    const { top, left, right, bottom } = list.getBoundingClientRect();
+    const { from, rows } = gesture;
+    const source = rows.find(row => row.index === from);
+    const first = rows[0];
+    const last = rows[rows.length - 1];
+    if (!source || rows.length < 2) return;
 
-    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-cycle-position]'));
-    const others = cards.filter(card => Number(card.dataset.cyclePosition) !== from);
-    const position = others.findIndex(card => {
-      const { top, height } = card.getBoundingClientRect();
-      return y < top + height / 2;
-    });
-    return Number(cards[position < 0 ? cards.length - 1 : position]?.dataset.cyclePosition ?? from);
+    const pointerOffset = y - gesture.startY + gesture.startTop - top;
+    const offset = Math.min(last.top + last.height - source.top - source.height,
+      Math.max(first.top - source.top, pointerOffset));
+    const center = source.top + source.height / 2 + pointerOffset;
+    const insertion = rows.filter(row => row.index !== from).findIndex(row => center < row.top + row.height / 2);
+    const target = rows[insertion < 0 ? rows.length - 1 : insertion];
+    const inside = x >= left && x <= right && y >= top && y <= bottom;
+    const to = inside ? target.index : from;
+    const spacing = rows[1].top - first.top - first.height;
+    const destinationOffset = to === from ? 0
+      : to < from ? target.top - source.top
+      : target.top + target.height - source.height - source.top;
+
+    return { from, to, offset, gap: source.height + spacing, destinationOffset };
   };
 
   const updateBlockDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
@@ -493,20 +550,39 @@ export const CicloView: React.FC<CicloViewProps> = ({
     active.moved = true;
     if (event.clientY < 50) window.scrollBy(0, -18);
     if (event.clientY > window.innerHeight - 50) window.scrollBy(0, 18);
-    setDragPosition({ from: active.from, to: getDragDestination(event.clientX, event.clientY, active.from) ?? active.from });
+    setDragPosition(projectBlockDrag(active, event.clientX, event.clientY) ?? null);
+  };
+
+  const waitForDropAnimation = () => new Promise<void>(resolve => {
+    window.setTimeout(resolve, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : DROP_DURATION_MS);
+  });
+
+  const restoreDraggedBlock = async () => {
+    setDragPosition(position => position && { ...position, to: position.from, offset: 0, settling: true });
+    await waitForDropAnimation();
+    setDragPosition(null);
   };
 
   const cancelBlockDrag = () => {
+    const active = dragGesture.current;
     dragGesture.current = null;
-    setDragPosition(null);
+    if (active?.moved) void restoreDraggedBlock();
   };
 
   const finishBlockDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
     const active = dragGesture.current;
     if (!active || active.pointerId !== event.pointerId) return;
-    const destination = active.moved ? getDragDestination(event.clientX, event.clientY, active.from) : undefined;
-    cancelBlockDrag();
-    if (destination !== undefined) void handleMoveBlock(active.from, destination);
+    dragGesture.current = null;
+    if (!active.moved) return;
+
+    const position = projectBlockDrag(active, event.clientX, event.clientY);
+    if (!position || position.to === position.from || !canSwapBlocks(position.from, position.to) || reorderLock.current) {
+      void restoreDraggedBlock();
+      return;
+    }
+
+    setDragPosition({ ...position, offset: position.destinationOffset, settling: true });
+    void handleMoveBlock(position.from, position.to, waitForDropAnimation());
   };
 
   // Ação: Recomeçar Ciclo
@@ -652,7 +728,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Toast Feedback */}
       {feedback && (
-        <div role="status" className="p-3.5 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 animate-in fade-in flex items-center gap-2">
+        <div role="status" className="fixed z-40 right-4 bottom-20 lg:bottom-6 max-w-[calc(100%-2rem)] p-3.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 shadow-lg border border-primary/25 text-(--primary-800) dark:text-(--primary-text-dark) flex items-center gap-2 pointer-events-none">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{feedback}</span>
         </div>
@@ -1008,16 +1084,23 @@ export const CicloView: React.FC<CicloViewProps> = ({
               {displayPendingBlocks.map(({ block, originalIndex, percent }, listIdx) => {
                 const isCurrent = originalIndex === currentBlockIndex || (listIdx === 0 && !pendingBlocks.some(p => p.originalIndex === currentBlockIndex));
 
+                let offset = 0;
+                const isLifted = dragPosition?.from === originalIndex;
+                if (dragPosition) {
+                  const { from, to, gap } = dragPosition;
+                  if (isLifted) offset = dragPosition.offset;
+                  else if (originalIndex > from && originalIndex <= to) offset = -gap;
+                  else if (originalIndex >= to && originalIndex < from) offset = gap;
+                }
+
                 return (
                   <div
                     key={block.id || `pending_${originalIndex}`}
                     data-current={isCurrent}
                     data-cycle-position={originalIndex}
-                    data-dragging={dragPosition?.from === originalIndex}
-                    data-cycle-drop={dragPosition?.to === originalIndex && dragPosition.from !== originalIndex
-                      ? (dragPosition.from < originalIndex ? 'after' : 'before')
-                      : undefined}
-                    style={getNoteColor(block)}
+                    data-cycle-lifted={isLifted}
+                    data-cycle-animating={!!dragPosition && (!isLifted || dragPosition.settling)}
+                    style={{ ...getNoteColor(block), transform: dragPosition ? `translateY(${offset}px)` : undefined }}
                     className="weekly-schedule-note cycle-study-card p-3 sm:px-4"
                   >
                     {/* Coluna 1 & Coluna 2 */}
@@ -1029,18 +1112,14 @@ export const CicloView: React.FC<CicloViewProps> = ({
                         aria-label={`Mover bloco ${originalIndex + 1}: ${block.disciplinaName}`}
                         aria-describedby="cycle-drag-instructions"
                         title="Arrastar para reordenar"
-                        onPointerDown={event => {
-                          if (!event.isPrimary || event.button !== 0 || reorderLock.current) return;
-                          dragGesture.current = { pointerId: event.pointerId, from: originalIndex, startY: event.clientY, moved: false };
-                          event.currentTarget.setPointerCapture(event.pointerId);
-                        }}
+                        onPointerDown={event => startBlockDrag(event, originalIndex)}
                         onPointerMove={updateBlockDrag}
                         onPointerUp={finishBlockDrag}
                         onPointerCancel={cancelBlockDrag}
                         onLostPointerCapture={cancelBlockDrag}
                         onKeyDown={event => {
                           if (event.key === 'Escape') cancelBlockDrag();
-                          if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+                          if (dragGesture.current || dragPosition?.settling || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
                           event.preventDefault();
                           const offset = event.key === 'ArrowUp' ? -1 : 1;
                           void handleMoveBlock(originalIndex, pendingBlocks[listIdx + offset]?.originalIndex);
