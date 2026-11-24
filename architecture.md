@@ -119,7 +119,7 @@ O servidor roda na porta `3000` (com mapeamento explícito de `PORT === 8080` $\
 4. **Importação do catálogo Supabase**:
    - O seletor busca o registro por `editais.id` e lê `materias` como JSONB ou texto JSON. A grade é exibida para revisão com o cargo da origem.
    - No cadastro com edital e na mesclagem, as novas disciplinas são gravadas em `disciplinas` com `concurso_id`. Os tópicos são gravados em `assuntos` com `disciplina_id`. A confirmação aguarda as duas gravações. Uma nova tentativa usa o ID do mesmo concurso e reaproveita as disciplinas e os tópicos já gravados.
-   - O fluxo do catálogo no Edital Verticalizado usa mesclagem para recuperar matérias em concursos existentes.
+   - O Edital Verticalizado e o painel de concursos sem disciplinas reutilizam o `EditalImportModal` para importar do catálogo. No painel, o destino é o concurso aberto e a importação usa mesclagem.
 
 ## 5. Pendências Técnicas para Verificação
 

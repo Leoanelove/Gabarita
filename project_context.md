@@ -22,6 +22,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
    - Gestão de concursos (esfera federal/estadual/municipal, banca, cargo, remuneração, vagas, data da prova, arquivamento e seleção de concurso ativo único por usuário).
    - Cadastro e agendamento automático de provas (`autoScheduleProvaForConcurso`) vinculadas aos concursos.
    - Importação inteligente de editais (PDF ou texto) via `/api/edital/parse` (Gemini AI no servidor com fallback heurístico local em `editalParser.ts`) ou catálogo do Supabase (`editais` via `supabaseEditais.ts`).
+   - O painel de concursos sem disciplinas oferece a importação no próprio concurso por mesclagem.
 4. **Disciplinas e Edital Verticalizado (`DisciplinasView.tsx`, `EditalImportModal.tsx`, `NovaMateriaModal.tsx`)**:
    - Estrutura hierárquica **Concurso $\rightarrow$ Disciplina (com peso e sigla) $\rightarrow$ Assunto (importância, dificuldade, status, % de domínio, questões) $\rightarrow$ Subtópico**.
    - Reordenação, duplicação e importação em árvore (`importEditalTree`). A seleção de um edital cadastrado usa seu ID. A mesclagem no concurso de destino grava disciplinas e tópicos no Supabase para usuários autenticados e preserva os registros existentes.
