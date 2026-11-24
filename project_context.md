@@ -44,6 +44,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
     - Cadastro, execução com salvamento de progresso (`saveSimuladoProgress`), finalização (`finishSimulado`), evolução gráfica e envio de questões erradas direto para o Caderno de Erros.
 11. **Resumos (`ResumosView.tsx`), Histórico (`HistoricoView.tsx`) e Analytics (`AnalyticsView.tsx`)**:
     - Editor e biblioteca de resumos (`resumos`), linha do tempo completa do histórico de estudos, relatórios analíticos avançados e exportação em PDF/imagem (`jspdf`, `html2canvas`).
+    - O botão Editar do Histórico reaproveita o formulário de registro do Painel Geral e aplica as alterações à sessão selecionada.
 12. **Administração e Planos (`AdminView.tsx`, `ModalAdminEdital.tsx`, `PlanosAssinaturaView.tsx`, `featureGate.ts`)**:
     - Painel administrativo para gestão de editais oficiais no Supabase (`POST /api/editais`).
     - Controle de limites por plano (`FeatureGate`: `gratuito`, `teste`, `mensal`, `anual`) e fluxo de checkout em `paymentService.ts` (com fallback simulado caso o endpoint `/api/payment/checkout` não esteja ativo).

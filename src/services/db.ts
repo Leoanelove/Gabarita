@@ -3257,7 +3257,7 @@ export class DatabaseService {
     ]);
 
     const nextDiscId = partial.disciplinaId ?? prevSession.disciplinaId;
-    const nextAssuntoId = partial.assuntoId !== undefined ? partial.assuntoId : prevSession.assuntoId;
+    const nextAssuntoId = partial.assuntoId !== undefined ? partial.assuntoId || undefined : prevSession.assuntoId;
     const nextDisc = disciplinas.find(d => d.id === nextDiscId);
     const nextAssunto = assuntos.find(a => a.id === nextAssuntoId);
 
