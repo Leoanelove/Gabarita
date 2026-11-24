@@ -1,3 +1,4 @@
+import type { OpenStudyTimer } from '../../contexts/StudyTimerContext';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Calendar, 
@@ -78,7 +79,7 @@ interface PlanoViewProps {
   onMoveSession: (concursoId: string, sessionId: string, date: string, beforeSessionId?: string) => Promise<void>;
   onBatchRescheduleOverdue: (targetDate?: string, mode?: 'today' | 'spread') => Promise<void>;
   onToggleSessionStatus: (sessionId: string, status: PlanSessionStatus) => Promise<void>;
-  onOpenStudyTimer: (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string) => void;
+  onOpenStudyTimer: OpenStudyTimer;
   onAdvanceCycle?: (minutesStudied?: number) => Promise<void>;
   onRewindCycle?: () => Promise<void>;
   onRecordCycleProgress?: (additionalMinutes: number) => Promise<void>;
