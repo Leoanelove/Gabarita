@@ -1,3 +1,5 @@
+import type { OpenStudyTimer } from '../../contexts/StudyTimerContext';
+import { CycleService } from '../../services/cycleService';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   RotateCcw, 
@@ -107,7 +109,7 @@ interface CicloViewProps {
   onRecordCycleProgress: (additionalMinutes: number) => Promise<void>;
   onResetCycleLap: () => Promise<void>;
   onUpdateCycleBlock: (blockId: string, partial: Partial<CycleBlock>) => Promise<void>;
-  onOpenStudyTimer: (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string) => void;
+  onOpenStudyTimer: OpenStudyTimer;
   onSaveNewCycle?: (newCycle: StudyCycle) => Promise<void>;
   onSwitchMethod?: (method: StudyMethod) => Promise<void> | void;
   onRemoveCycle?: () => Promise<void>;
@@ -309,20 +311,10 @@ export const CicloView: React.FC<CicloViewProps> = ({
 
     activeCycle.blocks.forEach((block, idx) => {
       const elapsed = block.elapsedMinutes || 0;
-      const calculatedPercent =
-        typeof block.progressPercent === 'number'
-          ? Math.min(100, Math.round(block.progressPercent))
-          : block.durationMinutes > 0 && elapsed > 0
-          ? Math.min(100, Math.round((elapsed / block.durationMinutes) * 100))
-          : 0;
-
-      // Critério de conclusão: status 'concluido', flag completed, progresso >= 100% ou índice anterior ao ponteiro atual da volta
-      const isDone = Boolean(
-        block.completed === true ||
-        block.status === 'concluido' ||
-        calculatedPercent >= 100 ||
-        idx < (activeCycle.currentBlockIndex || 0)
-      );
+      const calculatedPercent = Math.max(0, Math.min(99, Math.floor(
+        block.progressPercent ?? (block.durationMinutes > 0 ? 100 * elapsed / block.durationMinutes : 0)
+      )));
+      const isDone = CycleService.isBlockComplete(block) || idx < currentBlockIndex;
 
       if (isDone) {
         completed.push({ block, originalIndex: idx, percent: 100 });
@@ -332,7 +324,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
     });
 
     return { pendingBlocks: pending, completedBlocks: completed };
-  }, [activeCycle]);
+  }, [activeCycle, currentBlockIndex]);
 
   const currentBlock = useMemo(() => {
     if (!hasBlocks) return null;
@@ -358,11 +350,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
   // Tempo total estudado (acumulado nos blocos + voltas já concluídas)
   const totalElapsedInCurrentLap = hasBlocks
     ? activeCycle.blocks.reduce((acc, b, idx) => {
-        const isBlockDone =
-          b.completed === true ||
-          b.status === 'concluido' ||
-          (typeof b.progressPercent === 'number' && b.progressPercent >= 100) ||
-          idx < (activeCycle.currentBlockIndex || 0);
+        const isBlockDone = CycleService.isBlockComplete(b) || idx < currentBlockIndex;
         return acc + (b.elapsedMinutes || (isBlockDone ? b.durationMinutes : 0));
       }, 0)
     : 0;
@@ -370,7 +358,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
 
   const formatHoursAndMins = (totalMinutes: number) => {
     const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
+    const mins = Math.floor(totalMinutes) % 60;
     return `${hours}h ${String(mins).padStart(2, '0')}min`;
   };
 
@@ -397,6 +385,16 @@ export const CicloView: React.FC<CicloViewProps> = ({
     }
     return pendingBlocks.slice(0, 8);
   }, [pendingBlocks, isExpanded]);
+
+  const startCycleBlock = (block: CycleBlock) => {
+    const assuntoId = block.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === block.disciplinaId)?.id;
+    const remainingMinutes = Math.max(1, Math.ceil(block.durationMinutes - (block.elapsedMinutes || 0)));
+    onOpenStudyTimer(block.disciplinaId, assuntoId, remainingMinutes, 'cronometro', true, {
+      concursoId: activeCycle.concursoId,
+      cycleId: activeCycle.id,
+      blockId: block.id,
+    });
+  };
 
   // Ação: Concluir bloco individual
   const handleCompleteBlock = async (blockId: string, durationMinutes: number) => {
@@ -778,8 +776,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
             <button
               onClick={() => {
                 if (currentBlock) {
-                  const assuntoId = currentBlock.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === currentBlock.disciplinaId)?.id;
-                  onOpenStudyTimer(currentBlock.disciplinaId, assuntoId, currentBlock.durationMinutes);
+                  startCycleBlock(currentBlock);
                 }
               }}
               style={{ backgroundColor: palette.primary }}
@@ -987,7 +984,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
           <div className="flex flex-col sm:items-end w-full md:w-auto relative z-10 shrink-0">
             <button
               disabled={isReordering}
-              onClick={() => onOpenStudyTimer(currentBlock.disciplinaId, currentBlock.assuntoSugeridoId, currentBlock.durationMinutes)}
+              onClick={() => startCycleBlock(currentBlock)}
               style={{
                 background: `linear-gradient(135deg, ${palette.primaryHover || palette.primary}, ${palette.primary})`,
                 boxShadow: `0 4px 14px ${palette.primary}40`
@@ -1209,10 +1206,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                       <button
                         type="button"
                         disabled={isReordering}
-                        onClick={() => {
-                          const assuntoId = block.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === block.disciplinaId)?.id;
-                          onOpenStudyTimer(block.disciplinaId, assuntoId, block.durationMinutes);
-                        }}
+                        onClick={() => startCycleBlock(block)}
                         style={{ backgroundColor: palette.primary }}
                         className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm hover:brightness-110 active:scale-95"
                         title={`Iniciar Sessão de Estudo: ${block.disciplinaName}${block.assuntoSugeridoName ? ` - ${block.assuntoSugeridoName}` : ''} (${formatDuration(block.durationMinutes)})`}
@@ -1332,7 +1326,7 @@ export const CicloView: React.FC<CicloViewProps> = ({
                         type="button"
                         onClick={() => {
                           const assuntoId = block.assuntoSugeridoId || internalAssuntos.find(a => a.disciplinaId === block.disciplinaId)?.id;
-                          onOpenStudyTimer(block.disciplinaId, assuntoId, block.durationMinutes);
+                          onOpenStudyTimer(block.disciplinaId, assuntoId, block.durationMinutes, 'cronometro', false);
                         }}
                         className="text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
                         title={`Revisar / Estudar novamente: ${block.disciplinaName}`}

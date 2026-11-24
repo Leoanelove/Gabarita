@@ -105,7 +105,6 @@ export interface StudyRegisterModalProps {
     completedAt?: string;
   }) => Promise<void>;
   onDelete?: () => Promise<void>;
-  onAdvanceCycle?: (minutesStudied?: number) => Promise<void>;
   onBackToTimer?: () => void;
 }
 
@@ -194,7 +193,6 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
   contabilizarPlanejamento = true,
   onSaveSuccess,
   onDelete,
-  onAdvanceCycle,
   onBackToTimer,
 }) => {
   const themeContext = useTheme();
@@ -886,15 +884,6 @@ export const StudyRegisterModal: React.FC<StudyRegisterModalProps> = ({
           await DatabaseService.updateAssuntoStatus(selectedAssuntoId, 'dominado');
         } catch (e) {
           console.warn('Erro ao atualizar status do assunto no edital:', e);
-        }
-      }
-
-      // 7. Avançar Ciclo somente se o registro contabilizar no planejamento (não for estudo avulso do banner)
-      if (onAdvanceCycle && contabilizarPlanejamento !== false) {
-        try {
-          await onAdvanceCycle(activeDurationMinutes);
-        } catch (e) {
-          console.warn('Erro ao avançar ciclo:', e);
         }
       }
 

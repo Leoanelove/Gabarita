@@ -112,6 +112,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     timerInitialDurationMinutes,
     timerInitialMode,
     timerContabilizarPlanejamento,
+    timerCycleStudyTarget,
     openStudyTimer,
     openStudyRegister,
     closeStudyTimer,
@@ -265,25 +266,8 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     return <AuthPage />;
   }
 
-  const handleOpenStudyTimer = (
-    disciplinaId?: string,
-    assuntoId?: string,
-    durationMinutes?: number | string,
-    mode?: 'cronometro' | 'manual',
-    contabilizarPlanejamento: boolean = true
-  ) => {
-    openStudyTimer(disciplinaId, assuntoId, durationMinutes, mode, contabilizarPlanejamento);
-  };
-
-  const handleOpenStudyRegister = (options?: {
-    modo?: 'cronometro' | 'manual';
-    disciplinaId?: string;
-    assuntoId?: string;
-    durationMinutes?: number | string;
-    contabilizarPlanejamento?: boolean;
-  }) => {
-    openStudyRegister(options);
-  };
+  const handleOpenStudyTimer = openStudyTimer;
+  const handleOpenStudyRegister = openStudyRegister;
 
   const handleUpdateSubscription = async (plan: UserPlan) => {
     if (!user) return;
@@ -849,6 +833,25 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
 
     const profile = await DatabaseService.getUserProfile(user.id);
     refreshProfile(profile);
+  };
+
+  const handleSaveTimerSession = async (session: Parameters<typeof handleSaveStudySession>[0]) => {
+    await handleSaveStudySession(session);
+    if (session.contabilizarPlanejamento === false || (studyMethod !== 'ciclo' && !timerCycleStudyTarget)) return;
+
+    const concursoId = timerCycleStudyTarget?.concursoId || activeConcursoId;
+    if (!concursoId) return;
+    try {
+      const updated = await DatabaseService.recordCycleProgress(
+        (session.durationSeconds ?? session.durationMinutes * 60) / 60,
+        { concursoId, disciplinaId: session.disciplinaId, assuntoId: session.assuntoId, target: timerCycleStudyTarget },
+      );
+      if (concursoId === activeConcursoId) {
+        setCycle(current => current && current.concursoId !== concursoId ? current : updated);
+      }
+    } catch (error) {
+      console.warn('Erro ao registrar progresso do ciclo:', error);
+    }
   };
 
   const handleUpdateStudySession = async (sessionId: string, partial: Partial<SessaoEstudo>) => {
@@ -1507,8 +1510,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
         initialDurationMinutes={timerInitialDurationMinutes}
         initialMode={timerInitialMode}
         contabilizarPlanejamento={timerContabilizarPlanejamento}
-        onSaveSession={handleSaveStudySession}
-        onAdvanceCycle={timerContabilizarPlanejamento !== false && studyMethod === 'ciclo' ? handleAdvanceCycle : undefined}
+        onSaveSession={handleSaveTimerSession}
       />
     </div>
   );

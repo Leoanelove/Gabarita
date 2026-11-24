@@ -22,6 +22,7 @@ import {
   PlanSessionStatus, 
   StudyCycle, 
   CycleBlock,
+  CycleStudyTarget,
   RegistroBlocoQuestoes,
   ItemCadernoErros,
   MotivoErro,
@@ -6110,11 +6111,24 @@ export class DatabaseService {
     return this.saveStudyCycle(rewound);
   }
 
-  static async recordCycleProgress(additionalMinutes: number): Promise<StudyCycle> {
-    const cycle = await this.getStudyCycle();
-    const updated = CycleService.recordBlockProgress(cycle, additionalMinutes);
-    // Desvinculado: atualiza apenas a minutagem interna do bloco sem gerar sessão fantasma no histórico.
-    return this.saveStudyCycle(updated);
+  static async recordCycleProgress(
+    additionalMinutes: number,
+    study?: { concursoId: string; disciplinaId: string; assuntoId?: string; target?: CycleStudyTarget },
+  ): Promise<StudyCycle> {
+    const cycle = await this.getStudyCycle(study?.concursoId);
+    const target = study?.target;
+    if (target && (cycle.id !== target.cycleId || cycle.concursoId !== target.concursoId)) return cycle;
+
+    const block = target
+      ? cycle.blocks.find(candidate => candidate.id === target.blockId)
+      : cycle.blocks[cycle.currentBlockIndex || 0];
+    if (!block || (study && (
+      block.disciplinaId !== study.disciplinaId ||
+      (!target && block.assuntoSugeridoId && block.assuntoSugeridoId !== study.assuntoId)
+    ))) return cycle;
+
+    const updated = CycleService.recordBlockProgress(cycle, additionalMinutes, block.id);
+    return updated === cycle ? cycle : this.saveStudyCycle(updated);
   }
 
   static async resetCycleCurrentLap(): Promise<StudyCycle> {
@@ -6202,19 +6216,8 @@ export class DatabaseService {
 
   static async resetStudyCycle(clearCompletedCyclesCount: boolean = false): Promise<StudyCycle> {
     const cycle = await this.getStudyCycle();
-    const updatedBlocks = cycle.blocks.map((b, idx) => ({
-      ...b,
-      status: (idx === 0 ? 'em_andamento' : 'aguardando') as CycleBlock['status'],
-      elapsedMinutes: 0,
-      completedAt: undefined,
-    }));
-    const resetCycle: StudyCycle = {
-      ...cycle,
-      currentBlockIndex: 0,
-      completedCyclesCount: clearCompletedCyclesCount ? 0 : cycle.completedCyclesCount,
-      blocks: updatedBlocks,
-      updatedAt: new Date().toISOString(),
-    };
+    const resetCycle = CycleService.resetCurrentLap(cycle);
+    if (clearCompletedCyclesCount) resetCycle.completedCyclesCount = 0;
     return this.saveStudyCycle(resetCycle);
   }
 
