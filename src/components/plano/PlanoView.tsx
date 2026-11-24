@@ -75,6 +75,7 @@ interface PlanoViewProps {
   onUpdateSession: (sessionId: string, partial: Partial<PlannedSession>) => Promise<void>;
   onDeleteSession: (sessionId: string) => Promise<void>;
   onRescheduleSession: (sessionId: string, newDate: string, reason?: string) => Promise<void>;
+  onMoveSession: (concursoId: string, sessionId: string, date: string, beforeSessionId?: string) => Promise<void>;
   onBatchRescheduleOverdue: (targetDate?: string, mode?: 'today' | 'spread') => Promise<void>;
   onToggleSessionStatus: (sessionId: string, status: PlanSessionStatus) => Promise<void>;
   onOpenStudyTimer: (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string) => void;
@@ -104,6 +105,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
   onUpdateSession,
   onDeleteSession,
   onRescheduleSession,
+  onMoveSession,
   onBatchRescheduleOverdue,
   onToggleSessionStatus,
   onOpenStudyTimer,
@@ -941,6 +943,7 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
             sessoes={sessoes}
             concursos={concursos}
             onRescheduleSession={onRescheduleSession}
+            onMoveSession={onMoveSession}
             onBatchRescheduleOverdue={onBatchRescheduleOverdue}
             onToggleSessionStatus={onToggleSessionStatus}
             onOpenStudyTimer={onOpenStudyTimer}

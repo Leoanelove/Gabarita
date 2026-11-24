@@ -34,6 +34,7 @@ import { Button } from '../../design-system/Button';
 import { Modal } from '../../design-system/Modal';
 import { PlannerService } from '../../services/plannerService';
 import { DatabaseService } from '../../services/db';
+import { WeeklySchedule } from './WeeklySchedule';
 import { SessionActionModal } from './SessionActionModal';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -44,6 +45,7 @@ interface CalendarViewProps {
   sessoes?: SessaoEstudo[];
   concursos?: Concurso[];
   onRescheduleSession: (sessionId: string, newDate: string, reason?: string) => Promise<void>;
+  onMoveSession: (concursoId: string, sessionId: string, date: string, beforeSessionId?: string) => Promise<void>;
   onBatchRescheduleOverdue: (targetDate?: string, mode?: 'today' | 'spread') => Promise<void>;
   onToggleSessionStatus: (sessionId: string, status: PlanSessionStatus) => Promise<void>;
   onOpenStudyTimer: (disciplinaId?: string, assuntoId?: string, durationMinutes?: number | string) => void;
@@ -67,6 +69,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   sessoes = [],
   concursos = [],
   onRescheduleSession,
+  onMoveSession,
   onBatchRescheduleOverdue,
   onToggleSessionStatus,
   onOpenStudyTimer,
@@ -89,8 +92,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   }, []);
   const todayStr = useMemo(() => PlannerService.formatLocalDate(currentClockDate), [currentClockDate]);
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
-  const [draggedSessionId, setDraggedSessionId] = useState<string | null>(null);
-  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
   // Estado da sessão selecionada para abrir o Modal Intermediário (SessionActionModal)
   const [selectedSessionForAction, setSelectedSessionForAction] = useState<PlannedSession | null>(null);
@@ -176,6 +177,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return days;
   }, [selectedDateObj, todayStr]);
 
+  const weekStart = weekDays[0].dateObj;
+  const weekEnd = weekDays[6].dateObj;
+  const weekLabel = weekStart.getMonth() === weekEnd.getMonth()
+    ? `${weekStart.getDate()} a ${weekEnd.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}`
+    : `${weekStart.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} a ${weekEnd.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}`;
+
   const monthData = useMemo(() => {
     const year = selectedDateObj.getFullYear();
     const month = selectedDateObj.getMonth();
@@ -228,22 +235,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return sessionsByDate[selectedDateStr] || [];
   }, [sessionsByDate, selectedDateStr]);
 
-  const handleDragStart = (e: React.DragEvent, sessionId: string) => {
-    setDraggedSessionId(sessionId);
-    e.dataTransfer.setData('text/plain', sessionId);
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetDateStr: string) => {
-    e.preventDefault();
-    setDragOverDate(null);
-    const sessionId = e.dataTransfer.getData('text/plain') || draggedSessionId;
-    if (!sessionId) return;
-    const session = plan.sessions.find(s => s.id === sessionId);
-    if (!session || session.date === targetDateStr) return;
-    await onRescheduleSession(sessionId, targetDateStr, `Movido para ${targetDateStr}`);
-    showFeedback(`Sessão movida com sucesso!`);
-  };
-
   return (
     <div className="space-y-4">
       {feedback && (
@@ -270,7 +261,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
           <span className="font-extrabold text-sm capitalize">
             {viewMode === 'diario' && selectedDateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-            {viewMode === 'semanal' && `${weekDays[0].dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${weekDays[6].dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`}
+            {viewMode === 'semanal' && weekLabel}
             {viewMode === 'mensal' && monthData.monthLabel}
           </span>
         </div>
@@ -450,42 +441,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           2. VISÃO SEMANAL: Grade completa da semana
           ========================================================================= */}
       {viewMode === 'semanal' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
-          {weekDays.map(day => {
-            const daySessions = sessionsByDate[day.dateStr] || [];
-            return (
-              <div
-                key={day.dateStr}
-                onDragOver={(e) => { e.preventDefault(); setDragOverDate(day.dateStr); }}
-                onDrop={(e) => handleDrop(e, day.dateStr)}
-                className={`rounded-2xl border overflow-hidden flex flex-col min-h-96 bg-white dark:bg-slate-900 ${day.isToday ? 'theme-primary-border ring-1 ring-(--primary-color)' : 'border-slate-200 dark:border-slate-800'}`}
-              >
-                <div className="dashboard-themed-header relative overflow-hidden p-3 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border-b border-primary/25 dark:border-primary/20 flex items-center justify-between text-xs font-bold text-slate-900 dark:text-slate-100">
-                  <span className={day.isToday ? 'text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] font-extrabold' : ''}>{day.dayOfWeek.toUpperCase()}</span>
-                  <span className={`font-mono ${day.isToday ? 'px-1.5 py-0.5 rounded-md bg-[var(--primary-color)] text-white' : ''}`}>{day.dateObj.getDate()}</span>
-                </div>
-                <div className="p-2 space-y-2 flex-1 overflow-y-auto">
-                  {daySessions.map(session => (
-                    <div
-                      key={session.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, session.id)}
-                      onClick={() => handleSessionClick(session)}
-                      className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-2xs"
-                      style={{ borderLeftWidth: '4px', borderLeftColor: session.disciplinaColor || '#10b981' }}
-                    >
-                      <span className="font-bold block truncate" style={{ color: session.disciplinaColor }}>{session.disciplinaName}</span>
-                      <p className="text-[11px] truncate text-slate-700 dark:text-slate-300 font-medium">{session.assuntoName}</p>
-                      <div className="flex items-center text-[10px] text-slate-500 dark:text-slate-400 font-mono pt-0.5">
-                        <span>⏱ {session.durationMinutes}min</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <WeeklySchedule
+          key={plan.id}
+          days={weekDays}
+          sessionsByDate={sessionsByDate}
+          studySessions={sessoes}
+          onClickSession={handleSessionClick}
+          onAddSession={onOpenAddSession}
+          onMoveSession={(sessionId, date, before) => onMoveSession(plan.concursoId, sessionId, date, before)}
+        />
       )}
 
       {/* =========================================================================

@@ -1,0 +1,305 @@
+.weekly-schedule {
+  --week-ink: #19203b;
+  --week-muted: #5a6480;
+  --week-surface: #faf9ff;
+  --week-line: color-mix(in srgb, var(--primary-color) 19%, transparent);
+  --note-tint: 20%;
+  color: var(--week-ink);
+  font-family: 'Nunito', 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.dark .weekly-schedule {
+  --week-ink: #f2f1fc;
+  --week-muted: #bac4db;
+  --week-surface: #11182b;
+  --week-line: color-mix(in srgb, var(--primary-text-dark) 28%, transparent);
+  --note-tint: 23%;
+}
+
+.weekly-schedule-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--week-line);
+  border-radius: 1.5rem;
+  background: color-mix(in srgb, var(--primary-color) 5%, transparent);
+  padding: .625rem;
+}
+
+.weekly-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(132px, 1fr));
+  min-width: 936px;
+  gap: 2px;
+}
+
+.weekly-schedule-day {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 26rem;
+  padding: .625rem;
+  border: 1px solid var(--week-line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--week-surface) 75%, transparent);
+}
+
+.weekly-schedule-day[data-today="true"],
+.weekly-schedule-day[data-drop-target="true"] {
+  background: color-mix(in srgb, var(--primary-color) 9%, var(--week-surface));
+}
+
+.weekly-schedule-day[data-drop-target="true"] {
+  border-color: var(--primary-color);
+}
+
+.weekly-schedule-day-header {
+  min-height: 3.75rem;
+  margin: 0 .125rem .375rem;
+}
+
+.weekly-schedule-day-title {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  padding-bottom: .375rem;
+  border-bottom: 1px solid var(--primary-hover);
+  font-size: .875rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1.25;
+}
+
+.weekly-schedule-day-title time {
+  margin-left: auto;
+  padding: .25rem .4rem;
+  border: 1px solid var(--week-line);
+  border-radius: .5rem;
+  background: var(--primary-light);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.weekly-schedule-day[data-today="true"] time {
+  background: var(--primary-color);
+  color: white;
+}
+
+.weekly-schedule-today {
+  padding: .125rem .375rem;
+  border-radius: 1rem;
+  background: var(--primary-light);
+  color: var(--primary-800);
+  font-size: .625rem;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.dark .weekly-schedule-today {
+  color: var(--primary-text-dark);
+}
+
+.weekly-schedule-time {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  color: var(--week-muted);
+  font-size: .6875rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.weekly-schedule-time svg {
+  flex-shrink: 0;
+}
+
+.weekly-schedule-day-header .weekly-schedule-time {
+  margin-top: .5rem;
+}
+
+.weekly-schedule-notes {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: .625rem;
+}
+
+.weekly-schedule-note {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--note-color) 27%, var(--week-surface));
+  border-radius: .75rem;
+  background: color-mix(in srgb, var(--note-color) var(--note-tint), var(--week-surface));
+  box-shadow: 0 1px 2px rgb(15 23 42 / 7%);
+  overflow-wrap: anywhere;
+}
+
+.weekly-schedule-note::before {
+  position: absolute;
+  top: -.1875rem;
+  left: .625rem;
+  width: 1.75rem;
+  height: .375rem;
+  border-radius: .25rem;
+  background: color-mix(in srgb, var(--note-color) 65%, var(--week-surface));
+  content: '';
+  pointer-events: none;
+}
+
+.weekly-schedule-note[data-done="true"] {
+  --note-color: #94a3b8;
+  --note-tint: 13%;
+}
+
+.weekly-schedule-note[data-done="true"]::before {
+  display: none;
+}
+
+.weekly-schedule-note[data-dragging="true"] {
+  opacity: .4;
+}
+
+.weekly-schedule-note[data-insert="true"]::after,
+.weekly-schedule-insertion {
+  height: 3px;
+  border-radius: 1rem;
+  background: var(--primary-color);
+}
+
+.weekly-schedule-note[data-insert="true"]::after {
+  position: absolute;
+  top: -.375rem;
+  right: 0;
+  left: 0;
+  content: '';
+  pointer-events: none;
+}
+
+.weekly-schedule-open {
+  display: block;
+  width: 100%;
+  padding: .625rem .5rem .625rem .625rem;
+  border-radius: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.weekly-schedule-note[data-done="true"] .weekly-schedule-open {
+  padding-left: 1.5rem;
+}
+
+.weekly-schedule-open:hover {
+  background: color-mix(in srgb, var(--note-color) 8%, transparent);
+}
+
+.weekly-schedule-subject,
+.weekly-schedule-topic {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.weekly-schedule-subject {
+  padding-right: 1.2rem;
+  font-size: .8125rem;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+.weekly-schedule-topic {
+  margin-block: .1875rem .3125rem;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.weekly-schedule-done {
+  position: absolute;
+  top: .625rem;
+  left: .3125rem;
+  color: #15803d;
+  pointer-events: none;
+}
+
+.dark .weekly-schedule-done {
+  color: #86efac;
+}
+
+.weekly-schedule-grip {
+  position: absolute;
+  top: .375rem;
+  right: .25rem;
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: .375rem;
+  color: var(--week-muted);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.weekly-schedule-grip:active {
+  cursor: grabbing;
+}
+
+.weekly-schedule-grip:hover {
+  background: var(--primary-light);
+  color: var(--week-ink);
+}
+
+.weekly-schedule button:focus-visible {
+  outline: 2px solid var(--primary-hover);
+  outline-offset: 2px;
+}
+
+.weekly-schedule-empty {
+  display: grid;
+  flex: 1;
+  place-content: center;
+  justify-items: center;
+  gap: .5rem;
+  min-height: 6rem;
+  color: var(--week-muted);
+  font-size: .8125rem;
+  font-weight: 800;
+}
+
+.weekly-schedule-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  margin-top: .75rem;
+  padding: .5rem .125rem;
+  border: 1px dashed var(--primary-light-border);
+  border-radius: .625rem;
+  color: var(--primary-800);
+  font-size: .75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dark .weekly-schedule-add {
+  color: var(--primary-text-dark);
+}
+
+.weekly-schedule-add:hover {
+  background: var(--primary-light);
+}
+
+.weekly-schedule-status {
+  margin-top: .5rem;
+  color: var(--week-muted);
+  font-size: .8125rem;
+  font-weight: 700;
+}
+
+.weekly-schedule-preview {
+  position: fixed;
+  z-index: 70;
+  width: 10.5rem;
+  padding: .625rem;
+  transform: translate(12px, 12px) rotate(-3deg);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 25%);
+  pointer-events: none;
+}

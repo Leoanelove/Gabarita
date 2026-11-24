@@ -583,6 +583,11 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     setPlan(updated);
   };
 
+  const handleMovePlanSession = async (concursoId: string, sessionId: string, date: string, beforeSessionId?: string) => {
+    const updated = await DatabaseService.movePlannedSession(concursoId, sessionId, date, beforeSessionId);
+    setPlan(current => current && current.concursoId !== concursoId ? current : updated);
+  };
+
   const handleBatchRescheduleOverdue = async (targetDate?: string, mode?: 'today' | 'spread') => {
     const updated = await DatabaseService.batchRescheduleOverdue(targetDate, mode);
     setPlan(updated);
@@ -1159,6 +1164,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
               onUpdateSession={handleUpdatePlanSession}
               onDeleteSession={handleDeletePlanSession}
               onRescheduleSession={handleReschedulePlanSession}
+              onMoveSession={handleMovePlanSession}
               onBatchRescheduleOverdue={handleBatchRescheduleOverdue}
               onToggleSessionStatus={handleTogglePlanSessionStatus}
               onOpenStudyTimer={handleOpenStudyTimer}
