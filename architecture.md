@@ -38,7 +38,7 @@ Todas as bibliotecas abaixo constam em `package.json` e nos arquivos-fonte inspe
     │   ├── StudyTimerContext.tsx        # Estado global de abertura e parâmetros do modal de cronômetro/registro
     │   └── ThemeContext.tsx             # Gerenciamento de dark/light mode, 5 skins de cor e fallback de 7 dias
     ├── design-system/                   # Componentes base reutilizáveis (Badge, Button, Card, Input, Modal, ThemeToggle)
-    ├── hooks/useTimerAlarm.ts           # Hook para disparo de alarmes sonoros do cronômetro
+    ├── hooks/useTimerAlarm.ts           # Hook de alarme sonoro e aviso vinculado ao cronômetro que o disparou
     ├── services/
     │   ├── supabaseClient.ts            # Instância única do cliente Supabase e sanitização de URL/Key
     │   ├── supabase.ts                  # Re-exportação do cliente Supabase e tipos auxiliares

@@ -594,6 +594,7 @@ export const ActiveAlarmAlertBanner: React.FC<ActiveAlarmAlertBannerProps> = ({
 }) => {
   return (
     <div
+      role="alert"
       className="alarm-alert-banner w-full rounded-2xl border-2 border-[#10b981] bg-[#0b1120] px-5 py-5 sm:px-6 sm:py-6 text-white shadow-2xl animate-in fade-in zoom-in-95 duration-200 my-2"
       style={{
         backgroundColor: '#0b1120',

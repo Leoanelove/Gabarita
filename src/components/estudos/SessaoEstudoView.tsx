@@ -377,7 +377,7 @@ export const SessaoEstudoView: React.FC<SessaoEstudoViewProps> = ({
   useEffect(() => {
     if (timerState?.isRunning && currentSeconds >= plannedSeconds && plannedSeconds > 0 && !hasPlayedGoalChimeRef.current) {
       hasPlayedGoalChimeRef.current = true;
-      triggerAlarm('session');
+      triggerAlarm();
     } else if (currentSeconds < plannedSeconds) {
       hasPlayedGoalChimeRef.current = false;
     }

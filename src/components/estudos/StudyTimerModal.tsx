@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Play, 
   Pause, 
@@ -248,7 +249,6 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
   const runStartTimestampRef = useRef<number | null>(null);
   const pausedAtTimestampRef = useRef<number | null>(null);
   const baseFocusSecondsBeforeRunRef = useRef<number>(0);
-  const handleStopAndSaveRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     secondsRemainingRef.current = secondsRemaining;
@@ -323,24 +323,19 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
     }
   }, [isOpen, initialDurationMinutes, initialMode, stopAlarm]);
 
-  // Dispara o alarme em loop contínuo + Notificação + Pop-up quando o cronômetro chega a 00:00:00
+  // Restaura o cronômetro e sinaliza o término na própria tela.
   useEffect(() => {
-    if (prevSecondsRef.current > 0 && secondsRemaining === 0) {
+    if (isOpen && prevSecondsRef.current > 0 && secondsRemaining === 0) {
       setIsMinimized(false);
+      setShowResetConfirm(false);
+      setShowDiscardConfirm(false);
       setIsPaused(false);
       setPausedSeconds(0);
       pausedAtTimestampRef.current = null;
-      triggerAlarm({
-        title: currentMode === 'foco' ? 'Tempo Finalizado!' : 'Pausa Concluída!',
-        subtitle:
-          currentMode === 'foco'
-            ? 'Parabéns! Seu tempo de foco foi concluído.'
-            : 'Sua pausa terminou. Hora de retomar os estudos!',
-        onSaveSession: () => handleStopAndSaveRef.current(),
-      });
+      triggerAlarm();
     }
     prevSecondsRef.current = secondsRemaining;
-  }, [secondsRemaining, currentMode, triggerAlarm]);
+  }, [isOpen, secondsRemaining, triggerAlarm]);
 
   // Contagem regressiva à prova de segundo plano (Timestamp real + Web Worker + visibilitychange)
   useEffect(() => {
@@ -761,7 +756,6 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
     onStopAndSave(elapsed, focoMinutes);
   };
 
-  handleStopAndSaveRef.current = handleStopAndSave;
 
   // Formatação de tempo em HH:MM:SS
   const formatTime = (totalSeconds: number) => {
@@ -799,8 +793,8 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
     );
   }
 
-  return (
-    <div className="fixed inset-0 !mt-0 z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+  const timerView = (
+    <div className={`fixed inset-0 !mt-0 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 ${isAlarmRinging ? 'z-[10000]' : 'z-50'}`}>
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
@@ -865,6 +859,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
             <button
               type="button"
               onClick={() => setIsMinimized(true)}
+              disabled={isAlarmRinging}
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               title="Minimizar cronômetro"
               aria-label="Minimizar cronômetro"
@@ -1519,4 +1514,6 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
       )}
     </div>
   );
+
+  return isAlarmRinging ? createPortal(timerView, document.body) : timerView;
 };

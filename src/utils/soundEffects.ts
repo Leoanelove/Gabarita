@@ -66,12 +66,6 @@ export const ALARM_RINGTONES: AlarmRingtone[] = [
 
 export const DEFAULT_RINGTONE_ID = "toque-01";
 
-export interface TriggerAlarmOptions {
-  title?: string;
-  subtitle?: string;
-  onSaveSession?: () => void;
-}
-
 class SoundManager {
   private readonly STORAGE_KEY_ENABLED = 'gabarita_sound_enabled';
   private readonly STORAGE_KEY_MUTED = 'cronometro_muted';
@@ -81,23 +75,10 @@ class SoundManager {
   private alarmAudio: HTMLAudioElement | null = null;
   private previewAudio: HTMLAudioElement | null = null;
   private previewingId: string | null = null;
-  private alarmRinging: boolean = false;
-  private popupWindow: Window | null = null;
-  private activeNotification: Notification | null = null;
-  private currentSaveCallback: (() => void) | null = null;
+  private alarmOwner: symbol | null = null;
 
-  constructor() {
-    if (typeof window !== 'undefined') {
-      (window as unknown as Record<string, unknown>).__gabaritaStopAlarm = () => {
-        this.stopAlarm();
-      };
-      (window as unknown as Record<string, unknown>).__gabaritaSaveFromAlarm = () => {
-        const cb = this.currentSaveCallback;
-        this.stopAlarm();
-        window.focus();
-        if (cb) cb();
-      };
-    }
+  private get alarmRinging(): boolean {
+    return this.alarmOwner !== null;
   }
 
   public isMuted(): boolean {
@@ -315,19 +296,11 @@ class SoundManager {
   }
 
   /**
-   * Desbloqueio preventivo de áudio (Autoplay Unlock) e permissão de Notificação do Sistema
+   * Desbloqueio preventivo de áudio (Autoplay Unlock)
    * Deve ser chamado ao clicar em "Iniciar" ou "Retomar" o cronômetro
    */
-  public unlockAudioAndPermissions(): void {
-    if (typeof window === 'undefined') return;
-
-    // 1. Solicita permissão da Notification API
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
-    }
-
-    // 2. Warm-up da instância HTMLAudioElement com o toque selecionado
-    if (this.alarmRinging) return;
+  public unlockAudio(): void {
+    if (typeof window === 'undefined' || this.alarmRinging) return;
 
     try {
       const ringtone = this.getSelectedRingtone();
@@ -364,8 +337,8 @@ class SoundManager {
     }
   }
 
-  public isAlarmRinging(): boolean {
-    return this.alarmRinging;
+  public isAlarmRinging(owner: symbol): boolean {
+    return this.alarmOwner === owner;
   }
 
   private playLoopingAudio(): void {
@@ -393,212 +366,30 @@ class SoundManager {
     }
   }
 
-  /**
-   * Dispara o alarme em loop contínuo + Notificação do Sistema + Janela Pop-up sobre outras telas
-   */
-  public startContinuousAlarm(options?: TriggerAlarmOptions): void {
-    if (typeof window === 'undefined') return;
+  public startContinuousAlarm(owner: symbol): void {
+    if (typeof window === 'undefined' || this.isAlarmRinging(owner)) return;
 
     this.stopPreview();
-    this.currentSaveCallback = options?.onSaveSession || null;
-    this.alarmRinging = true;
-    window.dispatchEvent(new CustomEvent('gabarita_alarm_state_changed', { detail: true }));
-
-    // 1. Toca o MP3 selecionado em loop contínuo (audio.loop = true)
+    this.alarmOwner = owner;
+    window.dispatchEvent(new CustomEvent('gabarita_alarm_state_changed'));
     this.playLoopingAudio();
-
-    const title = options?.title || 'Tempo Finalizado!';
-    const subtitle = options?.subtitle || 'Parabéns! Seu tempo de foco foi concluído.';
-
-    // 2. Dispara Notificação Nativa do Sistema Operacional (requireInteraction: true)
-    try {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        if (this.activeNotification) {
-          this.activeNotification.close();
-        }
-        const notif = new Notification(title, {
-          body: subtitle,
-          requireInteraction: true,
-          tag: 'gabarita-timer-alarm',
-        });
-        notif.onclick = () => {
-          this.stopAlarm();
-          window.focus();
-          notif.close();
-        };
-        this.activeNotification = notif;
-      }
-    } catch {
-      // ignore se o navegador não suportar construtor direto
-    }
-
-    // 3. Tenta abrir Janela Pop-up sobre outras telas e focar
-    try {
-      window.focus();
-      const popup = window.open(
-        '',
-        'AlarmeCronometro',
-        'width=420,height=320,top=100,left=100,resizable=no,scrollbars=no'
-      );
-      if (popup) {
-        this.popupWindow = popup;
-        popup.document.open();
-        popup.document.write(`
-          <!DOCTYPE html>
-          <html lang="pt-BR">
-          <head>
-            <meta charset="UTF-8" />
-            <title>Alarme do Cronômetro - Gabarita</title>
-            <style>
-              * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-              body {
-                background: #0b1120;
-                color: #f8fafc;
-                height: 100vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 24px;
-                text-align: center;
-                border: 2px solid rgba(16, 185, 129, 0.45);
-              }
-              .badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                padding: 4px 12px;
-                border-radius: 999px;
-                background: rgba(16, 185, 129, 0.15);
-                border: 1px solid rgba(16, 185, 129, 0.4);
-                color: #10b981;
-                font-size: 11px;
-                font-weight: 800;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                margin-bottom: 12px;
-              }
-              .timer-zero {
-                font-family: ui-monospace, monospace;
-                font-size: 36px;
-                font-weight: 900;
-                color: #10b981;
-                text-shadow: 0 0 18px rgba(16, 185, 129, 0.65);
-                margin-bottom: 6px;
-              }
-              h1 {
-                font-size: 17px;
-                font-weight: 800;
-                color: #ffffff;
-                margin-bottom: 6px;
-              }
-              p {
-                font-size: 12px;
-                color: #94a3b8;
-                margin-bottom: 20px;
-                line-height: 1.4;
-              }
-              .actions {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                width: 100%;
-              }
-              button {
-                width: 100%;
-                padding: 12px 16px;
-                border-radius: 12px;
-                font-size: 13px;
-                font-weight: 800;
-                cursor: pointer;
-                transition: transform 0.15s, opacity 0.15s;
-                border: none;
-              }
-              button:active { transform: scale(0.98); }
-              .btn-stop {
-                background: #ef4444;
-                color: #ffffff;
-                box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
-              }
-              .btn-save {
-                background: #10b981;
-                color: #052e16;
-                box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
-              }
-            </style>
-          </head>
-          <body>
-            <div class="badge">🔔 Alarme Disparado</div>
-            <div class="timer-zero">00:00:00</div>
-            <h1>${title}</h1>
-            <p>${subtitle}</p>
-            <div class="actions">
-              <button class="btn-stop" id="stopBtn">🔕 Desativar Alarme</button>
-              <button class="btn-save" id="saveBtn">✅ Ir para o App e Salvar Sessão</button>
-            </div>
-            <script>
-              document.getElementById('stopBtn').onclick = function() {
-                if (window.opener && window.opener.__gabaritaStopAlarm) {
-                  window.opener.__gabaritaStopAlarm();
-                }
-                window.close();
-              };
-              document.getElementById('saveBtn').onclick = function() {
-                if (window.opener) {
-                  if (window.opener.__gabaritaSaveFromAlarm) {
-                    window.opener.__gabaritaSaveFromAlarm();
-                  } else if (window.opener.__gabaritaStopAlarm) {
-                    window.opener.__gabaritaStopAlarm();
-                  }
-                  window.opener.focus();
-                }
-                window.close();
-              };
-            </script>
-          </body>
-          </html>
-        `);
-        popup.document.close();
-        popup.focus();
-      }
-    } catch {
-      // Caso bloqueado pelo navegador, o modal interno do cronômetro já está visível
-    }
   }
 
-  public stopAlarm(): void {
+  public stopAlarm(owner: symbol): void {
+    if (!this.isAlarmRinging(owner)) return;
+
     if (this.alarmAudio) {
       try {
         this.alarmAudio.pause();
         this.alarmAudio.currentTime = 0;
       } catch {
-        // ignore
+        // O áudio pode já ter sido descartado pelo navegador.
       }
     }
 
-    if (this.activeNotification) {
-      try {
-        this.activeNotification.close();
-      } catch {
-        // ignore
-      }
-      this.activeNotification = null;
-    }
-
-    if (this.popupWindow && !this.popupWindow.closed) {
-      try {
-        this.popupWindow.close();
-      } catch {
-        // ignore
-      }
-      this.popupWindow = null;
-    }
-
-    if (this.alarmRinging) {
-      this.alarmRinging = false;
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('gabarita_alarm_state_changed', { detail: false }));
-      }
+    this.alarmOwner = null;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('gabarita_alarm_state_changed'));
     }
   }
 }

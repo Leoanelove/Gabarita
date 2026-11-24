@@ -34,6 +34,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
    - **Cronograma Semanal (`plannerService.ts`)**: Alocação baseada em disponibilidade semanal (`WeeklyAvailability`), detecção de conflitos, reagendamento em lote de sessões atrasadas (`batchRescheduleOverdue`) e marcação de sessões estudadas.
 6. **Sessão de Estudo e Cronômetro (`SessaoEstudoView.tsx`, `StudyTimerModal.tsx`, `StudyRegisterModal.tsx`, `StudyTimerContext.tsx`)**:
    - Cronômetro persistente (`TimerService` em `localStorage`) nos modos `livre`, `pomodoro` e `regressivo`, com alarmes sonoros customizáveis (`RingtoneSelectorModal.tsx`, `soundEffects.ts`).
+   - O aviso de término é exibido no cronômetro que iniciou o alarme, com ações para desativar o toque e concluir a sessão.
    - Registro detalhado de sessões (`SessaoEstudo`) com intervalo de páginas (`PageInterval`), videoaulas (`VideoaulaRecord`), questões resolvidas, origem (`manual`, `cronometro`, `pomodoro`, `edital`, etc.) e agendamento automático de revisões.
 7. **Revisões Espaçadas (`RevisoesView.tsx`)**:
    - Ciclo de revisões configurável (`RevisionSettings`: intervalos padrão `24h`, `7d`, `15d`, `30d`, `60d`, modo adaptativo por desempenho `easeMultiplier` / `hardPenaltyDays`) e preservação de metadados da sessão original que gerou a revisão.
