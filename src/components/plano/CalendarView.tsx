@@ -34,9 +34,10 @@ import { Button } from '../../design-system/Button';
 import { Modal } from '../../design-system/Modal';
 import { PlannerService } from '../../services/plannerService';
 import { DatabaseService } from '../../services/db';
-import { WeeklySchedule } from './WeeklySchedule';
+import { WeeklySchedule, getNoteColor } from './WeeklySchedule';
 import { SessionActionModal } from './SessionActionModal';
 import { useTheme } from '../../contexts/ThemeContext';
+import './calendarViews.css';
 
 interface CalendarViewProps {
   plan: StudyPlan;
@@ -320,32 +321,30 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           1. VISÃO DIÁRIA: Lista de sessões ou blocos de horários focados no dia atual
           ========================================================================= */}
       {viewMode === 'diario' && (
-        <div className="space-y-4">
-          <div className="flashcards-daily-review-card relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="weekly-schedule space-y-4">
+          <div className="flashcards-daily-review-card relative p-4 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-[var(--primary-light)] text-[var(--primary-color)] dark:text-[var(--primary-text-dark)] border border-[var(--primary-light-border)]">
                 <CalendarIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 capitalize">
+                <h3 className="font-extrabold text-base first-letter:uppercase">
                   {selectedDateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {dailySessions.length} bloco(s) de estudo programado(s) para este dia
+                <p className="text-xs text-(--week-muted)">
+                  {dailySessions.length === 1 ? '1 bloco planejado' : `${dailySessions.length} blocos planejados`}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onOpenAddSession(selectedDateStr)}
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-                className="cursor-pointer font-bold"
-              >
-                Adicionar Sessão
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onOpenAddSession(selectedDateStr)}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              className="cursor-pointer font-bold"
+            >
+              Adicionar sessão
+            </Button>
           </div>
 
           <div className="space-y-3">
@@ -354,59 +353,38 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               const isOverdue = PlannerService.isSessionOverdue(session, todayStr, sessoes);
 
               return (
-                <div
+                <article
                   key={session.id}
                   onClick={() => handleSessionClick(session)}
-                  className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 cursor-pointer ${
-                    isDone 
-                      ? 'border-[var(--primary-light-border)] bg-[var(--primary-light)]/40'
-                      : isOverdue 
-                      ? 'border-rose-500/30 bg-rose-50/20 dark:bg-rose-950/10'
-                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                  }`}
-                  style={{ borderLeftWidth: '5px', borderLeftColor: session.disciplinaColor || '#0ea5e9' }}
+                  className="weekly-schedule-note daily-calendar-note px-4 py-3 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer"
+                  style={getNoteColor(session)}
                 >
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold text-xs">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{session.durationMinutes} min</span>
-                      </div>
-                      <span
-                        className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-xs"
-                        style={{ backgroundColor: session.disciplinaColor || '#0ea5e9' }}
-                      >
-                        {session.disciplinaName}
-                      </span>
-                      {isDone && (
-                        <Badge variant="primary" size="sm">Concluída</Badge>
-                      )}
-                      {isOverdue && (
-                        <Badge variant="rose" size="sm">Atrasada</Badge>
-                      )}
-                      {!isDone && !isOverdue && (
-                        <Badge variant="sky" size="sm">Pendente</Badge>
-                      )}
-                    </div>
-
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-black text-base leading-tight">{session.disciplinaName}</h4>
+                    <p className="mt-0.5 text-sm font-semibold line-clamp-2" title={session.assuntoName}>
                       {session.assuntoName}
-                    </h4>
-
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="weekly-schedule-time">
+                        <Clock className="w-3.5 h-3.5" />
+                        {session.durationMinutes} min
+                      </span>
+                      {isDone && <Badge variant="primary" size="sm">Concluída</Badge>}
+                      {isOverdue && <Badge variant="rose" size="sm">Atrasada</Badge>}
+                      {!isDone && !isOverdue && <Badge variant="sky" size="sm">Pendente</Badge>}
+                    </div>
                     {session.notes && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                        {session.notes}
-                      </p>
+                      <p className="mt-1 text-xs text-(--week-muted) line-clamp-1" title={session.notes}>{session.notes}</p>
                     )}
                   </div>
 
-                  <div 
-                    className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800 ml-auto"
+                  <div
+                    className="flex items-center justify-end gap-2 shrink-0"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Button
                       size="sm"
-                      variant={isDone ? "outline" : "primary"}
+                      variant={isDone ? 'outline' : 'primary'}
                       onClick={() => handleSessionClick(session)}
                       leftIcon={<Play className="w-3.5 h-3.5 fill-current" />}
                       className="cursor-pointer font-bold"
@@ -416,7 +394,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onOpenEditSession(session)}
-                      className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                      className="daily-calendar-action"
+                      aria-label="Editar sessão"
                       title="Editar sessão"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -424,13 +403,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onDeleteSession(session.id)}
-                      className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 cursor-pointer"
+                      className="daily-calendar-action daily-calendar-action-delete"
+                      aria-label="Excluir sessão"
                       title="Excluir sessão"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
@@ -456,90 +436,52 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           3. VISÃO MENSAL: Calendário completo do mês
           ========================================================================= */}
       {viewMode === 'mensal' && (
-        <div className="space-y-3">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 sm:p-4 shadow-xs overflow-hidden">
-            {/* Cabeçalho dos Dias da Semana */}
-            <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800 text-center font-bold text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
-              <span>SEG</span>
-              <span>TER</span>
-              <span>QUA</span>
-              <span>QUI</span>
-              <span>SEX</span>
-              <span>SÁB</span>
-              <span>DOM</span>
-            </div>
-
-            {/* Grid dos Dias do Mês */}
-            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        <div className="weekly-schedule">
+          <div className="weekly-schedule-scroll">
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+              {['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'].map(label => (
+                <span key={label} className="py-1.5 sm:py-2 text-center font-black text-[10px] sm:text-xs">{label}</span>
+              ))}
               {monthData.days.map((day) => {
                 const daySessions = sessionsByDate[day.dateStr] || [];
                 const isSelected = day.dateStr === selectedDateStr;
+                const openDay = () => {
+                  setSelectedDateStr(day.dateStr);
+                  setViewMode('diario');
+                };
 
                 return (
                   <div
                     key={day.dateStr}
-                    onClick={() => {
-                      setSelectedDateStr(day.dateStr);
-                      setViewMode('diario');
-                    }}
-                    className={`min-w-0 min-h-16 sm:min-h-24 p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer flex flex-col justify-between overflow-hidden ${
-                      day.isToday
-                        ? 'border-[var(--primary-color)] bg-[var(--primary-light)] ring-1 ring-[var(--primary-light-border)]'
-                        : isSelected
-                        ? 'border-[var(--primary-hover)] bg-[var(--primary-light)]/40 ring-1 ring-[var(--primary-light-border)]'
-                        : day.isCurrentMonth
-                        ? 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
-                        : 'border-slate-100 dark:border-slate-800/40 bg-slate-50/40 dark:bg-slate-900/20 opacity-40'
-                    }`}
+                    className="monthly-calendar-day"
+                    data-highlighted={day.isToday || isSelected}
+                    data-outside-month={!day.isCurrentMonth}
                   >
-                    <div className="flex items-center justify-between gap-0.5 text-xs mb-1">
-                      <span
-                        className={`font-mono font-bold rounded-full w-5 h-5 flex items-center justify-center text-[10px] sm:text-[11px] shrink-0 ${
-                          day.isToday 
-                            ? 'theme-btn-primary' 
-                            : isSelected 
-                            ? 'theme-btn-primary opacity-90' 
-                            : 'text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        {day.dayNumber}
-                      </span>
+                    <button type="button" className="monthly-calendar-date" onClick={openDay} aria-label={`Abrir ${PlannerService.parseLocalDate(day.dateStr).toLocaleDateString('pt-BR', { dateStyle: 'long' })}`}>
+                      <time dateTime={day.dateStr} aria-current={day.isToday ? 'date' : undefined}>{day.dayNumber}</time>
                       {daySessions.length > 0 && (
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 truncate">
-                          {daySessions.length}
-                          <span className="hidden sm:inline"> {daySessions.length === 1 ? 'bloco' : 'blocos'}</span>
+                        <span className="monthly-calendar-count">
+                          {daySessions.length} <span className="hidden sm:inline">{daySessions.length === 1 ? 'bloco' : 'blocos'}</span>
                         </span>
                       )}
-                    </div>
-
-                    <div className="space-y-1 overflow-y-auto max-h-16">
-                      {daySessions.slice(0, 2).map((s) => (
-                        <div
-                          key={s.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSessionClick(s);
-                          }}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-medium text-white truncate shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
-                          style={{ backgroundColor: s.disciplinaColor || '#0ea5e9' }}
-                          title={`${s.disciplinaName}: ${s.assuntoName} (${s.durationMinutes} min)`}
-                        >
-                          {s.disciplinaName}
-                        </div>
-                      ))}
-                      {daySessions.length > 2 && (
-                        <span 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDateStr(day.dateStr);
-                            setViewMode('diario');
-                          }}
-                          className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block text-center cursor-pointer hover:underline hover:text-emerald-500 transition-colors"
-                        >
-                          +{daySessions.length - 2} mais
-                        </span>
-                      )}
-                    </div>
+                    </button>
+                    {daySessions.slice(0, 2).map(session => (
+                      <button
+                        key={session.id}
+                        type="button"
+                        onClick={() => handleSessionClick(session)}
+                        className="weekly-schedule-note monthly-calendar-note"
+                        style={getNoteColor(session)}
+                        title={`${session.disciplinaName}: ${session.assuntoName} (${session.durationMinutes} min)`}
+                      >
+                        {session.disciplinaName}
+                      </button>
+                    ))}
+                    {daySessions.length > 2 && (
+                      <button type="button" onClick={openDay} className="monthly-calendar-more">
+                        +{daySessions.length - 2}<span className="hidden sm:inline"> blocos</span>
+                      </button>
+                    )}
                   </div>
                 );
               })}
