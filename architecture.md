@@ -59,7 +59,7 @@ Todas as bibliotecas abaixo constam em `package.json` e nos arquivos-fonte inspe
     └── components/
         ├── auth/                        # AuthPage.tsx (login, cadastro, Google OAuth, Turnstile)
         ├── layout/                      # Sidebar.tsx, Navbar.tsx, MobileNav.tsx
-        ├── common/                      # GezinhoLogo, MenuBannerFrame, SubjectIcon, EmptyContestState
+        ├── common/                      # GezinhoLogo, MenuBannerFrame, ConcursoBanner, SubjectIcon, EmptyContestState
         ├── dashboard/                   # DashboardView, StudyCharts, StreakCalendarModal
         ├── concursos/                   # ConcursosView, ProvasTab, NovoConcursoModal, NovaProvaModal, DetalhesProvaModal, EditalSelectorGlassBanner
         ├── disciplinas/                 # DisciplinasView, EditalImportModal, NovaMateriaModal
