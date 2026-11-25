@@ -34,6 +34,7 @@ import { Button } from '../../design-system/Button';
 import { Modal } from '../../design-system/Modal';
 import { PlannerService } from '../../services/plannerService';
 import { DatabaseService } from '../../services/db';
+import { DailyScheduleList } from './DailyScheduleList';
 import { WeeklySchedule, getNoteColor } from './WeeklySchedule';
 import { SessionActionModal } from './SessionActionModal';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -347,18 +348,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </Button>
           </div>
 
-          <div className="space-y-3">
-            {dailySessions.map((session) => {
+          <DailyScheduleList
+            key={`${plan.id}:${selectedDateStr}`}
+            sessions={dailySessions}
+            onOpenSession={handleSessionClick}
+            onMoveSession={(sessionId, before) => onMoveSession(plan.concursoId, sessionId, selectedDateStr, before)}
+            renderSession={(session) => {
               const isDone = session.status === 'concluida' || PlannerService.isSessionStudied(session, sessoes);
               const isOverdue = PlannerService.isSessionOverdue(session, todayStr, sessoes);
 
               return (
-                <article
-                  key={session.id}
-                  onClick={() => handleSessionClick(session)}
-                  className="weekly-schedule-note daily-calendar-note px-4 py-3 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer"
-                  style={getNoteColor(session)}
-                >
+                <>
                   <div className="min-w-0 flex-1">
                     <h4 className="font-black text-base leading-tight">{session.disciplinaName}</h4>
                     <p className="mt-0.5 text-sm font-semibold line-clamp-2" title={session.assuntoName}>
@@ -410,10 +410,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                </article>
+                </>
               );
-            })}
-          </div>
+            }}
+          />
         </div>
       )}
 
