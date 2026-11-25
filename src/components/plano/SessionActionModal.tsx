@@ -123,7 +123,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
     );
   }, [isOpen, session, assuntos, disciplinas]);
 
-  if (!isOpen || !session) return null;
+  if (!isOpen || !session || PlannerService.isSessionStudied(session)) return null;
 
   // Formatação de data completa por extenso
   const formatFullDateBR = (dateStr: string) => {

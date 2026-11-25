@@ -96,7 +96,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
 
   // Estado da sessão selecionada para abrir o Modal Intermediário (SessionActionModal)
-  const [selectedSessionForAction, setSelectedSessionForAction] = useState<PlannedSession | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const selectedSessionForAction = selectedSessionId
+    ? plan.sessions.find(session => session.id === selectedSessionId)
+    : undefined;
 
   const [reschedulingSession, setReschedulingSession] = useState<PlannedSession | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState<string>(todayStr);
@@ -132,7 +135,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleSessionClick = (session: PlannedSession) => {
-    setSelectedSessionForAction(session);
+    if (!PlannerService.isSessionStudied(session)) setSelectedSessionId(session.id);
   };
 
   const overdueSessions = useMemo(() => {
@@ -353,9 +356,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             sessions={dailySessions}
             onOpenSession={handleSessionClick}
             onMoveSession={(sessionId, before) => onMoveSession(plan.concursoId, sessionId, selectedDateStr, before)}
-            renderSession={(session) => {
-              const isDone = PlannerService.isSessionStudied(session);
+            renderSession={(session, isDone) => {
+              const studiedSeconds = PlannerService.studiedSeconds(session);
+              const isInProgress = !isDone && studiedSeconds > 0;
               const isOverdue = PlannerService.isSessionOverdue(session, todayStr);
+              const studiedMinutes = Math.floor(studiedSeconds / 60);
 
               return (
                 <>
@@ -369,8 +374,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         <Clock className="w-3.5 h-3.5" />
                         {session.durationMinutes} min
                       </span>
-                      <ScheduleStatusBadge done={isDone} overdue={isOverdue} />
+                      <ScheduleStatusBadge done={isDone} inProgress={isInProgress} overdue={isOverdue} />
                     </div>
+                    {isInProgress && (
+                      <p className="mt-1 text-xs font-semibold">
+                        {studiedMinutes > 0
+                          ? `${studiedMinutes} de ${session.durationMinutes} min estudados`
+                          : 'Menos de 1 min estudado'}
+                      </p>
+                    )}
                     {session.notes && (
                       <p className="mt-1 text-xs text-(--week-muted) line-clamp-1" title={session.notes}>{session.notes}</p>
                     )}
@@ -382,12 +394,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   >
                     <Button
                       size="sm"
-                      variant={isDone ? 'outline' : 'primary'}
+                      variant={isDone ? 'secondary' : 'primary'}
+                      disabled={isDone}
+                      type="button"
                       onClick={() => handleSessionClick(session)}
-                      leftIcon={<Play className="w-3.5 h-3.5 fill-current" />}
-                      className="cursor-pointer font-bold"
+                      leftIcon={isDone ? <Check className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                      className={isDone ? 'daily-calendar-completed-button font-bold' : 'font-bold'}
                     >
-                      Estudar
+                      {isDone ? 'Concluído' : 'Estudar'}
                     </Button>
                     <button
                       type="button"
@@ -423,7 +437,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           key={plan.id}
           days={weekDays}
           sessionsByDate={sessionsByDate}
-          today={todayStr}
           onClickSession={handleSessionClick}
           onAddSession={onOpenAddSession}
           onMoveSession={(sessionId, date, before) => onMoveSession(plan.concursoId, sessionId, date, before)}
@@ -467,6 +480,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <button
                         key={session.id}
                         type="button"
+                        disabled={PlannerService.isSessionStudied(session)}
                         onClick={() => handleSessionClick(session)}
                         className="weekly-schedule-note monthly-calendar-note"
                         style={getNoteColor(session)}
@@ -532,9 +546,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Modal Intermediário: Detalhes da Sessão Planejada */}
       <SessionActionModal
-        session={selectedSessionForAction}
+        session={selectedSessionForAction ?? null}
         isOpen={!!selectedSessionForAction}
-        onClose={() => setSelectedSessionForAction(null)}
+        onClose={() => setSelectedSessionId(null)}
         disciplinas={disciplinas}
         assuntos={assuntos}
         sessoes={sessoes}
