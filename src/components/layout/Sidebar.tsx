@@ -25,7 +25,7 @@ import {
   History,
   NotebookPen
 } from 'lucide-react';
-import { NavigationTab, StudyMethod, Concurso, Revisao, Disciplina } from '../../types';
+import { NavigationTab, StudyMethod, Concurso } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DatabaseService } from '../../services/db';
@@ -40,8 +40,6 @@ interface SidebarProps {
   studyMethod?: StudyMethod;
   concursos?: Concurso[];
   activeConcursoId?: string;
-  revisoes?: Revisao[];
-  disciplinas?: Disciplina[];
   onSetActiveConcurso?: (id: string) => void | Promise<void>;
 }
 
@@ -53,8 +51,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   studyMethod = 'ciclo',
   concursos = [],
   activeConcursoId,
-  revisoes,
-  disciplinas,
   onSetActiveConcurso,
 }) => {
   const { user, logout } = useAuth();
@@ -63,7 +59,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localConcursos, setLocalConcursos] = useState<Concurso[]>([]);
-  const [revisoesCountHoje, setRevisoesCountHoje] = useState<number>(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
 
@@ -91,67 +86,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       });
     }
   }, [concursos]);
-
-  // Carrega e sincroniza a contagem real de revisões de HOJE (mesma lógica de stats.hoje do RevisoesView)
-  useEffect(() => {
-    const calcularHoje = (list: any[], discs: any[]) => {
-      const d = new Date();
-      const ano = d.getFullYear();
-      const mes = String(d.getMonth() + 1).padStart(2, '0');
-      const dia = String(d.getDate()).padStart(2, '0');
-      const todayStr = `${ano}-${mes}-${dia}`;
-
-      const filteredByConcurso = activeConcursoId
-        ? list.filter((r: any) => {
-            const disc = discs.find((discItem: any) => discItem.id === r.disciplinaId);
-            return disc && disc.concursoId === activeConcursoId;
-          })
-        : list;
-
-      return filteredByConcurso.filter((r: any) => {
-        if (!r || !r.scheduledFor) return false;
-        if (r.status === 'concluida' || r.status === 'ignorada' || r.status === 'atrasada') {
-          return false;
-        }
-        const sDate = r.scheduledFor.includes('T') ? r.scheduledFor.split('T')[0] : r.scheduledFor;
-        return sDate === todayStr;
-      }).length;
-    };
-
-    const carregarContagemRevisoesHoje = () => {
-      if (Array.isArray(revisoes) && Array.isArray(disciplinas)) {
-        setRevisoesCountHoje(calcularHoje(revisoes, disciplinas));
-        return;
-      }
-
-      try {
-        const rawRevs = localStorage.getItem('gabarita_revisoes');
-        const rawDiscs = localStorage.getItem('gabarita_disciplinas');
-        if (rawRevs) {
-          const list = JSON.parse(rawRevs);
-          const discs = rawDiscs ? JSON.parse(rawDiscs) : [];
-          if (Array.isArray(list)) {
-            setRevisoesCountHoje(calcularHoje(list, Array.isArray(discs) ? discs : []));
-            return;
-          }
-        }
-      } catch {
-        // fallback para DatabaseService
-      }
-
-      Promise.all([DatabaseService.getRevisoes(), DatabaseService.getDisciplinas()]).then(([list, discs]) => {
-        setRevisoesCountHoje(calcularHoje(list, discs));
-      });
-    };
-
-    carregarContagemRevisoesHoje();
-    window.addEventListener('storage', carregarContagemRevisoesHoje);
-    window.addEventListener('focus', carregarContagemRevisoesHoje);
-    return () => {
-      window.removeEventListener('storage', carregarContagemRevisoesHoje);
-      window.removeEventListener('focus', carregarContagemRevisoesHoje);
-    };
-  }, [currentTab, activeConcursoId, revisoes, disciplinas]);
 
   // Fechamento suave ao clicar fora (click outside)
   useEffect(() => {
@@ -223,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'concursos', label: 'Concursos & Provas', icon: Target },
     { id: 'plano', label: 'Plano de Estudos', icon: CalendarClock },
     { id: 'estudos', label: 'Edital Verticalizado', icon: BookOpen },
-    { id: 'revisoes', label: 'Revisões', icon: Repeat, badge: `${revisoesCountHoje} hoje` },
+    { id: 'revisoes', label: 'Revisões', icon: Repeat },
     { id: 'resumos', label: 'Resumos', icon: NotebookPen },
     { id: 'historico', label: 'Histórico', icon: History },
     { id: 'flashcards', label: 'Flashcards', icon: Layers },
@@ -234,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // Para reativar o menu "Assistente IA", altere visible para true
     { id: 'ai_assistant', label: 'Assistente IA', icon: Sparkles, badge: 'Gemini', visible: false },
     { id: 'simulados', label: 'Simulados', icon: Award },
-    { id: 'planos_assinatura', label: 'Planos & Assinatura', icon: Crown, badge: 'PRO' },
+    { id: 'planos_assinatura', label: 'Planos & Assinatura', icon: Crown },
     { id: 'perfil', label: 'Perfil & Ajustes', icon: UserCircle },
     ...(user?.role === 'admin' ? [{ id: 'admin' as NavigationTab, label: 'Área Administrativa', icon: Shield, badge: 'Admin' }] : []),
   ];
@@ -423,8 +357,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`relative z-10 transition-transform duration-200 ${
                         isActive
                           ? 'text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/20 text-white'
-                          : item.id === 'revisoes'
-                          ? 'px-2 py-0.5 text-[11px] font-bold rounded-full bg-primary/15 text-primary-800 dark:text-primary-300 border border-primary/25'
                           : item.id === 'ai_assistant'
                           ? 'px-2 py-0.5 text-[11px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                           : 'text-[10px] font-bold px-1.5 py-0.5 rounded-full sidebar-badge'
