@@ -84,14 +84,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
   // Carrega / sincroniza o histórico de sessões se necessário
   useEffect(() => {
     if (isOpen && session) {
-      const topics = PlannerService.getOrderedTopicsForDisciplina(
-        session.disciplinaId,
-        session.disciplinaName,
-        assuntos,
-        disciplinas
-      );
-      const matched = topics.find(t => t.id === session.assuntoId || (session.assuntoName && t.name.toLowerCase() === session.assuntoName.toLowerCase()));
-      setSelectedTopicId(matched?.id || session.assuntoId || '');
+      setSelectedTopicId(PlannerService.resolveSessionTopicId(session, assuntos, disciplinas) || '');
       setIsEditingTopic(false);
       setShowDatePicker(false);
       setIsMenuOpen(false);
@@ -164,11 +157,12 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
 
   const planStudyTarget = { concursoId: session.concursoId, planId: session.planId, sessionId: session.id };
   const remainingMinutes = PlannerService.remainingMinutes(session);
+  const assuntoId = PlannerService.resolveSessionTopicId(session, assuntos, disciplinas);
 
   // Ações de Início de Estudo
   const handleStartStudy = () => {
     onClose();
-    openStudyTimer(session.disciplinaId, session.assuntoId, remainingMinutes, 'cronometro', true, undefined, planStudyTarget);
+    openStudyTimer(session.disciplinaId, assuntoId, remainingMinutes, 'cronometro', true, undefined, planStudyTarget);
   };
 
   // Ação de Registro Manual
@@ -178,7 +172,7 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
     openStudyRegister({
       modo: 'manual',
       disciplinaId: session.disciplinaId,
-      assuntoId: session.assuntoId,
+      assuntoId,
       durationMinutes: remainingMinutes,
       planStudyTarget,
     });
