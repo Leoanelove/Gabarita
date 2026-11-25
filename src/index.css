@@ -1646,15 +1646,15 @@ html:not(.dark):not(.dark-mode) body.theme-purple .min-h-screen {
   color: #1e293b !important;
 }
 
-/* Sidebar e Painéis de Destaque no Modo Claro */
+/* Sidebar e barra de navegação do app no modo claro */
 html:not(.dark):not(.dark-mode) body.theme-purple aside,
 html:not(.dark):not(.dark-mode) .theme-purple aside,
 html:not(.dark):not(.dark-mode) [data-skin="roxo"] aside,
 html:not(.dark):not(.dark-mode) [data-skin="purple"] aside,
-html:not(.dark):not(.dark-mode) body.theme-purple header,
-html:not(.dark):not(.dark-mode) .theme-purple header,
-html:not(.dark):not(.dark-mode) [data-skin="roxo"] header,
-html:not(.dark):not(.dark-mode) [data-skin="purple"] header {
+html:not(.dark):not(.dark-mode) body.theme-purple .app-navbar,
+html:not(.dark):not(.dark-mode) .theme-purple .app-navbar,
+html:not(.dark):not(.dark-mode) [data-skin="roxo"] .app-navbar,
+html:not(.dark):not(.dark-mode) [data-skin="purple"] .app-navbar {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
@@ -1743,12 +1743,12 @@ html.dark body.theme-purple aside,
 html.dark-mode body.theme-purple aside,
 html.dark [data-skin="roxo"] aside,
 html.dark-mode [data-skin="roxo"] aside,
-body.dark.theme-purple header,
-body.dark-mode.theme-purple header,
-html.dark body.theme-purple header,
-html.dark-mode body.theme-purple header,
-html.dark [data-skin="roxo"] header,
-html.dark-mode [data-skin="roxo"] header {
+body.dark.theme-purple .app-navbar,
+body.dark-mode.theme-purple .app-navbar,
+html.dark body.theme-purple .app-navbar,
+html.dark-mode body.theme-purple .app-navbar,
+html.dark [data-skin="roxo"] .app-navbar,
+html.dark-mode [data-skin="roxo"] .app-navbar {
   background-color: #0f172a !important;
   border-color: #1e293b !important;
 }
@@ -2105,9 +2105,9 @@ html:not(.dark):not(.dark-mode) body.theme-laranja .min-h-screen {
 html:not(.dark):not(.dark-mode) body.theme-orange aside,
 html:not(.dark):not(.dark-mode) body.theme-laranja aside,
 html:not(.dark):not(.dark-mode) [data-skin="laranja"] aside,
-html:not(.dark):not(.dark-mode) body.theme-orange header,
-html:not(.dark):not(.dark-mode) body.theme-laranja header,
-html:not(.dark):not(.dark-mode) [data-skin="laranja"] header {
+html:not(.dark):not(.dark-mode) body.theme-orange .app-navbar,
+html:not(.dark):not(.dark-mode) body.theme-laranja .app-navbar,
+html:not(.dark):not(.dark-mode) [data-skin="laranja"] .app-navbar {
   background-color: #FFFFFF !important;
   border-color: #e2e8f0 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
@@ -2188,9 +2188,9 @@ body.dark-mode.theme-orange aside,
 body.dark-mode.theme-laranja aside,
 html.dark [data-skin="laranja"] aside,
 html.dark-mode [data-skin="laranja"] aside,
-body.dark.theme-orange header,
-body.dark.theme-laranja header,
-html.dark [data-skin="laranja"] header {
+body.dark.theme-orange .app-navbar,
+body.dark.theme-laranja .app-navbar,
+html.dark [data-skin="laranja"] .app-navbar {
   background-color: #0f172a !important;
   border-color: #1e293b !important;
 }
