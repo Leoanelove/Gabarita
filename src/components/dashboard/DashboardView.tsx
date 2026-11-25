@@ -952,7 +952,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         id: session.id,
         disciplinaId: session.disciplinaId,
         disciplinaName: session.disciplinaName,
-        assuntoId: session.assuntoId,
+        assuntoId: PlannerService.resolveSessionTopicId(session, relevantAssuntos, disciplinas),
         assuntoName: session.assuntoName || relevantAssuntos.find(a => a.id === session.assuntoId)?.name || 'Estudo dirigido do edital',
         durationMinutes: PlannerService.remainingMinutes(session),
       }));

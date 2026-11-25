@@ -177,6 +177,22 @@ export class PlannerService {
     return result;
   }
 
+  static resolveSessionTopicId(
+    session: Pick<PlannedSession, 'disciplinaId' | 'disciplinaName' | 'assuntoId' | 'assuntoName'>,
+    assuntos: Assunto[],
+    disciplinas: Disciplina[]
+  ): string | undefined {
+    if (session.assuntoId) return session.assuntoId;
+
+    const normalize = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
+    const topicName = normalize(session.assuntoName || '');
+    if (!topicName) return undefined;
+
+    const topics = this.getOrderedTopicsForDisciplina(session.disciplinaId, session.disciplinaName, assuntos, disciplinas);
+    const matches = topics.filter(topic => topic.disciplinaId === session.disciplinaId && normalize(topic.name) === topicName);
+    return matches.length === 1 ? matches[0].id : undefined;
+  }
+
   static calculateDistribution(
     disciplinas: Disciplina[],
     assuntos: Assunto[],
@@ -444,6 +460,7 @@ export class PlannerService {
               disciplinaId: discAlloc.disciplinaId,
               disciplinaName: discAlloc.disciplinaName,
               disciplinaColor: discAlloc.color,
+              assuntoId: discAlloc.disciplinaId === rev.disciplinaId ? rev.assuntoId : undefined,
               assuntoName: rev.assuntoName,
               date: currentDateStr,
               dayOfWeek,
