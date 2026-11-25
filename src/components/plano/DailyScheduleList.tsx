@@ -1,13 +1,14 @@
 import { useId, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { GripVertical } from 'lucide-react';
 import type { PlannedSession } from '../../types';
+import { PlannerService } from '../../services/plannerService';
 import { getNoteColor } from './WeeklySchedule';
 
 interface DailyScheduleListProps {
   sessions: PlannedSession[];
   onOpenSession: (session: PlannedSession) => void;
   onMoveSession: (sessionId: string, beforeSessionId?: string) => Promise<void>;
-  renderSession: (session: PlannedSession) => ReactNode;
+  renderSession: (session: PlannedSession, done: boolean) => ReactNode;
 }
 
 interface Row {
@@ -148,6 +149,7 @@ export function DailyScheduleList({ sessions, onOpenSession, onMoveSession, rend
       <p id={instructionsId} className="sr-only">Arraste o bloco ou use as setas para cima e para baixo no teclado.</p>
       <div ref={list} className="space-y-3" aria-busy={isSaving}>
         {sessions.map((session, index) => {
+          const done = PlannerService.isSessionStudied(session);
           const lifted = preview?.from === index;
           let offset = 0;
           if (preview) {
@@ -162,8 +164,8 @@ export function DailyScheduleList({ sessions, onOpenSession, onMoveSession, rend
               data-daily-session={session.id}
               data-lifted={lifted}
               data-animating={!!preview && (!lifted || preview.settling)}
-              onClick={() => onOpenSession(session)}
-              className="weekly-schedule-note daily-calendar-note relative pl-12 pr-4 py-3 sm:pl-14 sm:pr-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer"
+              onClick={done ? undefined : () => onOpenSession(session)}
+              className={`weekly-schedule-note daily-calendar-note relative pl-12 pr-4 py-3 sm:pl-14 sm:pr-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${done ? '' : 'cursor-pointer'}`}
               style={{ ...getNoteColor(session), transform: preview ? `translateY(${offset}px)` : undefined }}
             >
               <button
@@ -189,7 +191,7 @@ export function DailyScheduleList({ sessions, onOpenSession, onMoveSession, rend
               >
                 <GripVertical className="w-4 h-4" />
               </button>
-              {renderSession(session)}
+              {renderSession(session, done)}
             </article>
           );
         })}

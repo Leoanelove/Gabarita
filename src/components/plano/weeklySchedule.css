@@ -182,10 +182,11 @@
 }
 
 .weekly-schedule-note[data-done="true"] .weekly-schedule-open {
-  padding-left: 1.5rem;
+  color: var(--week-muted);
+  cursor: default;
 }
 
-.weekly-schedule-open:hover {
+.weekly-schedule-open:enabled:hover {
   background: color-mix(in srgb, var(--note-color) 8%, transparent);
 }
 
@@ -211,16 +212,25 @@
   line-height: 1.25;
 }
 
+.weekly-schedule-note[data-done="true"] .weekly-schedule-subject,
+.weekly-schedule-note[data-done="true"] .weekly-schedule-topic {
+  font-weight: 500;
+}
+
 .weekly-schedule-done {
   position: absolute;
-  top: .625rem;
-  left: .3125rem;
-  color: #15803d;
+  top: 50%;
+  left: 50%;
+  width: 3.375rem;
+  height: 3.375rem;
+  transform: translate(-50%, -50%);
+  color: #64748b;
+  opacity: .5;
   pointer-events: none;
 }
 
 .dark .weekly-schedule-done {
-  color: #86efac;
+  color: #cbd5e1;
 }
 
 .weekly-schedule-grip {
@@ -302,42 +312,4 @@
   transform: translate(12px, 12px) rotate(-3deg);
   box-shadow: 0 8px 24px rgb(15 23 42 / 25%);
   pointer-events: none;
-}
-
-.schedule-status-badge {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  padding: .125rem .5rem;
-  border: 1px solid #fda4af;
-  border-radius: 999px;
-  background-color: #fff1f2;
-  color: #9f1239;
-  font-size: .6875rem;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
-.schedule-status-badge[data-complete="true"] {
-  border-color: #86efac;
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.dark .schedule-status-badge {
-  border-color: #9f1239;
-  background-color: #4c0519;
-  color: #fecdd3;
-}
-
-.dark .schedule-status-badge[data-complete="true"] {
-  border-color: #15803d;
-  background-color: #052e16;
-  color: #bbf7d0;
-}
-
-.weekly-schedule-open .schedule-status-badge {
-  margin-top: .3125rem;
-  padding-inline: .375rem;
-  font-size: .625rem;
 }

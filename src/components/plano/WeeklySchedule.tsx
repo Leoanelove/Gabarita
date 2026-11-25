@@ -1,8 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
-import { CalendarDays, Check, Clock, GripVertical, Plus } from 'lucide-react';
+import { CalendarDays, CircleCheck, Clock, GripVertical, Plus } from 'lucide-react';
 import type { PlannedSession } from '../../types';
 import { PlannerService } from '../../services/plannerService';
-import { ScheduleStatusBadge } from './ScheduleStatusBadge';
 import './weeklySchedule.css';
 
 interface WeekDay {
@@ -27,7 +26,6 @@ interface DragPosition {
 interface WeeklyScheduleProps {
   days: WeekDay[];
   sessionsByDate: Record<string, PlannedSession[]>;
-  today: string;
   onClickSession: (session: PlannedSession) => void;
   onAddSession: (date: string) => void;
   onMoveSession: (sessionId: string, date: string, beforeSessionId?: string) => Promise<void>;
@@ -44,7 +42,7 @@ function plannedDuration(sessions: PlannedSession[]) {
 }
 
 export function WeeklySchedule({
-  days, sessionsByDate, today, onClickSession, onAddSession, onMoveSession,
+  days, sessionsByDate, onClickSession, onAddSession, onMoveSession,
 }: WeeklyScheduleProps) {
   const board = useRef<HTMLDivElement>(null);
   const gesture = useRef<DragPosition | null>(null);
@@ -188,13 +186,13 @@ export function WeeklySchedule({
                         data-insert={target?.before === session.id}
                         style={done ? undefined : getNoteColor(session)}
                       >
-                        <button type="button" className="weekly-schedule-open" onClick={() => onClickSession(session)}>
+                        <button type="button" disabled={done} className="weekly-schedule-open" onClick={() => onClickSession(session)}>
                           <span className="weekly-schedule-subject" title={session.disciplinaName}>{session.disciplinaName}</span>
                           <span className="weekly-schedule-topic" title={session.assuntoName}>{session.assuntoName || 'Tópico geral'}</span>
                           <span className="weekly-schedule-time"><Clock size={13} /> {session.durationMinutes} min</span>
-                          <ScheduleStatusBadge done={done} overdue={PlannerService.isSessionOverdue(session, today)} />
+                          {done && <span className="sr-only">Concluído</span>}
                         </button>
-                        {done && <span className="weekly-schedule-done" aria-hidden="true"><Check size={16} /></span>}
+                        {done && <CircleCheck className="weekly-schedule-done" strokeWidth={2.5} aria-hidden="true" />}
                         <button
                           type="button"
                           className="weekly-schedule-grip"
