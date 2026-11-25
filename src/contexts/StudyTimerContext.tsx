@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-import type { CycleStudyTarget } from '../types';
+import type { CycleStudyTarget, PlanStudyTarget } from '../types';
 
 export type OpenStudyTimer = (
   disciplinaId?: string,
@@ -9,6 +9,7 @@ export type OpenStudyTimer = (
   mode?: 'cronometro' | 'manual',
   contabilizarPlanejamento?: boolean,
   cycleStudyTarget?: CycleStudyTarget,
+  planStudyTarget?: PlanStudyTarget,
 ) => void;
 
 export interface StudyRegisterOptions {
@@ -18,6 +19,7 @@ export interface StudyRegisterOptions {
   durationMinutes?: number | string;
   contabilizarPlanejamento?: boolean;
   cycleStudyTarget?: CycleStudyTarget;
+  planStudyTarget?: PlanStudyTarget;
 }
 
 interface StudyTimerContextType {
@@ -28,6 +30,7 @@ interface StudyTimerContextType {
   timerInitialMode?: 'cronometro' | 'manual';
   timerContabilizarPlanejamento?: boolean;
   timerCycleStudyTarget?: CycleStudyTarget;
+  timerPlanStudyTarget?: PlanStudyTarget;
   openStudyTimer: OpenStudyTimer;
   openStudyRegister: (options?: StudyRegisterOptions) => void;
   closeStudyTimer: () => void;
@@ -44,6 +47,7 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [timerContabilizarPlanejamento, setTimerContabilizarPlanejamento] = useState<boolean>(true);
 
   const [timerCycleStudyTarget, setTimerCycleStudyTarget] = useState<CycleStudyTarget>();
+  const [timerPlanStudyTarget, setTimerPlanStudyTarget] = useState<PlanStudyTarget>();
 
   // Auxiliar para converter duração numérica ou string (ex: "1h 13min", "45min", 73) em minutos
   const parseDurationToMinutes = (val?: number | string): number | undefined => {
@@ -86,6 +90,7 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     mode: 'cronometro' | 'manual' = 'cronometro',
     contabilizarPlanejamento: boolean = true,
     cycleStudyTarget?: CycleStudyTarget,
+    planStudyTarget?: PlanStudyTarget,
   ) => {
     setTimerInitialDisciplinaId(disciplinaId);
     setTimerInitialAssuntoId(assuntoId);
@@ -94,6 +99,7 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTimerInitialMode(mode);
     setTimerContabilizarPlanejamento(contabilizarPlanejamento);
     setTimerCycleStudyTarget(cycleStudyTarget);
+    setTimerPlanStudyTarget(planStudyTarget);
     setIsStudyTimerOpen(true);
   }, []);
 
@@ -105,6 +111,7 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       options?.modo || 'manual',
       options?.contabilizarPlanejamento,
       options?.cycleStudyTarget,
+      options?.planStudyTarget,
     );
   }, [openStudyTimer]);
 
@@ -122,6 +129,7 @@ export const StudyTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         timerInitialMode,
         timerContabilizarPlanejamento,
         timerCycleStudyTarget,
+        timerPlanStudyTarget,
         openStudyTimer,
         openStudyRegister,
         closeStudyTimer,

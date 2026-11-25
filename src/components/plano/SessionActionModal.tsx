@@ -162,10 +162,13 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
     }
   };
 
+  const planStudyTarget = { concursoId: session.concursoId, planId: session.planId, sessionId: session.id };
+  const remainingMinutes = PlannerService.remainingMinutes(session);
+
   // Ações de Início de Estudo
   const handleStartStudy = () => {
     onClose();
-    openStudyTimer(session.disciplinaId, session.assuntoId, session.durationMinutes, 'cronometro');
+    openStudyTimer(session.disciplinaId, session.assuntoId, remainingMinutes, 'cronometro', true, undefined, planStudyTarget);
   };
 
   // Ação de Registro Manual
@@ -176,7 +179,8 @@ export const SessionActionModal: React.FC<SessionActionModalProps> = ({
       modo: 'manual',
       disciplinaId: session.disciplinaId,
       assuntoId: session.assuntoId,
-      durationMinutes: session.durationMinutes,
+      durationMinutes: remainingMinutes,
+      planStudyTarget,
     });
   };
 

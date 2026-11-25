@@ -46,6 +46,7 @@ import {
   StudyPlan,
   StudyCycle,
   CycleStudyTarget,
+  PlanStudyTarget,
   StudyMethod,
   Prova,
   RevisionRating 
@@ -228,6 +229,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     assuntoId?: string;
     durationMinutes?: number;
     cycleStudyTarget?: CycleStudyTarget;
+    planStudyTarget?: PlanStudyTarget;
   }) => {
     setStudyOptionsMenuId(null);
     if (onOpenStudyRegister) {
@@ -237,6 +239,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         assuntoId: item.assuntoId,
         durationMinutes: item.durationMinutes,
         cycleStudyTarget: item.cycleStudyTarget,
+        planStudyTarget: item.planStudyTarget,
       });
     } else {
       onOpenStudyTimer(
@@ -246,6 +249,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         'manual',
         true,
         item.cycleStudyTarget,
+        item.planStudyTarget,
       );
     }
   };
@@ -909,7 +913,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     session.date === todayStr && (!effectivePlan?.startDate || session.date >= effectivePlan.startDate)
   );
   const pendingToday = todaysSessions
-    .filter(session => !PlannerService.isSessionStudied(session, activeSessoes))
+    .filter(session => !PlannerService.isSessionStudied(session))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const pendingCycleBlocks = cycleBlocks
@@ -920,6 +924,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     concursoId: effectiveCycle.concursoId,
     cycleId: effectiveCycle.id,
     blockId,
+  } : undefined;
+
+  const getPlanStudyTarget = (sessionId: string) => !isCycleMethod && effectivePlan ? {
+    concursoId: effectivePlan.concursoId,
+    planId: effectivePlan.id,
+    sessionId,
   } : undefined;
 
   const studyQueue = isCycleMethod
@@ -944,7 +954,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         disciplinaName: session.disciplinaName,
         assuntoId: session.assuntoId,
         assuntoName: session.assuntoName || relevantAssuntos.find(a => a.id === session.assuntoId)?.name || 'Estudo dirigido do edital',
-        durationMinutes: session.durationMinutes || 45,
+        durationMinutes: PlannerService.remainingMinutes(session),
       }));
 
   const [primaryStudyItem, ...upcomingStudyItems] = studyQueue;
@@ -1393,6 +1403,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               'cronometro',
                               true,
                               getCycleStudyTarget(primaryStudyItem.id),
+                              getPlanStudyTarget(primaryStudyItem.id),
                             )
                           }
                           className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95 whitespace-nowrap"
@@ -1425,6 +1436,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                     assuntoId: primaryStudyItem.assuntoId,
                                     durationMinutes: primaryStudyItem.durationMinutes,
                                     cycleStudyTarget: getCycleStudyTarget(primaryStudyItem.id),
+                                    planStudyTarget: getPlanStudyTarget(primaryStudyItem.id),
                                   })
                                 }
                                 className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
@@ -1553,6 +1565,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                         assuntoId: item.assuntoId,
                                         durationMinutes: item.durationMinutes,
                                         cycleStudyTarget: getCycleStudyTarget(item.id),
+                                        planStudyTarget: getPlanStudyTarget(item.id),
                                       })
                                     }
                                     className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold transition-colors cursor-pointer"
