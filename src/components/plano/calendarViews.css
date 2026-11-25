@@ -3,6 +3,57 @@
   width: 2.25rem;
 }
 
+.daily-calendar-note[data-animating="true"] {
+  transition: transform 180ms cubic-bezier(.2, .75, .25, 1);
+}
+
+.daily-calendar-note[data-lifted="true"] {
+  z-index: 2;
+  box-shadow: 0 12px 26px rgb(15 23 42 / 18%);
+  border-color: var(--primary-color);
+  user-select: none;
+}
+
+.dark .daily-calendar-note[data-lifted="true"] {
+  box-shadow: 0 12px 26px rgb(0 0 0 / 45%);
+}
+
+.daily-calendar-grip {
+  position: absolute;
+  inset-inline-start: .5rem;
+  top: 50%;
+  display: grid;
+  width: 2rem;
+  height: 2.5rem;
+  transform: translateY(-50%);
+  place-items: center;
+  border-radius: .5rem;
+  color: var(--week-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.daily-calendar-grip:hover:enabled {
+  background: var(--primary-light);
+  color: var(--week-ink);
+}
+
+.daily-calendar-grip:active {
+  cursor: grabbing;
+}
+
+.daily-calendar-grip:disabled,
+.daily-calendar-grip[aria-disabled="true"] {
+  opacity: .4;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-calendar-note[data-animating="true"] {
+    transition: none;
+  }
+}
+
 .daily-calendar-note:hover {
   border-color: color-mix(in srgb, var(--note-color) 50%, var(--week-surface));
 }
