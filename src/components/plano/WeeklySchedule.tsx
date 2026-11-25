@@ -1,7 +1,8 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { CalendarDays, Check, Clock, GripVertical, Plus } from 'lucide-react';
-import type { PlannedSession, SessaoEstudo } from '../../types';
+import type { PlannedSession } from '../../types';
 import { PlannerService } from '../../services/plannerService';
+import { ScheduleStatusBadge } from './ScheduleStatusBadge';
 import './weeklySchedule.css';
 
 interface WeekDay {
@@ -26,7 +27,7 @@ interface DragPosition {
 interface WeeklyScheduleProps {
   days: WeekDay[];
   sessionsByDate: Record<string, PlannedSession[]>;
-  studySessions: SessaoEstudo[];
+  today: string;
   onClickSession: (session: PlannedSession) => void;
   onAddSession: (date: string) => void;
   onMoveSession: (sessionId: string, date: string, beforeSessionId?: string) => Promise<void>;
@@ -43,7 +44,7 @@ function plannedDuration(sessions: PlannedSession[]) {
 }
 
 export function WeeklySchedule({
-  days, sessionsByDate, studySessions, onClickSession, onAddSession, onMoveSession,
+  days, sessionsByDate, today, onClickSession, onAddSession, onMoveSession,
 }: WeeklyScheduleProps) {
   const board = useRef<HTMLDivElement>(null);
   const gesture = useRef<DragPosition | null>(null);
@@ -68,7 +69,7 @@ export function WeeklySchedule({
   async function moveSession(session: PlannedSession, target: DropPosition) {
     if (saving.current) return;
     const sameDay = session.date === target.date;
-    if (!sameDay && PlannerService.isSessionStudied(session, studySessions)) {
+    if (!sameDay && PlannerService.isSessionStudied(session)) {
       setNotice('Um bloco concluído só pode ser reordenado no próprio dia.');
       return;
     }
@@ -176,7 +177,7 @@ export function WeeklySchedule({
                 </header>
                 <div className="weekly-schedule-notes">
                   {sessions.map(session => {
-                    const done = PlannerService.isSessionStudied(session, studySessions);
+                    const done = PlannerService.isSessionStudied(session);
                     return (
                       <div
                         key={session.id}
@@ -191,8 +192,9 @@ export function WeeklySchedule({
                           <span className="weekly-schedule-subject" title={session.disciplinaName}>{session.disciplinaName}</span>
                           <span className="weekly-schedule-topic" title={session.assuntoName}>{session.assuntoName || 'Tópico geral'}</span>
                           <span className="weekly-schedule-time"><Clock size={13} /> {session.durationMinutes} min</span>
+                          <ScheduleStatusBadge done={done} overdue={PlannerService.isSessionOverdue(session, today)} />
                         </button>
-                        {done && <span className="weekly-schedule-done" title="Concluído"><Check size={16} /><span className="sr-only">Concluído</span></span>}
+                        {done && <span className="weekly-schedule-done" aria-hidden="true"><Check size={16} /></span>}
                         <button
                           type="button"
                           className="weekly-schedule-grip"

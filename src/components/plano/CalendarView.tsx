@@ -29,7 +29,7 @@ import {
   StudyMethod,
   SessaoEstudo
 } from '../../types';
-import { Badge } from '../../design-system/Badge';
+import { ScheduleStatusBadge } from './ScheduleStatusBadge';
 import { Button } from '../../design-system/Button';
 import { Modal } from '../../design-system/Modal';
 import { PlannerService } from '../../services/plannerService';
@@ -136,8 +136,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const overdueSessions = useMemo(() => {
-    return PlannerService.getOverdueSessions(plan.sessions, todayStr, sessoes);
-  }, [plan.sessions, todayStr, sessoes]);
+    return PlannerService.getOverdueSessions(plan.sessions, todayStr);
+  }, [plan.sessions, todayStr]);
 
   const selectedDateObj = useMemo(() => {
     return PlannerService.parseLocalDate(selectedDateStr);
@@ -354,8 +354,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onOpenSession={handleSessionClick}
             onMoveSession={(sessionId, before) => onMoveSession(plan.concursoId, sessionId, selectedDateStr, before)}
             renderSession={(session) => {
-              const isDone = session.status === 'concluida' || PlannerService.isSessionStudied(session, sessoes);
-              const isOverdue = PlannerService.isSessionOverdue(session, todayStr, sessoes);
+              const isDone = PlannerService.isSessionStudied(session);
+              const isOverdue = PlannerService.isSessionOverdue(session, todayStr);
 
               return (
                 <>
@@ -369,9 +369,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         <Clock className="w-3.5 h-3.5" />
                         {session.durationMinutes} min
                       </span>
-                      {isDone && <Badge variant="primary" size="sm">Concluída</Badge>}
-                      {isOverdue && <Badge variant="rose" size="sm">Atrasada</Badge>}
-                      {!isDone && !isOverdue && <Badge variant="sky" size="sm">Pendente</Badge>}
+                      <ScheduleStatusBadge done={isDone} overdue={isOverdue} />
                     </div>
                     {session.notes && (
                       <p className="mt-1 text-xs text-(--week-muted) line-clamp-1" title={session.notes}>{session.notes}</p>
@@ -425,7 +423,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           key={plan.id}
           days={weekDays}
           sessionsByDate={sessionsByDate}
-          studySessions={sessoes}
+          today={todayStr}
           onClickSession={handleSessionClick}
           onAddSession={onOpenAddSession}
           onMoveSession={(sessionId, date, before) => onMoveSession(plan.concursoId, sessionId, date, before)}

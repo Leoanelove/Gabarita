@@ -598,6 +598,12 @@ export interface WeeklyAvailability {
 export type PlanSessionType = 'teoria' | 'questoes' | 'revisao' | 'simulado';
 export type PlanSessionStatus = 'pendente' | 'concluida' | 'atrasada' | 'reagendada' | 'conflito';
 
+export interface PlanStudyTarget {
+  concursoId: string;
+  planId: string;
+  sessionId: string;
+}
+
 export interface PlannedSession {
   id: string;
   planId: string;
@@ -611,6 +617,7 @@ export interface PlannedSession {
   dayOfWeek: DayOfWeek;
   startTime?: string;
   durationMinutes: number;
+  studyRecords?: Record<string, number>;
   type: PlanSessionType;
   status: PlanSessionStatus;
   notes?: string;

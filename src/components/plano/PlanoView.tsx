@@ -455,8 +455,8 @@ export const PlanoView: React.FC<PlanoViewProps> = ({
     const examDate = PlannerService.parseLocalDate(effectivePlan.targetExamDate);
     const daysUntilExam = Math.max(0, Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
     const totalSessions = effectivePlan.sessions.length;
-    const completedSessions = effectivePlan.sessions.filter(s => s.status === 'concluida' || PlannerService.isSessionStudied(s, sessoes)).length;
-    const overdueSessionsList = PlannerService.getOverdueSessions(effectivePlan.sessions, todayStr, sessoes);
+    const completedSessions = effectivePlan.sessions.filter(s => PlannerService.isSessionStudied(s)).length;
+    const overdueSessionsList = PlannerService.getOverdueSessions(effectivePlan.sessions, todayStr);
     const overdueSessions = overdueSessionsList.length;
     const todaySessions = effectivePlan.sessions.filter(s => s.date === todayStr);
     const weeklyMinutes = totalSessions > 0 ? Object.values(effectivePlan.weeklyAvailability).reduce((a, b) => a + b, 0) : 0;
