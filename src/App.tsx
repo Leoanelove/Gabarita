@@ -113,6 +113,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     timerInitialMode,
     timerContabilizarPlanejamento,
     timerCycleStudyTarget,
+    timerPlanStudyTarget,
     openStudyTimer,
     openStudyRegister,
     closeStudyTimer,
@@ -774,7 +775,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
     setMetas(updatedMetas);
   };
 
-  const handleSaveStudySession = async (session: {
+  const saveStudySession = async (session: {
     concursoId?: string;
     disciplinaId: string;
     assuntoId?: string;
@@ -833,11 +834,30 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
 
     const profile = await DatabaseService.getUserProfile(user.id);
     refreshProfile(profile);
+    return recorded;
   };
 
-  const handleSaveTimerSession = async (session: Parameters<typeof handleSaveStudySession>[0]) => {
-    await handleSaveStudySession(session);
-    if (session.contabilizarPlanejamento === false || (studyMethod !== 'ciclo' && !timerCycleStudyTarget)) return;
+  const handleSaveStudySession = async (session: Parameters<typeof saveStudySession>[0]) => {
+    await saveStudySession(session);
+  };
+
+  const handleSaveTimerSession = async (session: Parameters<typeof saveStudySession>[0]) => {
+    const recorded = await saveStudySession(session);
+    if (session.contabilizarPlanejamento === false) return;
+
+    if (timerPlanStudyTarget) {
+      try {
+        const updated = await DatabaseService.recordPlannedStudy(timerPlanStudyTarget, recorded);
+        if (timerPlanStudyTarget.concursoId === activeConcursoId) {
+          setPlan(current => current && current.concursoId !== updated.concursoId ? current : updated);
+        }
+      } catch (error) {
+        console.warn('Erro ao registrar progresso do cronograma:', error);
+      }
+      return;
+    }
+
+    if (studyMethod !== 'ciclo' && !timerCycleStudyTarget) return;
 
     const concursoId = timerCycleStudyTarget?.concursoId || activeConcursoId;
     if (!concursoId) return;

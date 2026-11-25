@@ -17,7 +17,8 @@ import {
   AssuntoImportance,
   EditalAiImportPayload, 
   StudyPlan, 
-  PlannedSession, 
+  PlannedSession,
+  PlanStudyTarget,
   WeeklyAvailability, 
   PlanSessionStatus, 
   StudyCycle, 
@@ -5713,6 +5714,37 @@ export class DatabaseService {
     return plan;
   }
 
+  private static readonly plannedStudyWrites = new Map<string, Promise<StudyPlan>>();
+
+  static async recordPlannedStudy(target: PlanStudyTarget, study: SessaoEstudo): Promise<StudyPlan> {
+    const previous = this.plannedStudyWrites.get(target.concursoId);
+    const write = (previous?.catch(() => {}) ?? Promise.resolve()).then(async () => {
+      await this.studyPlanWrites.get(target.concursoId);
+      const plan = await this.getStudyPlan(target.concursoId);
+      const session = plan.sessions.find(item => item.id === target.sessionId);
+      const seconds = Math.round(study.durationSeconds ?? study.durationMinutes * 60);
+      if (plan.id !== target.planId || !session || session.disciplinaId !== study.disciplinaId ||
+          study.contabilizarPlanejamento === false || !Number.isFinite(seconds) || seconds <= 0 ||
+          (session.assuntoId && session.assuntoId !== study.assuntoId) ||
+          PlannerService.isSessionStudied(session) ||
+          plan.sessions.some(item => item.studyRecords?.[study.id] !== undefined)) return plan;
+
+      const sessions = plan.sessions.map(item => item.id === session.id ? {
+        ...item,
+        studyRecords: { ...item.studyRecords, [study.id]: seconds },
+      } : item);
+      const assuntos = await this.getAssuntos();
+      const conflicts = PlannerService.detectConflicts(sessions, plan.weeklyAvailability, plan.targetExamDate, assuntos);
+      return this.saveStudyPlan({ ...plan, sessions, conflicts, updatedAt: new Date().toISOString() });
+    });
+    this.plannedStudyWrites.set(target.concursoId, write);
+    try {
+      return await write;
+    } finally {
+      if (this.plannedStudyWrites.get(target.concursoId) === write) this.plannedStudyWrites.delete(target.concursoId);
+    }
+  }
+
   static async movePlannedSession(
     concursoId: string,
     sessionId: string,
@@ -5724,11 +5756,11 @@ export class DatabaseService {
     if (plan.startDate && destinationDate < plan.startDate) {
       throw new Error('Escolha um dia a partir do início do cronograma.');
     }
-    const [studySessions, assuntos] = await Promise.all([this.getSessoes(), this.getAssuntos()]);
-    const sessions = PlannerService.movePlannedSession(plan.sessions, sessionId, destinationDate, beforeSessionId, studySessions);
+    const assuntos = await this.getAssuntos();
+    const sessions = PlannerService.movePlannedSession(plan.sessions, sessionId, destinationDate, beforeSessionId);
     if (sessions === plan.sessions) return plan;
 
-    const conflicts = PlannerService.detectConflicts(sessions, plan.weeklyAvailability, plan.targetExamDate, assuntos, studySessions);
+    const conflicts = PlannerService.detectConflicts(sessions, plan.weeklyAvailability, plan.targetExamDate, assuntos);
     return this.saveStudyPlan({ ...plan, sessions, conflicts, updatedAt: new Date().toISOString() }, true);
   }
 
@@ -5913,10 +5945,9 @@ export class DatabaseService {
   static async batchRescheduleOverdue(targetDateStr?: string, mode: 'today' | 'spread' = 'spread'): Promise<StudyPlan> {
     const plan = await this.getStudyPlan();
     const destinationDate = targetDateStr || PlannerService.formatLocalDate(new Date());
-    const sessoes = await this.getSessoes();
-    const { updatedSessions, count } = PlannerService.redistributeOverdueSessions(plan, mode, destinationDate, sessoes);
+    const { updatedSessions, count } = PlannerService.redistributeOverdueSessions(plan, mode, destinationDate);
     const assuntos = await this.getAssuntos();
-    const conflicts = PlannerService.detectConflicts(updatedSessions, plan.weeklyAvailability, plan.targetExamDate, assuntos, sessoes);
+    const conflicts = PlannerService.detectConflicts(updatedSessions, plan.weeklyAvailability, plan.targetExamDate, assuntos);
     const updatedPlan: StudyPlan = {
       ...plan,
       sessions: updatedSessions,

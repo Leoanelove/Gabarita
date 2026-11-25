@@ -43,114 +43,26 @@ export class PlannerService {
     return `${y}-${m}-${d}`;
   }
 
-  /**
-   * Determina se uma sessão planejada foi efetivamente estudada pelo estudante
-   * (seja por marcação direta no plano ou por registro de estudo em `sessoes`).
-   */
-  static isSessionStudied(session: PlannedSession, sessoes: SessaoEstudo[] = []): boolean {
-    if (session.status === 'concluida') return true;
-    if (!sessoes || sessoes.length === 0) return false;
-
-    const sessionDate = session.date;
-    return sessoes.some(st => {
-      if (st.disciplinaId !== session.disciplinaId) return false;
-      const studyDate = st.completedAt
-        ? (st.completedAt.includes('T') ? st.completedAt.split('T')[0] : st.completedAt)
-        : (st.createdAt ? (st.createdAt.includes('T') ? st.createdAt.split('T')[0] : st.createdAt) : '');
-
-      // Se estudou na data planejada do bloco
-      if (studyDate === sessionDate) {
-        if (session.assuntoId && st.assuntoId) {
-          return st.assuntoId === session.assuntoId;
-        }
-        return true;
-      }
-
-      // Se estudou o mesmo tópico em data posterior à planejada
-      if (session.assuntoId && st.assuntoId && st.assuntoId === session.assuntoId && studyDate >= sessionDate) {
-        return true;
-      }
-
-      return false;
-    });
+  static studiedSeconds(session: PlannedSession): number {
+    return Object.values(session.studyRecords ?? {}).reduce((total, seconds) => total + seconds, 0);
   }
 
-  /**
-   * Uma sessão só pode ser considerada atrasada se:
-   * 1. A sua data já passou estritamente (session.date < todayStr) — ou seja,
-   *    a notificação só deve aparecer NO DIA SEGUINTE ao dos blocos (nunca no próprio dia ou futuro).
-   * 2. O estudante NÃO tiver estudado a sessão (nem marcada como concluída nem registrada em sessoes).
-   */
-  static isSessionOverdue(
-    session: PlannedSession,
-    todayStr: string,
-    sessoes: SessaoEstudo[] = []
-  ): boolean {
-    // REGRA FUNDAMENTAL: Blocos do dia de hoje (ou de datas futuras) NUNCA são considerados atrasados.
-    // A notificação de atraso só pode aparecer no dia seguinte ao dos blocos.
-    if (!session.date || session.date >= todayStr) {
-      return false;
-    }
-
-    // Se já estiver marcada como concluída
-    if (session.status === 'concluida') {
-      return false;
-    }
-
-    // Verifica se o usuário estudou a sessão no histórico
-    if (this.isSessionStudied(session, sessoes)) {
-      return false;
-    }
-
-    return true;
+  static isSessionStudied(session: PlannedSession): boolean {
+    return session.status === 'concluida' ||
+      (session.durationMinutes > 0 && this.studiedSeconds(session) >= Math.round(session.durationMinutes * 60));
   }
 
-  /**
-   * Retorna apenas as sessões de dias anteriores que o usuário NÃO tiver estudado.
-   */
-  static getOverdueSessions(
-    sessions: PlannedSession[],
-    todayStr: string,
-    sessoes: SessaoEstudo[] = []
-  ): PlannedSession[] {
-    if (!sessions || sessions.length === 0) return [];
+  static remainingMinutes(session: PlannedSession): number {
+    const remainingSeconds = session.durationMinutes * 60 - this.studiedSeconds(session);
+    return this.isSessionStudied(session) ? session.durationMinutes : Math.max(1, Math.ceil(remainingSeconds / 60));
+  }
 
-    const usedSessaoIds = new Set<string>();
+  static isSessionOverdue(session: PlannedSession, todayStr: string): boolean {
+    return Boolean(session.date && session.date < todayStr && !this.isSessionStudied(session));
+  }
 
-    return sessions.filter(session => {
-      // Bloqueia qualquer sessão de hoje ou de datas futuras
-      if (!session.date || session.date >= todayStr) return false;
-      if (session.status === 'concluida') return false;
-
-      // Procura correspondência no histórico de estudos
-      const matchedSessao = (sessoes || []).find(st => {
-        if (usedSessaoIds.has(st.id)) return false;
-        if (st.disciplinaId !== session.disciplinaId) return false;
-        const studyDate = st.completedAt
-          ? (st.completedAt.includes('T') ? st.completedAt.split('T')[0] : st.completedAt)
-          : (st.createdAt ? (st.createdAt.includes('T') ? st.createdAt.split('T')[0] : st.createdAt) : '');
-
-        if (studyDate === session.date) {
-          if (session.assuntoId && st.assuntoId) {
-            return st.assuntoId === session.assuntoId;
-          }
-          return true;
-        }
-
-        if (session.assuntoId && st.assuntoId && st.assuntoId === session.assuntoId && studyDate >= session.date) {
-          return true;
-        }
-
-        return false;
-      });
-
-      if (matchedSessao) {
-        usedSessaoIds.add(matchedSessao.id);
-        return false; // Estudada! Não está atrasada.
-      }
-
-      return true; // Não estudada e data passada -> atrasada!
-    });
+  static getOverdueSessions(sessions: PlannedSession[], todayStr: string): PlannedSession[] {
+    return sessions.filter(session => this.isSessionOverdue(session, todayStr));
   }
 
   /**
@@ -427,7 +339,7 @@ export class PlannerService {
     const rawDiffDays = Math.round((examDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const totalDays = Math.max(1, Math.min(rawDiffDays, 366));
     const finalSessions: PlannedSession[] = [
-      ...preservedSessions.filter(s => s.status === 'concluida' && s.date >= startDateStr && s.date <= targetExamDateStr)
+      ...preservedSessions.filter(s => (this.isSessionStudied(s) || this.studiedSeconds(s) > 0) && s.date >= startDateStr && s.date <= targetExamDateStr)
     ];
 
     const pendingReviews = revisoes.filter(r => r.status === 'pendente');
@@ -466,7 +378,7 @@ export class PlannerService {
       discTopicsMap[key] = topics;
       // Dá continuidade com base em blocos concluídos prévios para não reiniciar do início se já houver progresso
       const completedCount = finalSessions.filter(
-        s => (s.disciplinaId === d.disciplinaId || s.disciplinaName === d.disciplinaName) && s.status === 'concluida'
+        s => (s.disciplinaId === d.disciplinaId || s.disciplinaName === d.disciplinaName) && (this.isSessionStudied(s) || this.studiedSeconds(s) > 0)
       ).length;
       topicIndices[key] = completedCount;
     });
@@ -722,14 +634,13 @@ export class PlannerService {
     sessionId: string,
     destinationDate: string,
     beforeSessionId: string | undefined,
-    studySessions: SessaoEstudo[] = [],
   ): PlannedSession[] {
     const session = sessions.find(item => item.id === sessionId);
     if (!session) throw new Error('Bloco indisponível no cronograma.');
     if (beforeSessionId === sessionId) return sessions;
 
     const dateChanged = destinationDate !== session.date;
-    if (dateChanged && this.isSessionStudied(session, studySessions)) {
+    if (dateChanged && this.isSessionStudied(session)) {
       throw new Error('Um bloco concluído só pode ser reordenado no próprio dia.');
     }
 
@@ -770,14 +681,13 @@ export class PlannerService {
     availability: WeeklyAvailability,
     examDateStr: string,
     assuntos: Assunto[],
-    sessoes: SessaoEstudo[] = []
   ): PlanConflict[] {
     const conflicts: PlanConflict[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = this.formatLocalDate(today);
 
-    const overdueSessions = this.getOverdueSessions(sessions, todayStr, sessoes);
+    const overdueSessions = this.getOverdueSessions(sessions, todayStr);
     if (overdueSessions.length > 0) {
       conflicts.push({
         id: 'conf_overdue',
@@ -848,8 +758,8 @@ export class PlannerService {
     const weeklyTotalMinutes = Object.values(availability).reduce((a, b) => a + b, 0);
     const dailyAverageMinutes = Math.round(weeklyTotalMinutes / 7);
 
-    const preservedCompletedSessions = currentPlan.sessions.filter(
-      s => s.status === 'concluida' && s.date >= effectiveStartDate
+    const preservedSessions = currentPlan.sessions.filter(
+      s => (this.isSessionStudied(s) || this.studiedSeconds(s) > 0) && s.date >= effectiveStartDate
     );
     const newDistribution =
       currentPlan.disciplinasDistribution && currentPlan.disciplinasDistribution.length > 0
@@ -871,17 +781,18 @@ export class PlannerService {
       assuntos,
       revisoes,
       newDistribution,
-      preservedCompletedSessions
+      preservedSessions
     );
 
+    const completedSessions = preservedSessions.filter(session => this.isSessionStudied(session));
     const newLog: PlanHistoryLog = {
       id: `log_recalc_${Date.now()}`,
       planId: currentPlan.id,
       action: 'recalculo',
       timestamp: now.toISOString(),
-      description: `Plano recalculado com sucesso. ${preservedCompletedSessions.length} sessões concluídas mantidas intactas.`,
-      preservedCompletedCount: preservedCompletedSessions.length,
-      totalStudyMinutes: preservedCompletedSessions.reduce((acc, s) => acc + s.durationMinutes, 0),
+      description: `Plano recalculado com sucesso. ${preservedSessions.length} sessões com progresso preservadas.`,
+      preservedCompletedCount: completedSessions.length,
+      totalStudyMinutes: completedSessions.reduce((acc, s) => acc + s.durationMinutes, 0),
     };
 
     const startObj = this.parseLocalDate(effectiveStartDate);
@@ -909,14 +820,13 @@ export class PlannerService {
     plan: StudyPlan,
     mode: 'today' | 'spread' = 'spread',
     targetDateStr?: string,
-    sessoes: SessaoEstudo[] = []
   ): { updatedSessions: PlannedSession[]; count: number } {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = this.formatLocalDate(today);
     const destinationDate = targetDateStr || todayStr;
 
-    const overdueSessions = this.getOverdueSessions(plan.sessions, todayStr, sessoes);
+    const overdueSessions = this.getOverdueSessions(plan.sessions, todayStr);
     if (overdueSessions.length === 0) {
       return { updatedSessions: plan.sessions, count: 0 };
     }
