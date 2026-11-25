@@ -12,7 +12,8 @@ import {
   Flame, 
   Repeat,
   BookOpen,
-  Video,
+  Play,
+  FileText,
   CalendarCheck,
   Calendar,
   Filter,
@@ -42,6 +43,7 @@ import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { MenuBannerFrame } from '../common/MenuBannerFrame';
 import { useTheme } from '../../contexts/ThemeContext';
+import './analyticsNotebook.css';
 
 export const ESTATISTICAS_BANNER_THEMES: Record<string, string> = {
   verde: '/assets/bannersestatisticas/Banner-Estatistica-verde.webp',
@@ -83,6 +85,35 @@ const DYNAMIC_PALETTE_POOL = [
   '#E11D48', '#06B6D4', '#EAB308', '#64748B', '#3B82F6',
   '#D946EF', '#22C55E', '#F43F5E', '#8B5CF6', '#10B981'
 ];
+
+interface NotebookMetricProps {
+  tone: 'amber' | 'violet' | 'mint' | 'blue' | 'rose' | 'peach';
+  icon: typeof Clock;
+  label: string;
+  value: React.ReactNode;
+  detail: string;
+  description?: string;
+  footer?: string;
+}
+
+function NotebookMetric({ tone, icon: Icon, label, value, detail, description, footer }: NotebookMetricProps) {
+  return (
+    <article className="stats-note" data-tone={tone}>
+      <header className="stats-note-heading">
+        <span className="stats-note-icon"><Icon aria-hidden="true" size={20} /></span>
+        <div>
+          <h3>{label}</h3>
+          {description && <p>{description}</p>}
+        </div>
+      </header>
+      <div className="stats-note-reading">
+        <p className="stats-note-value">{value}</p>
+        <p className="stats-note-detail"><span>{detail}</span></p>
+        {footer && <p className="stats-note-footer">{footer}</p>}
+      </div>
+    </article>
+  );
+}
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   disciplinas,
@@ -496,7 +527,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     return `${m}min`;
   };
 
-  // 6. Tempo por Categoria (Gráfico de Rosca Dinâmico + Lista Lateral)
+  // 6. Tempo por categoria
   const categoryData = useMemo(() => {
     // Unir categorias padrão conhecidas + categorias customizadas salvas + tipos presentes nas sessões
     const categoryMap = new Map<string, { label: string; minutes: number; color: string }>();
@@ -562,6 +593,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       totalCategoryMinutes,
     };
   }, [customTypes, filteredData.filteredSessoes, filteredData.filteredSimulados]);
+
+  const activeCategories = categoryData.list.filter(category => category.minutes > 0);
+  const emptyCategories = categoryData.list.filter(category => category.minutes <= 0);
 
 
   // Desempenho por Disciplina (respeitando filtros)
@@ -977,277 +1011,95 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
       </div>
 
-      {/* 2. NOVOS CARDS DE MÉTRICAS ESPECÍFICAS & ANALÍTICAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Card 1: Páginas Lidas */}
-        <div className="flashcards-daily-review-card gabarita-card-hover-theme p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700/60 flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-600 dark:text-slate-300 block">
-                  Páginas Lidas
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">Leitura, Teoria & Lei Seca</span>
-              </div>
-            </div>
-            {filteredData.totalPaginasLidas > 0 && (
-              <Badge variant="amber" size="sm">
-                Ativo
-              </Badge>
-            )}
-          </div>
-
-          <div className="space-y-1 my-2">
-            <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {filteredData.totalPaginasLidas} <span className="text-base font-semibold text-slate-500 dark:text-slate-400">pág.</span>
-            </div>
-            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
-              {filteredData.ritmoPaginasPorHora.toFixed(1).replace('.', ',')} páginas por hora no período filtrado
-            </p>
-          </div>
+      <div className="stats-notebook">
+        <div className="stats-notes stats-notes-featured">
+          <NotebookMetric
+            tone="amber" icon={BookOpen} label="Páginas lidas" description="Leitura, Teoria e Lei Seca"
+            value={<>{filteredData.totalPaginasLidas} <small>{filteredData.totalPaginasLidas === 1 ? 'página' : 'páginas'}</small></>}
+            detail={`${filteredData.ritmoPaginasPorHora.toFixed(1).replace('.', ',')} páginas por hora`}
+          />
+          <NotebookMetric
+            tone="violet" icon={Play} label="Videoaulas" description="Tempo e aulas concluídas"
+            value={formatDurationFriendly(filteredData.totalVideoMinutes)}
+            detail={`${filteredData.totalVideosAssistidos} ${filteredData.totalVideosAssistidos === 1 ? 'aula concluída' : 'aulas concluídas'}`}
+          />
+          <NotebookMetric
+            tone="mint" icon={CalendarCheck} label="Constância" description="Dias com e sem estudo"
+            value={<>{filteredData.diasEstudados} <small>{filteredData.diasEstudados === 1 ? 'dia' : 'dias'}</small></>}
+            detail={`${filteredData.constanciaPercentual}% de constância`}
+            footer={`${filteredData.diasSemEstudo} ${filteredData.diasSemEstudo === 1 ? 'dia' : 'dias'} sem estudo desde o início`}
+          />
         </div>
 
-        {/* Card 2: Videoaulas */}
-        <div className="flashcards-daily-review-card gabarita-card-hover-theme p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-700/60 flex items-center justify-center shrink-0">
-                <Video className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-600 dark:text-slate-300 block">
-                  Videoaulas
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">Tempo & aulas concluídas</span>
-              </div>
-            </div>
-            {filteredData.totalVideosAssistidos > 0 && (
-              <Badge variant="purple" size="sm">
-                {filteredData.totalVideosAssistidos} aulas
-              </Badge>
-            )}
-          </div>
-
-          <div className="space-y-1 my-2">
-            <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {formatDurationFriendly(filteredData.totalVideoMinutes)}
-            </div>
-            <p className="text-xs font-medium text-purple-600 dark:text-purple-400">
-              {filteredData.totalVideosAssistidos} videoaula{filteredData.totalVideosAssistidos === 1 ? '' : 's'} concluída{filteredData.totalVideosAssistidos === 1 ? '' : 's'} no período
-            </p>
-          </div>
+        <div className="stats-notes stats-notes-summary">
+          <NotebookMetric
+            tone="blue" icon={Clock} label="Horas líquidas"
+            value={formatDurationFriendly(filteredData.totalMinutes)}
+            detail={`${filteredData.sessoesCount} ${filteredData.sessoesCount === 1 ? 'sessão registrada' : 'sessões registradas'}`}
+          />
+          <NotebookMetric
+            tone="mint" icon={Target} label="Taxa de acerto"
+            value={`${filteredData.taxaAcerto}%`} detail={`${filteredData.acertos} certas de ${filteredData.questoes}`}
+          />
+          <NotebookMetric
+            tone="rose" icon={FileText} label="Erros registrados"
+            value={filteredData.erros} detail="No período selecionado"
+          />
+          <NotebookMetric
+            tone="peach" icon={Calendar} label="Revisões concluídas"
+            value={filteredData.filteredRevisoes.length} detail="No período selecionado"
+          />
         </div>
 
-        {/* Card 3: Constância nos Estudos */}
-        <div className="flashcards-daily-review-card gabarita-card-hover-theme p-5 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-l-4 border-primary/25 dark:border-primary/20 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div 
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
-                style={{
-                  backgroundColor: `${themeGlowStyles.color}15`,
-                  color: themeGlowStyles.color,
-                  borderColor: `${themeGlowStyles.color}40`,
-                }}
-              >
-                <CalendarCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-slate-600 dark:text-slate-300 block">
-                  Constância nos Estudos
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">Dias de estudo vs. sem estudo</span>
-              </div>
+        <section className="stats-category-sheet" aria-labelledby="stats-category-title">
+          <header className="stats-category-heading">
+            <div>
+              <h3 id="stats-category-title"><BarChart3 aria-hidden="true" size={22} /> Tempo por categoria</h3>
+              <p>Distribuição do tempo líquido de estudo por método e material</p>
             </div>
-            <span
-              className="text-xs font-bold px-2 py-0.5 rounded-full border"
-              style={{
-                backgroundColor: `${themeGlowStyles.color}20`,
-                color: themeGlowStyles.color,
-                borderColor: `${themeGlowStyles.color}40`,
-              }}
-            >
-              {filteredData.constanciaPercentual}% de constância
-            </span>
-          </div>
-
-          <div className="space-y-1 my-2">
-            <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-baseline gap-2">
-              <span>{filteredData.diasEstudados} <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">dias estudados</span></span>
-            </div>
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              {filteredData.diasSemEstudo} {filteredData.diasSemEstudo === 1 ? 'dia' : 'dias'} sem estudo (desde o início oficial)
+            <p className="stats-category-total">
+              <Clock aria-hidden="true" size={15} />
+              <span><strong>{formatDurationFriendly(categoryData.totalCategoryMinutes)}</strong> no período</span>
             </p>
-          </div>
-        </div>
-      </div>
+          </header>
 
-      {/* CARDS COMPLEMENTARES DE RENDIMENTO */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/5 border-indigo-200/40 dark:border-indigo-900/40">
-          <CardBody className="p-5">
-            <span className="text-xs uppercase font-extrabold text-indigo-600 dark:text-indigo-400 block mb-1">
-              Horas Líquidas
-            </span>
-            <span className="text-3xl font-black text-slate-900 dark:text-white">{filteredData.horasTotais}h</span>
-            <span className="text-[11px] text-slate-400 block mt-1">
-              {filteredData.sessoesCount} sessões registradas
-            </span>
-          </CardBody>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-200/40 dark:border-emerald-900/40">
-          <CardBody className="p-5">
-            <span className="text-xs uppercase font-extrabold text-emerald-600 dark:text-emerald-400 block mb-1">
-              Taxa de Acerto
-            </span>
-            <span className="text-3xl font-black text-slate-900 dark:text-white">{filteredData.taxaAcerto}%</span>
-            <span className="text-[11px] text-slate-400 block mt-1">
-              {filteredData.acertos} certas de {filteredData.questoes}
-            </span>
-          </CardBody>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-rose-500/10 to-rose-600/5 border-rose-200/40 dark:border-rose-900/40">
-          <CardBody className="p-5">
-            <span className="text-xs uppercase font-extrabold text-rose-600 dark:text-rose-400 block mb-1">
-              Erros Registrados
-            </span>
-            <span className="text-3xl font-black text-slate-900 dark:text-white">{filteredData.erros}</span>
-            <span className="text-[11px] text-slate-400 block mt-1">
-              No período selecionado
-            </span>
-          </CardBody>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-200/40 dark:border-amber-900/40">
-          <CardBody className="p-5">
-            <span className="text-xs uppercase font-extrabold text-amber-600 dark:text-amber-400 block mb-1">
-              Revisões Concluídas
-            </span>
-            <span className="text-3xl font-black text-slate-900 dark:text-white">{filteredData.filteredRevisoes.length}</span>
-            <span className="text-[11px] text-slate-400 block mt-1">
-              Ciclos de retenção ativos
-            </span>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* 3. QUADRO ANALÍTICO "TEMPO POR CATEGORIA" (DONUT CHART DINÂMICO + LEGENDA) */}
-      <div className="flashcards-daily-review-card bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 dark:border-primary/20 rounded-2xl p-6 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-primary/15 dark:border-primary/20">
-          <div>
-            <h3 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              TEMPO POR CATEGORIA
-            </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-              Distribuição dinâmica do tempo líquido de estudo por método e material
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Gráfico de Rosca (Donut Chart SVG) */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center">
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center">
-              {(() => {
-                const totalMinutes = categoryData.totalCategoryMinutes;
-                const radius = 80;
-                const circumference = 2 * Math.PI * radius; // ~502.65
-                let accumulatedOffset = 0;
-
-                return (
-                  <svg
-                    viewBox="0 0 220 220"
-                    className="w-full h-full transform -rotate-90 select-none overflow-visible"
-                  >
-                    {/* Anel de Fundo Neutro */}
-                    <circle
-                      cx="110"
-                      cy="110"
-                      r={radius}
-                      fill="transparent"
-                      stroke="currentColor"
-                      strokeWidth="24"
-                      className="text-white/70 dark:text-slate-800/80"
-                    />
-
-                    {/* Slices Dinâmicas */}
-                    {totalMinutes > 0 && categoryData.list.map((cat) => {
-                      if (cat.minutes <= 0) return null;
-                      const sliceStroke = (cat.minutes / totalMinutes) * circumference;
-                      const strokeDasharray = `${sliceStroke} ${circumference}`;
-                      const strokeDashoffset = -accumulatedOffset;
-                      accumulatedOffset += sliceStroke;
-
-                      return (
-                        <circle
-                          key={cat.id}
-                          cx="110"
-                          cy="110"
-                          r={radius}
-                          fill="transparent"
-                          stroke={cat.color}
-                          strokeWidth="24"
-                          strokeDasharray={strokeDasharray}
-                          strokeDashoffset={strokeDashoffset}
-                          className="transition-all duration-500 ease-out hover:opacity-90 cursor-pointer"
-                        >
-                          <title>{`${cat.label}: ${formatDurationFriendly(cat.minutes)} (${cat.percentage}%)`}</title>
-                        </circle>
-                      );
-                    })}
-                  </svg>
-                );
-              })()}
-
-              {/* Centro do Gráfico: Tempo Total Acumulado */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-                <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {formatDurationFriendly(categoryData.totalCategoryMinutes)}
-                </span>
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
-                  no período
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Legenda Lateral Dinâmica */}
-          <div className="lg:col-span-7">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
-              {categoryData.list.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/80 dark:bg-slate-900/75 border border-primary/15 dark:border-slate-800 transition-all hover:border-primary/35 dark:hover:border-slate-700"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
+          {activeCategories.length > 0 ? (
+            <ul className="stats-category-bars">
+              {activeCategories.map(cat => (
+                <li className="stats-category-row" key={cat.id}>
+                  <span className="stats-category-label">
+                    <span className="stats-category-dot" aria-hidden="true" style={{ backgroundColor: cat.color }} />
+                    {cat.label}
+                  </span>
+                  <span className="stats-category-track" aria-hidden="true">
                     <span
-                      className="w-3 h-3 rounded-full shrink-0 shadow-xs"
-                      style={{ backgroundColor: cat.color }}
+                      className="stats-category-fill"
+                      style={{ width: `${cat.minutes / categoryData.totalCategoryMinutes * 100}%`, backgroundColor: cat.color }}
                     />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                      {cat.label}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
-                      {formatDurationFriendly(cat.minutes)}
-                    </span>
-                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-primary/15 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                      {cat.percentage}%
-                    </span>
-                  </div>
-                </div>
+                  </span>
+                  <span className="stats-category-values">
+                    <strong>{formatDurationFriendly(cat.minutes)}</strong>
+                    <span>{cat.percentage.toLocaleString('pt-BR')}%</span>
+                  </span>
+                </li>
               ))}
-            </div>
-          </div>
-        </div>
+            </ul>
+          ) : (
+            <p className="stats-category-empty">Nenhum tempo registrado no período selecionado.</p>
+          )}
+
+          {emptyCategories.length > 0 && (
+            <ul className="stats-category-zero" aria-label="Categorias sem tempo registrado">
+              {emptyCategories.map(cat => (
+                <li key={cat.id}>
+                  <span className="stats-category-dot" aria-hidden="true" style={{ backgroundColor: cat.color }} />
+                  <span>{cat.label}</span>
+                  <strong>0 min</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
       {/* ABAS DETALHADAS DE DESEMPENHO E EVOLUÇÃO */}
