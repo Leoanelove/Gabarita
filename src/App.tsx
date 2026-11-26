@@ -1115,6 +1115,7 @@ const activeThemeBgUrl = effectiveTheme === 'light' ? THEME_LIGHT_BACKGROUNDS[cu
                 disciplinas={disciplinas}
                 assuntos={assuntos}
                 sessoes={sessoes}
+                blocosQuestoes={blocosQuestoes}
                 revisoes={revisoes}
                 metas={metas}
                 plan={plan}

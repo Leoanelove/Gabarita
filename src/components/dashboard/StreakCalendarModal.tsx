@@ -6,7 +6,7 @@ import {
   Check, 
   X, 
 } from 'lucide-react';
-import { SessaoEstudo, Concurso, Disciplina } from '../../types';
+import type { StudyStreak } from './studyStreak';
 import { Modal } from '../../design-system/Modal';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
@@ -14,141 +14,18 @@ import { Badge } from '../../design-system/Badge';
 interface StreakCalendarModalProps {
   isOpen: boolean;
   onClose: () => void;
-  streakDays: number;
-  bestStreakDays?: number;
-  sessoes?: SessaoEstudo[];
-  activeConcurso?: Concurso | null;
-  disciplinas?: Disciplina[];
+  streak: StudyStreak;
 }
-
-const extractLocalDateStr = (raw?: string): string => {
-  if (!raw) return '';
-  const clean = String(raw).trim();
-  const datePart = clean.split('T')[0].split(' ')[0];
-  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-    return datePart;
-  }
-  const parsed = new Date(clean);
-  if (isNaN(parsed.getTime())) return '';
-  const y = parsed.getFullYear();
-  const m = String(parsed.getMonth() + 1).padStart(2, '0');
-  const d = String(parsed.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
 
 export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
   isOpen,
   onClose,
-  streakDays,
-  bestStreakDays,
-  sessoes = [],
-  activeConcurso = null,
-  disciplinas = [],
+  streak,
 }) => {
-  // Controle de navegação de meses
   const [currentDate, setCurrentDate] = useState(() => new Date());
-
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-
-  // Data atual de referência para hoje (formato YYYY-MM-DD local)
-  const todayStr = useMemo(() => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }, []);
-
-  // Conjunto de disciplinas válidas do concurso ativo (quando aplicável)
-  const validDisciplinaIds = useMemo(() => {
-    if (!activeConcurso || !disciplinas || disciplinas.length === 0) return null;
-    const filtered = disciplinas.filter(
-      (d) => !d.concursoId || String(d.concursoId) === String(activeConcurso.id)
-    );
-    if (filtered.length === 0) return null;
-    return new Set(filtered.map((d) => String(d.id)));
-  }, [activeConcurso, disciplinas]);
-
-  // Mapeamento estrito de dias com estudo efetivo e marco inicial (dataInicioEstudo)
-  const { studiedDatesSet, dataInicioEstudo, realBestStreak } = useMemo(() => {
-    const set = new Set<string>();
-
-    // 1. Extrai datas das sessões reais cadastradas no concurso ativo
-    sessoes.forEach((s) => {
-      if (validDisciplinaIds && s.disciplinaId && !validDisciplinaIds.has(String(s.disciplinaId))) {
-        return;
-      }
-      const hasStudy = (s.durationMinutes || 0) > 0 || (s.questionsAttempted || 0) > 0;
-      if (!hasStudy) return;
-      const d = extractLocalDateStr(s.completedAt) || extractLocalDateStr(s.createdAt);
-      if (d && d <= todayStr) {
-        set.add(d);
-      }
-    });
-
-    // 2. Extrai datas dos blocos de questões reais cadastrados no concurso ativo
-    try {
-      const rawBlocos = localStorage.getItem('gabarita_blocos_questoes');
-      if (rawBlocos) {
-        const blocos = JSON.parse(rawBlocos);
-        if (Array.isArray(blocos)) {
-          blocos.forEach((b: any) => {
-            if (
-              validDisciplinaIds &&
-              b.disciplinaId &&
-              !validDisciplinaIds.has(String(b.disciplinaId))
-            ) {
-              return;
-            }
-            const totalQ = Number(b.totalQuestions) || 0;
-            if (totalQ <= 0) return;
-            const bDate = extractLocalDateStr(b.date) || extractLocalDateStr(b.createdAt);
-            if (bDate && bDate <= todayStr) {
-              set.add(bDate);
-            }
-          });
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    const sortedDates = Array.from(set).sort();
-
-    // Se o usuário nunca iniciou nenhum estudo no concurso selecionado, dataInicioEstudo é null
-    const startStudyDate: string | null = sortedDates.length > 0 ? sortedDates[0] : null;
-
-    // Cálculo do recorde real de dias consecutivos a partir das datas estudadas
-    let maxStreak = 0;
-    let currentRun = 0;
-    let prevTime: number | null = null;
-
-    sortedDates.forEach((dateStr) => {
-      const [y, m, d] = dateStr.split('-').map(Number);
-      const time = new Date(y, m - 1, d).getTime();
-      if (prevTime !== null) {
-        const diffDays = Math.round((time - prevTime) / (1000 * 60 * 60 * 24));
-        if (diffDays === 1) {
-          currentRun += 1;
-        } else if (diffDays > 1) {
-          currentRun = 1;
-        }
-      } else {
-        currentRun = 1;
-      }
-      if (currentRun > maxStreak) {
-        maxStreak = currentRun;
-      }
-      prevTime = time;
-    });
-
-    return {
-      studiedDatesSet: set,
-      dataInicioEstudo: startStudyDate,
-      realBestStreak: maxStreak,
-    };
-  }, [sessoes, validDisciplinaIds, todayStr]);
+  const { todayStr, studiedDatesSet, dataInicioEstudo, currentStreak, bestStreak } = streak;
 
   // Navegação de mês
   const handlePrevMonth = () => {
@@ -261,20 +138,6 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       totalStudiedInMonth: studiedInMonthCount,
     };
   }, [year, month, todayStr, studiedDatesSet, dataInicioEstudo]);
-
-  // Total geral de dias estudados computados estritamente dentro do intervalo ativo
-  const totalDiasEstudados = useMemo(() => {
-    if (!dataInicioEstudo) return 0;
-    let count = 0;
-    studiedDatesSet.forEach((dateStr) => {
-      if (dateStr >= dataInicioEstudo && dateStr <= todayStr) {
-        count++;
-      }
-    });
-    return count;
-  }, [studiedDatesSet, dataInicioEstudo, todayStr]);
-
-  const recordeDias = bestStreakDays !== undefined ? bestStreakDays : Math.max(streakDays, realBestStreak);
 
   return (
     <Modal
@@ -450,14 +313,12 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                  Sequência Atual: {streakDays} Dias Seguidos
+                  Sequência atual: {currentStreak} {currentStreak === 1 ? 'dia seguido' : 'dias seguidos'}
                 </span>
-                <Badge variant="amber" size="sm">
-                  🔥 Ativa
-                </Badge>
+                {currentStreak > 0 && <Badge variant="amber" size="sm">🔥 Ativa</Badge>}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Recorde histórico: <strong>{recordeDias} dias constantes</strong>
+                Recorde histórico: <strong>{bestStreak} dias constantes</strong>
               </p>
             </div>
           </div>
@@ -468,7 +329,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
                 Total de dias estudados
               </span>
               <span className="streak-total-studied-value text-base font-black font-mono">
-                {totalDiasEstudados} dias
+                {studiedDatesSet.size} dias
               </span>
             </div>
             <Button variant="primary" onClick={onClose} size="sm">
