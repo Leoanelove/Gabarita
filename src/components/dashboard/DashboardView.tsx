@@ -2,7 +2,7 @@ import type { OpenStudyTimer, StudyRegisterOptions } from '../../contexts/StudyT
 import { CycleService } from '../../services/cycleService';
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
-  Flame, 
+  CalendarCheck,
   Clock, 
   CheckCircle2, 
   Calendar, 
@@ -64,6 +64,7 @@ import { resolveSubjectIcon } from '../common/SubjectIcon';
 import { ConcursoBanner } from '../common/ConcursoBanner';
 import { StudyTimerModal } from '../estudos/StudyTimerModal';
 import { StudyRegisterModal } from '../estudos/StudyRegisterModal';
+import './dashboardStreak.css';
 
 interface DashboardViewProps {
   user: UserProfile;
@@ -815,11 +816,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return (
       <div className="space-y-6 max-w-7xl mx-auto animate-pulse">
         <div className="h-44 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(n => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map(n => (
             <div key={n} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-xl" />
           ))}
         </div>
+        <div className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
       </div>
     );
   }
@@ -1139,7 +1141,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         const themeIconBg = `${themeBorderColor}1A`; // ~10% de opacidade
 
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* CARD 1: HORAS ESTUDADAS */}
             <Card 
               hoverEffect 
@@ -1149,11 +1151,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <CardBody className="p-4 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Horas Estudadas</p>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{totalStudyHours}h</h3>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{totalStudyHours.replace('.', ',')} h</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{sessoes.length} sessões</p>
                 </div>
                 <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
+                  className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors"
                   style={{
                     backgroundColor: themeIconBg,
                     color: themeBorderColor,
@@ -1164,7 +1166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </CardBody>
             </Card>
 
-            {/* CARD 2: QUESTÕES & ACERTOS */}
+            {/* CARD 2: DESEMPENHO */}
             <Card 
               hoverEffect 
               className="card-metric-theme border-l-4 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs" 
@@ -1172,12 +1174,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             >
               <CardBody className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Questões & Acertos</p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Desempenho</p>
                   <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{globalAccuracyRate}%</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{totalQuestionsCorrect}/{totalQuestionsAttempted} acertos</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{totalQuestionsCorrect} de {totalQuestionsAttempted} acertos</p>
                 </div>
                 <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
+                  className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors"
                   style={{
                     backgroundColor: themeIconBg,
                     color: themeBorderColor,
@@ -1188,51 +1190,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </CardBody>
             </Card>
 
-            {/* CARD 3: CONSTÂNCIA */}
-            <Card 
-              hoverEffect 
-              role="button"
-              tabIndex={0}
-              onClick={() => setIsStreakModalOpen(true)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setIsStreakModalOpen(true);
-                }
-              }}
-              className="card-metric-theme border-l-4 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs"
-              style={{ borderLeftColor: themeBorderColor, borderLeftWidth: '4px' }}
-            >
-              <CardBody className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Constância</p>
-                    <span 
-                      className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
-                      style={{
-                        backgroundColor: themeIconBg,
-                        color: themeBorderColor,
-                      }}
-                    >
-                      Ver histórico
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{user.streakDays} Dias Seguidos</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Clique Para Abrir</p>
-                </div>
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
-                  style={{
-                    backgroundColor: themeIconBg,
-                    color: themeBorderColor,
-                  }}
-                >
-                  <Flame className="w-6 h-6 stroke-[2]" />
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* CARD 4: REVISÕES PENDENTES (Mantém fixo o acento violeta característico de revisões) */}
+            {/* CARD 3: REVISÕES PENDENTES */}
             <Card
               hoverEffect
               role="button"
@@ -1244,8 +1202,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onNavigateTab('revisoes');
                 }
               }}
-              className="card-metric-revisoes border-l-4 border-l-purple-500 dark:border-l-purple-400 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs"
-              style={{ borderLeftColor: '#A855F7', borderLeftWidth: '4px' }}
+              className="card-metric-theme border-l-4 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-xs"
+              style={{ borderLeftColor: themeBorderColor, borderLeftWidth: '4px' }}
             >
               <CardBody className="p-4 flex items-center justify-between">
                 <div>
@@ -1253,7 +1211,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">{pendingRevisoes.length}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Para hoje</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+                <div
+                  className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors"
+                  style={{ backgroundColor: themeIconBg, color: themeBorderColor }}
+                >
                   <Award className="w-6 h-6 stroke-[2]" />
                 </div>
               </CardBody>
@@ -1261,6 +1222,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         );
       })()}
+
+      <section className="dashboard-streak" aria-labelledby="dashboard-streak-title">
+        <div className="dashboard-streak-icon">
+          <CalendarCheck className="w-8 h-8" aria-hidden="true" />
+        </div>
+        <div>
+          <h2 id="dashboard-streak-title" className="font-extrabold">Constância</h2>
+          <p className="dashboard-streak-label">Sequência de estudos</p>
+          <p className="dashboard-streak-count">
+            <strong>{user.streakDays ?? 0}</strong> {user.streakDays === 1 ? 'dia seguido' : 'dias seguidos'}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="dashboard-streak-history"
+          onClick={() => setIsStreakModalOpen(true)}
+        >
+          Ver histórico
+        </button>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Quadro 1 (Superior Esquerdo): Tópico Atual & Próximos Estudos (ou Empty State quando não houver plano) */}
@@ -2260,7 +2241,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <StreakCalendarModal
         isOpen={isStreakModalOpen}
         onClose={() => setIsStreakModalOpen(false)}
-        streakDays={user.streakDays}
+        streakDays={user.streakDays ?? 0}
         sessoes={sessoes}
         activeConcurso={activeConcurso}
         disciplinas={activeDisciplinasList}
