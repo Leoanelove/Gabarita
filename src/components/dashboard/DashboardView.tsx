@@ -39,6 +39,7 @@ import {
   Disciplina, 
   Assunto, 
   Revisao, 
+  RegistroBlocoQuestoes,
   Meta, 
   UserProfile, 
   NavigationTab, 
@@ -64,6 +65,7 @@ import { resolveSubjectIcon } from '../common/SubjectIcon';
 import { ConcursoBanner } from '../common/ConcursoBanner';
 import { StudyTimerModal } from '../estudos/StudyTimerModal';
 import { StudyRegisterModal } from '../estudos/StudyRegisterModal';
+import { summarizeStudyStreak } from './studyStreak';
 import './dashboardStreak.css';
 
 interface DashboardViewProps {
@@ -72,6 +74,7 @@ interface DashboardViewProps {
   disciplinas: Disciplina[];
   assuntos: Assunto[];
   sessoes: SessaoEstudo[];
+  blocosQuestoes: RegistroBlocoQuestoes[];
   revisoes: Revisao[];
   metas: Meta[];
   plan?: StudyPlan | null;
@@ -168,6 +171,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   disciplinas,
   assuntos,
   sessoes,
+  blocosQuestoes,
   revisoes,
   metas,
   plan,
@@ -855,6 +859,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }
 
   const totalStudyMinutes = activeSessoes.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+  const studyStreak = summarizeStudyStreak(sessoes, blocosQuestoes, activeConcurso.id, activeDiscIds);
+  const { currentStreak } = studyStreak;
   const totalStudyHours = (totalStudyMinutes / 60).toFixed(1);
 
   const totalQuestionsAttempted = activeSessoes.reduce((acc, s) => acc + (s.questionsAttempted || 0), 0);
@@ -1231,7 +1237,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <h2 id="dashboard-streak-title" className="font-extrabold">Constância</h2>
           <p className="dashboard-streak-label">Sequência de estudos</p>
           <p className="dashboard-streak-count">
-            <strong>{user.streakDays ?? 0}</strong> {user.streakDays === 1 ? 'dia seguido' : 'dias seguidos'}
+            <strong>{currentStreak}</strong> {currentStreak === 1 ? 'dia seguido' : 'dias seguidos'}
           </p>
         </div>
         <button
@@ -2241,10 +2247,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <StreakCalendarModal
         isOpen={isStreakModalOpen}
         onClose={() => setIsStreakModalOpen(false)}
-        streakDays={user.streakDays ?? 0}
-        sessoes={sessoes}
-        activeConcurso={activeConcurso}
-        disciplinas={activeDisciplinasList}
+        streak={studyStreak}
       />
 
       {/* Modal de Configuração de Metas Semanais (Sem sair da página) */}
