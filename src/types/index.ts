@@ -716,6 +716,7 @@ export interface StudyCycle {
   completedCyclesCount: number;
   totalCycleMinutes: number;
   blocks: CycleBlock[];
+  studyDays?: DayOfWeek[];
   createdAt: string;
   updatedAt: string;
 }

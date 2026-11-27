@@ -65,8 +65,16 @@ import { resolveSubjectIcon } from '../common/SubjectIcon';
 import { ConcursoBanner } from '../common/ConcursoBanner';
 import { StudyTimerModal } from '../estudos/StudyTimerModal';
 import { StudyRegisterModal } from '../estudos/StudyRegisterModal';
-import { summarizeStudyStreak } from './studyStreak';
+import { summarizeStudyStreak, type StreakSchedule } from './studyStreak';
 import './dashboardStreak.css';
+
+const STREAK_DAY_LABELS = {
+  studied: 'Estudo registrado',
+  rest: 'Descanso planejado',
+  missed: 'Dia de estudo sem registro',
+  pending: 'Aguardando registro de hoje',
+  neutral: 'Sem registro',
+};
 
 interface DashboardViewProps {
   user: UserProfile;
@@ -859,8 +867,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }
 
   const totalStudyMinutes = activeSessoes.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
-  const studyStreak = summarizeStudyStreak(sessoes, blocosQuestoes, activeConcurso.id, activeDiscIds);
-  const { currentStreak } = studyStreak;
   const totalStudyHours = (totalStudyMinutes / 60).toFixed(1);
 
   const totalQuestionsAttempted = activeSessoes.reduce((acc, s) => acc + (s.questionsAttempted || 0), 0);
@@ -917,6 +923,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const cycleBlocks = Array.isArray(effectiveCycle?.blocks) ? effectiveCycle.blocks : [];
   const plannedSessions = Array.isArray(effectivePlan?.sessions) ? effectivePlan.sessions : [];
   const hasActivePlanning = cycleBlocks.length > 0 || plannedSessions.length > 0;
+  let streakSchedule: StreakSchedule | undefined;
+  if (effectiveCycle?.studyDays?.length && cycleBlocks.length > 0) {
+    streakSchedule = { studyDays: effectiveCycle.studyDays, startsOn: effectiveCycle.createdAt };
+  } else if (effectivePlan?.weeklyAvailability && (plannedSessions.length > 0 || effectivePlan.disciplinasDistribution?.length)) {
+    streakSchedule = {
+      studyDays: PlannerService.DAYS_OF_WEEK.filter(day => effectivePlan.weeklyAvailability[day] > 0),
+      startsOn: effectivePlan.startDate,
+      endsOn: effectivePlan.targetExamDate,
+    };
+  }
+  const studyStreak = summarizeStudyStreak(sessoes, blocosQuestoes, activeConcurso.id, activeDiscIds, streakSchedule);
+  const { currentStreak, lastSevenDays } = studyStreak;
   const todaysSessions = plannedSessions.filter(session =>
     session.date === todayStr && (!effectivePlan?.startDate || session.date >= effectivePlan.startDate)
   );
@@ -1230,23 +1248,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       })()}
 
       <section className="dashboard-streak" aria-labelledby="dashboard-streak-title">
-        <div className="dashboard-streak-icon">
-          <CalendarCheck className="w-8 h-8" aria-hidden="true" />
+        <div className="dashboard-streak-layout">
+          <div className="dashboard-streak-summary">
+            <div className="dashboard-streak-icon">
+              <CalendarCheck className="w-8 h-8" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 id="dashboard-streak-title" className="font-extrabold">Constância</h2>
+              <p className="dashboard-streak-label">Sequência de estudos</p>
+              <p className="dashboard-streak-count">
+                <strong>{currentStreak}</strong> {currentStreak === 1 ? 'dia seguido' : 'dias seguidos'}
+              </p>
+            </div>
+          </div>
+          <ul className="dashboard-streak-week" aria-label="Últimos sete dias de estudo">
+            {lastSevenDays.map(({ date, status }) => {
+              const [, month, day] = date.split('-');
+              const isToday = date === studyStreak.todayStr;
+              const label = STREAK_DAY_LABELS[status];
+              return (
+                <li key={date} title={label}>
+                  <span className="dashboard-streak-day" data-status={status}>
+                    <time dateTime={date} aria-current={isToday ? 'date' : undefined}>{day}/{month}</time>
+                    <span className="sr-only"> {label}</span>
+                    {status === 'studied' && <Check size={15} aria-hidden="true" />}
+                    {status === 'missed' && <X size={15} aria-hidden="true" />}
+                    {status === 'rest' && <span className="dashboard-streak-rest-dot" aria-hidden="true" />}
+                    {(status === 'pending' || status === 'neutral') && <span aria-hidden="true">–</span>}
+                  </span>
+                  {isToday && <span className="dashboard-streak-today">Hoje</span>}
+                </li>
+              );
+            })}
+          </ul>
+          <button
+            type="button"
+            className="dashboard-streak-history"
+            onClick={() => setIsStreakModalOpen(true)}
+          >
+            Ver histórico
+          </button>
         </div>
-        <div>
-          <h2 id="dashboard-streak-title" className="font-extrabold">Constância</h2>
-          <p className="dashboard-streak-label">Sequência de estudos</p>
-          <p className="dashboard-streak-count">
-            <strong>{currentStreak}</strong> {currentStreak === 1 ? 'dia seguido' : 'dias seguidos'}
-          </p>
-        </div>
-        <button
-          type="button"
-          className="dashboard-streak-history"
-          onClick={() => setIsStreakModalOpen(true)}
-        >
-          Ver histórico
-        </button>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">

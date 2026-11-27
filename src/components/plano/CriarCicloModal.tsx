@@ -18,13 +18,24 @@ import {
   CheckCircle2,
   Loader2
 } from 'lucide-react';
-import { Disciplina, Assunto, StudyCycle, CycleBlock, Concurso } from '../../types';
+import { Disciplina, Assunto, StudyCycle, CycleBlock, Concurso, DayOfWeek } from '../../types';
 import { Modal } from '../../design-system/Modal';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
 import { DatabaseService } from '../../services/db';
 import { CycleService } from '../../services/cycleService';
 import { useTheme } from '../../contexts/ThemeContext';
+
+const WEEKDAYS: [DayOfWeek, string, string][] = [
+  ['dom', 'Dom', 'Domingo'],
+  ['seg', 'Seg', 'Segunda-feira'],
+  ['ter', 'Ter', 'Terça-feira'],
+  ['qua', 'Qua', 'Quarta-feira'],
+  ['qui', 'Qui', 'Quinta-feira'],
+  ['sex', 'Sex', 'Sexta-feira'],
+  ['sab', 'Sáb', 'Sábado'],
+];
+const ALL_STUDY_DAYS = WEEKDAYS.map(([day]) => day);
 
 export interface CriarCicloModalProps {
   isOpen: boolean;
@@ -98,6 +109,8 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
 
   // Passo 3: Horários e Intervalos dos Blocos
   const [weeklyHours, setWeeklyHours] = useState(20);
+  const [studyDays, setStudyDays] = useState<DayOfWeek[]>(ALL_STUDY_DAYS);
+  const existingStudyDays = currentCycle?.concursoId === resolvedActiveConcursoId ? currentCycle?.studyDays : undefined;
   const [minBlockMinutes, setMinBlockMinutes] = useState(50);
   const [maxBlockMinutes, setMaxBlockMinutes] = useState(90);
 
@@ -234,9 +247,13 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (isOpen) setStudyDays(existingStudyDays?.length ? existingStudyDays : ALL_STUDY_DAYS);
+  }, [isOpen, existingStudyDays]);
+
   // Salvamento e Integração Final (Passo 3 -> Concluir)
   const handleSaveAndGenerateCycle = async () => {
-    if (isSaving || savingPhase !== 'idle') return;
+    if (isSaving || savingPhase !== 'idle' || studyDays.length === 0) return;
     setErrorMessage(null);
 
     try {
@@ -275,7 +292,8 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
         completedCyclesCount: 0,
         totalCycleMinutes: totalCalculatedMinutes,
         blocks: interleaved,
-        createdAt: new Date().toISOString(),
+        studyDays,
+        createdAt: (existingStudyDays && currentCycle?.createdAt) || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -823,6 +841,33 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
                 </div>
               </div>
 
+              <fieldset className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                <legend className="px-1 text-xs font-bold">Dias de estudo na semana</legend>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Marque os dias em que pretende estudar. Os outros dias são de descanso e preservam sua constância.
+                </p>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                  {WEEKDAYS.map(([day, label, name]) => (
+                    <label key={day} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-2 text-xs font-semibold cursor-pointer has-checked:border-primary/45 has-checked:bg-primary/10">
+                      <input
+                        type="checkbox"
+                        aria-label={name}
+                        checked={studyDays.includes(day)}
+                        className="accent-primary"
+                        onChange={event => {
+                          const checked = event.currentTarget.checked;
+                          setStudyDays(days => checked ? [...days, day] : days.filter(value => value !== day));
+                        }}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                {studyDays.length === 0 && (
+                  <p className="text-xs text-rose-700 dark:text-rose-300">Selecione pelo menos um dia de estudo.</p>
+                )}
+              </fieldset>
+
               {/* Duração Mínima e Máxima dos Blocos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
@@ -947,6 +992,7 @@ export const CriarCicloModal: React.FC<CriarCicloModalProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={handleSaveAndGenerateCycle}
+                disabled={studyDays.length === 0}
                 isLoading={isSaving}
                 leftIcon={<Check className="w-4 h-4" />}
                 className="bg-emerald-600 hover:bg-emerald-700"
