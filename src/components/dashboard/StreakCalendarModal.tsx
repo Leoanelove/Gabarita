@@ -6,7 +6,7 @@ import {
   Check, 
   X, 
 } from 'lucide-react';
-import type { StudyStreak } from './studyStreak';
+import type { StudyStreak, StreakDayStatus } from './studyStreak';
 import { Modal } from '../../design-system/Modal';
 import { Button } from '../../design-system/Button';
 import { Badge } from '../../design-system/Badge';
@@ -25,7 +25,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const { todayStr, studiedDatesSet, dataInicioEstudo, currentStreak, bestStreak } = streak;
+  const { todayStr, studiedDatesSet, getDayStatus, currentStreak, bestStreak } = streak;
 
   // Navegação de mês
   const handlePrevMonth = () => {
@@ -59,8 +59,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       isCurrentMonth: boolean;
       isToday: boolean;
       isFuture: boolean;
-      isBeforeStart: boolean;
-      studied: boolean;
+      status: StreakDayStatus;
     }
 
     const grid: DayGridItem[] = [];
@@ -82,8 +81,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
         isCurrentMonth: false,
         isToday: false,
         isFuture: dateStr > todayStr,
-        isBeforeStart: !dataInicioEstudo || dateStr < dataInicioEstudo,
-        studied: false,
+        status: 'neutral',
       });
     }
 
@@ -93,11 +91,9 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       const d = String(dNum).padStart(2, '0');
       const dateStr = `${year}-${m}-${d}`;
       const isFuture = dateStr > todayStr;
-      const isBeforeStart = !dataInicioEstudo || dateStr < dataInicioEstudo;
-      const isWithinActiveInterval = !isFuture && !isBeforeStart;
-      const studied = isWithinActiveInterval && studiedDatesSet.has(dateStr);
+      const status = getDayStatus(dateStr);
 
-      if (studied) {
+      if (status === 'studied') {
         studiedInMonthCount++;
       }
 
@@ -107,8 +103,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
         isCurrentMonth: true,
         isToday: dateStr === todayStr,
         isFuture,
-        isBeforeStart,
-        studied,
+        status,
       });
     }
 
@@ -127,8 +122,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
         isCurrentMonth: false,
         isToday: false,
         isFuture: dateStr > todayStr,
-        isBeforeStart: !dataInicioEstudo || dateStr < dataInicioEstudo,
-        studied: false,
+        status: 'neutral',
       });
     }
 
@@ -137,7 +131,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
       daysInGrid: grid,
       totalStudiedInMonth: studiedInMonthCount,
     };
-  }, [year, month, todayStr, studiedDatesSet, dataInicioEstudo]);
+  }, [year, month, todayStr, getDayStatus]);
 
   return (
     <Modal
@@ -180,7 +174,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
           </div>
 
           {/* Legenda de Cores Semânticas Universais (Independente do Tema Ativo) */}
-          <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300 font-medium">
             <div className="flex items-center gap-1.5">
               <span className="streak-legend-studied w-4 h-4 rounded-md border flex items-center justify-center">
                 <Check className="streak-icon-studied w-2.5 h-2.5 stroke-[3]" />
@@ -192,6 +186,12 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
                 <X className="streak-icon-missed w-2.5 h-2.5 stroke-[3]" />
               </span>
               <span>Não estudou</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="streak-legend-studied w-4 h-4 rounded-md border flex items-center justify-center">
+                <span className="dashboard-streak-rest-dot text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              </span>
+              <span>Descanso</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="streak-legend-future w-4 h-4 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
@@ -216,7 +216,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
           {/* Células de dias */}
           <div className="grid grid-cols-7 gap-1.5 pt-1.5">
             {daysInGrid.map((item, idx) => {
-              const { dayNumber, isCurrentMonth, isToday, isFuture, isBeforeStart, studied } = item;
+              const { dayNumber, isCurrentMonth, isToday, isFuture, status } = item;
 
               const getCalendarCellStyles = () => {
                 // 1. Dias fora do mês atual (Padding) ou dias futuros: neutros, sem marcação
@@ -230,7 +230,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
                 }
 
                 // 2. Dias com estudo registrado (SEMPRE VERDE EM TODOS OS 5 TEMAS E MODOS):
-                if (studied) {
+                if (status === 'studied') {
                   const isTodayHighlight = isToday
                     ? 'streak-cell-today-ring ring-2 ring-emerald-500 border-2 border-emerald-500 dark:border-emerald-400 z-10'
                     : 'border border-emerald-400 dark:border-emerald-600/80';
@@ -242,8 +242,16 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
                   };
                 }
 
+                if (status === 'rest') {
+                  return {
+                    container: 'border border-dashed border-emerald-300 bg-emerald-50/60 dark:border-emerald-700 dark:bg-emerald-950/40',
+                    numberText: 'text-emerald-800 dark:text-emerald-300 font-semibold',
+                    icon: 'dot' as const,
+                  };
+                }
+
                 // 3. Dia de hoje ainda sem estudo registrado: pendente/neutro com destaque "Hoje", sem "X" precipitado
-                if (isToday) {
+                if (status === 'pending') {
                   return {
                     container:
                       'streak-cell-today-pending streak-cell-today-ring ring-2 ring-emerald-500 border-2 border-emerald-500 dark:border-emerald-400 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 font-semibold z-10',
@@ -253,7 +261,7 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
                 }
 
                 // 4. Dias anteriores ao início dos estudos: neutros, sem "X" e sem "check"
-                if (isBeforeStart) {
+                if (status === 'neutral') {
                   return {
                     container:
                       'streak-cell-neutral border border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 text-slate-400 dark:text-slate-600',
@@ -293,6 +301,9 @@ export const StreakCalendarModal: React.FC<StreakCalendarModalProps> = ({
                   <div className="flex items-center">
                     {cellStyle.icon === 'check' && (
                       <Check className="streak-icon-studied w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" />
+                    )}
+                    {cellStyle.icon === 'dot' && (
+                      <span className="dashboard-streak-rest-dot text-emerald-700 dark:text-emerald-400" role="img" aria-label="Descanso planejado" />
                     )}
                     {cellStyle.icon === 'x' && (
                       <X className="streak-icon-missed w-3.5 h-3.5 text-rose-500 dark:text-rose-400 stroke-[3] shrink-0" />

@@ -88,6 +88,8 @@ O `DatabaseService` (`src/services/db.ts`) interage com **17 tabelas** no Supaba
 - **Estrutura do Edital**: `concursos`, `provas`, `disciplinas`, `assuntos` (e subtópicos), `editais` (consultado e gravado via `server.ts` / `supabaseEditais.ts`).
 - **Execução e Desempenho**: `sessoes_estudo`, `revisoes`, `blocos_questoes`, `caderno_erros`, `simulados`, `metas`, `resumos`.
 - **Planejamento e Flashcards**: `study_plans`, `study_cycles`, `decks`, `flashcards`.
+- A migração `20261127170000_add_study_cycle_days.sql` adiciona `study_cycles.study_days` como campo opcional para os dias de estudo do ciclo. Aplique a migração no Supabase antes de publicar a interface que salva a seleção.
+- O resumo em `src/components/dashboard/studyStreak.ts` alimenta o banner e o histórico mensal. Para o Cronograma, usa a disponibilidade na janela do plano ativo. Para o Ciclo, usa os dias selecionados a partir da data de criação da configuração. A rotina ativa é usada no cálculo dentro desse intervalo.
 
 ### 3.2. Backend Express (`server.ts`)
 O servidor roda na porta `3000` (com mapeamento explícito de `PORT === 8080` $\rightarrow$ `3000` em `getPort()`):

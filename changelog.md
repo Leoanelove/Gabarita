@@ -2,6 +2,11 @@
 
 Todos os registros abaixo refletem o estado real inspecionado no código-fonte da versão `1.0.0` (`gabarita-v3---estudo-para-concursos`).
 
+## [2026-11-27] — Constância com descanso planejado
+
+- O banner do Painel Geral mostra os últimos sete dias e distingue estudo, falta, descanso e hoje ainda sem registro.
+- O cronograma reutiliza a disponibilidade diária. A criação e o replanejamento do ciclo permitem escolher os dias de estudo, com sincronização pelo Supabase.
+
 ## [2026-11-23] — Abertura de blocos do cronograma
 
 - Corrige a tela em branco ao abrir os detalhes de um bloco nas visões diária e semanal. O modal mantém a mesma ordem de hooks ao abrir e fechar.

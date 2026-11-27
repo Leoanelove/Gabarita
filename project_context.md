@@ -19,6 +19,7 @@ O **GABARITA** (`gabarita-concursos`) é uma plataforma web de planejamento de e
 2. **Painel Principal / Dashboard (`DashboardView.tsx`, `StudyCharts.tsx`, `StreakCalendarModal.tsx`)**:
    - Visão consolidada do concurso ativo (`activeConcursoId`), progresso real do edital, gráficos de horas estudadas, calendário de ofensiva (`streak`) e atalhos para iniciar sessão de estudo.
    - A fila do Painel Geral segue o método ativo. No Cronograma, exibe somente os blocos pendentes do dia atual.
+   - Banner e calendário associam a constância aos registros do concurso e à rotina do método ativo. Descanso preserva a sequência, estudo registrado soma um dia e falta só é registrada após o dia previsto terminar. Ciclos sem seleção mantêm todos os dias disponíveis.
 3. **Concursos, Provas e Editais (`ConcursosView.tsx`, `ProvasTab.tsx`, `NovoConcursoModal.tsx`, `NovaProvaModal.tsx`)**:
    - Gestão de concursos (esfera federal/estadual/municipal, banca, cargo, remuneração, vagas, data da prova, arquivamento e seleção de concurso ativo único por usuário).
    - Cadastro e agendamento automático de provas (`autoScheduleProvaForConcurso`) vinculadas aos concursos.

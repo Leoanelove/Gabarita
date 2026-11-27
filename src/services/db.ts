@@ -813,6 +813,7 @@ function mapStudyCycleFromDb(row: any): StudyCycle {
     completedCyclesCount: Number(row.completed_cycles_count || 0),
     totalCycleMinutes: Number(row.total_cycle_minutes || 0),
     blocks: Array.isArray(row.blocks) ? row.blocks : [],
+    studyDays: Array.isArray(row.study_days) && row.study_days.length > 0 ? row.study_days : undefined,
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
   };
@@ -6098,6 +6099,7 @@ export class DatabaseService {
           completed_cycles_count: savedCycle.completedCyclesCount,
           total_cycle_minutes: savedCycle.totalCycleMinutes,
           blocks: savedCycle.blocks,
+          ...(savedCycle.studyDays && { study_days: savedCycle.studyDays }),
           created_at: savedCycle.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }]);
@@ -6169,7 +6171,7 @@ export class DatabaseService {
   }
 
   static async recalculateStudyCycle(concursoId?: string, baseSlotDuration: number = 60): Promise<StudyCycle> {
-    const currentCycle = await this.getStudyCycle();
+    const currentCycle = await this.getStudyCycle(concursoId);
     const targetConcursoId = concursoId || currentCycle.concursoId;
     const [allDisciplinas, assuntos, concursos] = await Promise.all([
       this.getDisciplinas(),
@@ -6190,6 +6192,10 @@ export class DatabaseService {
       baseSlotDuration
     );
     newCycle.completedCyclesCount = currentCycle.completedCyclesCount;
+    if (currentCycle.studyDays) {
+      newCycle.studyDays = currentCycle.studyDays;
+      newCycle.createdAt = currentCycle.createdAt;
+    }
     return this.saveStudyCycle(newCycle);
   }
 

@@ -227,7 +227,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
   });
 
   // Passo 3: Horários (Checkboxes de DOM a SÁB com seletor numérico de incremento/decremento + e - de 30 em 30 min)
-  const [daysConfig, setDaysConfig] = useState<DayConfig[]>(() => {
+  const defaultDaysConfig = useMemo<DayConfig[]>(() => {
     const currentAvail = plan?.weeklyAvailability || {
       dom: 180,
       seg: 240,
@@ -248,16 +248,18 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
       { id: 'sab', label: 'SÁB', name: 'Sábado' },
     ];
 
+    const hasSavedHours = Object.values(currentAvail).some(value => value > 0);
     return daysOrder.map(d => {
       const mins = currentAvail[d.id] || 0;
       const hoursFromMins = Math.max(0.5, Math.round(mins / 30) * 0.5);
       return {
         ...d,
-        enabled: mins > 0 || (d.id !== 'dom'),
+        enabled: mins > 0 || (!hasSavedHours && d.id !== 'dom'),
         hours: mins > 0 ? hoursFromMins : 3,
       };
     });
-  });
+  }, [plan?.weeklyAvailability]);
+  const [daysConfig, setDaysConfig] = useState(defaultDaysConfig);
 
   // Configuração de Faixa de Tempo por Bloco de Estudo (Mínimo e Máximo)
   const [minBlockDuration, setMinBlockDuration] = useState<number>(30);
@@ -298,6 +300,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
       setStep(1);
       setErrorMessage(null);
       setIsSaving(false);
+      setDaysConfig(defaultDaysConfig);
       setStartDateOption('hoje');
       setCustomStartDate(addDaysToDateStr(todayStr, 2));
       setEndDateOption(hasFutureExamDate ? 'vespera' : 'custom');
@@ -319,7 +322,7 @@ export const CriarCronogramaModal: React.FC<CriarCronogramaModalProps> = ({
         setSelectedDisciplinaIds(materiasDoConcursoAtivo.map(d => d.id));
       }
     }
-  }, [isOpen, plan, resolvedActiveConcursoId, materiasDoConcursoAtivo, hasFutureExamDate, examEveDateStr, todayStr]);
+  }, [isOpen, plan, resolvedActiveConcursoId, materiasDoConcursoAtivo, hasFutureExamDate, examEveDateStr, todayStr, defaultDaysConfig]);
 
   // Data de início resolvida
   const resolvedStartDateStr = useMemo(() => {
